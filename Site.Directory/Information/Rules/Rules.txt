@@ -1,0 +1,113 @@
+<style>
+    .rules-container {
+        font-family: sans-serif;
+        line-height: 1.6;
+        color: #333;
+    }
+    .rule-box {
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        margin-bottom: 1.5rem;
+        background-color: #ffffff;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        overflow: hidden;
+    }
+    .rule-title {
+        background-color: #f8f9fa;
+        padding: 0.75rem 1.25rem;
+        border-bottom: 1px solid #dee2e6;
+    }
+    .rule-title h2 {
+        margin: 0;
+        font-size: 1.25rem;
+        color: #495057;
+    }
+    .rule-content {
+        padding: 1.25rem;
+    }
+    .rule-content p:last-child {
+        margin-bottom: 0;
+    }
+    hr {
+        border: 0;
+        border-top: 1px solid #e9ecef;
+        margin: 2rem 0;
+    }
+</style>
+<div class="rules-container">
+    <h1>Site Rules & Guidelines</h1>
+    <p>In order to foster a good community, rules are needed to maintain stability and ensure everyone adheres to the same standards. Breaking any of these rules will result in moderation, up to and including a permanent ban from the site.</p>
+
+    <hr>
+
+    <div class="rule-box">
+        <div class="rule-title">
+            <h2>RPG is an 18+ Only Website</h2>
+        </div>
+        <div class="rule-content">
+            <p>It has been decided that RPG is an <strong>18+ website</strong>, and as such, minors are strictly not allowed. By joining this site, you acknowledge that you are at least 18 years of age or older. Anyone caught being under 18 on the site will be explicitly banned, and anyone knowingly interacting with someone under 18 may be subject to site moderation.</p>
+        </div>
+    </div>
+
+    <div class="rule-box">
+        <div class="rule-title">
+            <h2>Don’t Be a Dick</h2>
+        </div>
+        <div class="rule-content">
+            <p>This is our most straightforward rule. Treat others as you would like to be treated. Do not threaten, harass, or intimidate other users of the site. This includes direct messaging, as well as indirectly publishing any information (on profiles, articles, chats, or anywhere else) that someone may not want to be seen. It also includes evading blocks or having someone communicate with a person who has blocked you on your behalf.</p>
+            <p>If someone is causing problems, do not hesitate to report them to moderation. We will handle it.</p>
+        </div>
+    </div>
+
+    <div class="rule-box">
+        <div class="rule-title">
+            <h2>Do Not Impersonate Others</h2>
+        </div>
+        <div class="rule-content">
+            <p>Do not pretend to be anyone else on the site outside of your own persona. Additionally, do not pretend to be site staff. Anyone claiming to be site staff without the official badge should not be taken seriously.</p>
+        </div>
+    </div>
+
+    <div class="rule-box">
+        <div class="rule-title">
+            <h2>Do Not Breach Consent</h2>
+        </div>
+        <div class="rule-content">
+            <p>Before messaging someone, please read their profile to ensure you are approaching them appropriately. Not everyone wants to receive an IC starter, especially if it contains questionable content. Also, communicate clearly with your RP partner about what you both are and aren’t comfortable with in terms of roleplay.</p>
+        </div>
+    </div>
+    
+    <div class="rule-box">
+        <div class="rule-title">
+            <h2>Forbidden Topics in Public Areas</h2>
+        </div>
+        <div class="rule-content">
+            <p>In the world of roleplay, we can pretend to be many things. However, RPG will not permit any erotic content involving minors or non-intelligent creatures.</p>
+            <p>This content is <strong>strictly forbidden</strong> in all public-facing areas of the site, including but not limited to: public threads, chat rooms, articles, and 'Looking for RP' posts.</p>
+            <p>We strongly encourage all users to exercise common sense and respect the boundaries of their partners. However, creating a character profile, article, or any other content that is dedicated to or primarily focused on these forbidden topics may be subject to moderator action.</p>
+        </div>
+    </div>
+
+    <div class="rule-box">
+        <div class="rule-title">
+            <h2>One Account Per Person</h2>
+        </div>
+        <div class="rule-content">
+            <p>Due to profile and image limitations, users are expected to have only one account. Anyone caught with multiple accounts may result in all of their accounts being banned.</p>
+        </div>
+    </div>
+
+    <div class="rule-box">
+        <div class="rule-title">
+            <h2>Do Not Post Content You Do Not Own</h2>
+        </div>
+        <div class="rule-content">
+            <p>When you post anything on RPG, it is assumed you have permission to use that content. This includes art and stories. RPG reserves the right to remove any content deemed to breach this policy.</p>
+            <p>If you are the owner of content that you see someone else using without permission, please contact staff.</p>
+        </div>
+    </div>
+
+    <hr>
+    
+    <p><em>I'm sure I'm missing a few things, but those are pretty universal rules.</em></p>
+</div>

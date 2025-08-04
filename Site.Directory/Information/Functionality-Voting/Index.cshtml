@@ -1,0 +1,77 @@
+﻿@page
+@model RoleplayersGuild.Site.Directory.Functionality_Voting.IndexModel
+@{
+    ViewData["Title"] = "Functionality Voting";
+    Layout = "~/Site.Directory/Shared/_Layout1Col.cshtml";
+}
+
+@if (!string.IsNullOrEmpty(Model.Message))
+{
+    <div class="alert alert-success">@Model.Message</div>
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h1>Community Ideas</h1>
+    <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addIdeaModal">
+        <i class="bi bi-plus-circle"></i> New Idea
+    </button>
+</div>
+
+<div class="FunctionalitySuggestions">
+    @foreach (var item in Model.ConsiderationItems)
+    {
+        <div class="card mb-3">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h5 class="card-title">@item.ItemName</h5>
+                        <p class="card-text">@Html.Raw(item.ItemDescription)</p>
+                    </div>
+                    <div class="text-center ms-3">
+                        <div class="fw-bold fs-4">@item.VoteCount</div>
+                        <div>Votes</div>
+                        <form method="post">
+                            <input type="hidden" name="itemId" value="@item.ItemId" />
+                            @if (item.HasVoted)
+                            {
+                                <button type="submit" asp-page-handler="RemoveVote" class="btn btn-sm btn-danger mt-2">Remove Vote</button>
+                            }
+                            else
+                            {
+                                <button type="submit" asp-page-handler="AddVote" class="btn btn-sm btn-success mt-2">Vote</button>
+                            }
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+<!-- Add Idea Modal -->
+<div class="modal fade" id="addIdeaModal" tabindex="-1" aria-labelledby="addIdeaModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="post">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="addIdeaModalLabel">Submit a New Idea</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label asp-for="NewIdea.Name" class="form-label"></label>
+                        <input asp-for="NewIdea.Name" class="form-control" required />
+                    </div>
+                    <div class="mb-3">
+                        <label asp-for="NewIdea.Description" class="form-label"></label>
+                        <textarea asp-for="NewIdea.Description" class="form-control" rows="5" required></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="submit" class="btn btn-primary">Submit Idea</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,96 @@
+﻿@page "/User-Panel/My-Profile/"
+@model RoleplayersGuild.Site.Directory.User_Panel.My_Profile.IndexMyProfileModel
+@using RoleplayersGuild.Site.Utils
+@{
+    ViewData["Title"] = "My Profile";
+    Layout = "_Layout1Col";
+}
+
+@if (Model.ProfileUser is not null)
+{
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h1>@ViewData["Title"]</h1>
+        <a asp-page="./Edit" class="btn btn-primary">
+            <i class="bi bi-pencil-square"></i> Edit Profile
+        </a>
+    </div>
+
+    <div class="alert alert-info" role="alert">
+        <i class="bi bi-info-circle-fill"></i> This is a preview of how your public profile appears to other users.
+    </div>
+
+    <div class="card mb-4">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h2 class="card-title h5 mb-0">
+                About @Model.ProfileUser.Username
+            </h2>
+            @if (DateUtils.IsOnline(Model.ProfileUser.LastAction) && Model.ProfileUser.ShowWhenOnline)
+            {
+                <span class="badge bg-success small">Currently Online</span>
+            }
+        </div>
+        <div class="card-body linkify">
+            @if (!string.IsNullOrWhiteSpace(Model.ProfileUser.AboutMe))
+            {
+                @Html.Raw(Model.ProfileUser.AboutMe)
+            }
+            else
+            {
+                <p class="text-muted fst-italic">You haven't written your "About Me" section yet. Click "Edit Profile" to add one!</p>
+            }
+        </div>
+    </div>
+
+    @if (Model.Badges.Any())
+    {
+        <div class="card mb-4">
+            <div class="card-header">
+                <h3 class="card-title h5 mb-0">Writer's Badges</h3>
+            </div>
+            <div class="card-body">
+                @foreach (var badge in Model.Badges)
+                {
+                    <img class="p-1" style="height: 60px;" src="@badge.BadgeImageUrl" title="@badge.BadgeName" data-bs-container="body" data-bs-placement="bottom" data-bs-trigger="hover focus" data-bs-toggle="popover" data-bs-content="@badge.BadgeDescription" />
+                }
+            </div>
+        </div>
+    }
+
+    @if (Model.Articles.Any())
+    {
+        <div class="card mb-4">
+            <div class="card-header"><h3 class="card-title h5 mb-0">Writer's Articles</h3></div>
+            <ul class="list-group list-group-flush">
+                @foreach (var article in Model.Articles)
+                {
+                    <li class="list-group-item">
+                        <a asp-page="/Community/Articles/View" asp-route-id="@article.ArticleId">@article.ArticleTitle</a>
+                        <span class="text-muted small">(@article.ContentRating)</span>
+                        @if (article.Genres.Any())
+                        {
+                            <span class="text-muted small">- @string.Join(", ", article.Genres)</span>
+                        }
+                    </li>
+                }
+            </ul>
+        </div>
+    }
+
+    @if (Model.Characters.Any())
+    {
+        @await Component.InvokeAsync("CharacterListing", new { characters = Model.Characters, title = $"{Model.ProfileUser.Username}'s Characters", displaySize = "profile-card-vertical" })
+    }
+}
+else
+{
+    <div class="alert alert-danger">Your profile could not be loaded.</div>
+}
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const popoverTriggerList = Array.from(document.querySelectorAll('[data-bs-toggle="popover"]'));
+            const popoverList = popoverTriggerList.map(popoverTriggerEl => new bootstrap.Popover(popoverTriggerEl));
+        });
+    </script>
+}

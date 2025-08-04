@@ -1,0 +1,51 @@
+﻿@page "{id:int}"
+@model RoleplayersGuild.Site.Directory.Community.Stories.ViewStoryModel
+@{
+    // CORRECTED: Switched to the simpler single-column layout
+    Layout = "_Layout1Col";
+}
+
+@* The cphLeftCol section has been removed as it's not needed for the 1-column layout *@
+
+@if (Model.Story is not null)
+{
+    <div class="row g-2 mb-3">
+        <div class="col-12 col-sm-3">
+            <a asp-page="./Search" class="btn btn-secondary w-100">Back To Stories</a>
+        </div>
+
+        @if (Model.Story.UniverseId.HasValue && Model.Story.UniverseId > 0)
+        {
+            <div class="col-12 col-sm-3">
+                <a asp-page="/Community/Universes/View" asp-route-id="@Model.Story.UniverseId" class="btn btn-primary w-100">View Universe</a>
+            </div>
+        }
+        @if (Model.IsStaff)
+        {
+            <div class="col-12 col-sm-3">
+                <a asp-page="/Admin-Panel/Stories/Edit" asp-route-id="@Model.Story.StoryId" class="btn btn-danger w-100">Admin Console</a>
+            </div>
+        }
+    </div>
+
+    @if (Model.IsBlocked)
+    {
+        <div class="alert alert-danger">
+            You and the owner of this story have blocked each other, so you cannot view its content.
+        </div>
+    }
+
+    <h1 class="text-center">@Model.Story.StoryTitle</h1>
+
+    <div class="card border-primary">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h3 class="card-title h5 mb-0">Story Description</h3>
+            <a asp-page="./Posts" asp-route-id="@Model.Story.StoryId" class="btn btn-success">
+                <i class="bi bi-book"></i> Read Posts
+            </a>
+        </div>
+        <div class="card-body story-styled linkify">
+            @Html.Raw(Model.Story.StoryDescription)
+        </div>
+    </div>
+}

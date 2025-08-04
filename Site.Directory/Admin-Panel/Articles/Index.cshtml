@@ -1,0 +1,167 @@
+﻿@page "{id:int?}"
+@model RoleplayersGuild.Site.Directory.Admin_Panel.Articles.IndexModel
+@{
+    ViewData["Title"] = "Manage Articles";
+    Layout = "_LayoutAdmin";
+}
+
+<p>
+    <a asp-page="/Admin-Panel/Index">&laquo;&nbsp;Back to Admin Console</a>
+</p>
+
+<div class="row">
+    <div class="col-md-3">
+        <div class="list-group">
+            @foreach (var article in Model.AllArticles)
+            {
+                var activeClass = (Model.Article?.ArticleId == article.ArticleId) ? "active" : "";
+                <a asp-page="./Index" asp-route-id="@article.ArticleId" class="list-group-item list-group-item-action @activeClass">
+                    @article.ArticleTitle
+                </a>
+            }
+        </div>
+    </div>
+
+    <div class="col-md-9">
+        @if (Model.Article != null)
+        {
+            <form method="post">
+                <input type="hidden" asp-for="Article.ArticleId" />
+
+                @if (!string.IsNullOrEmpty(Model.Message))
+                {
+                    var alertClass = Model.IsSuccess ? "alert-success" : "alert-danger";
+                    <div class="alert @alertClass" role="alert">
+                        @Model.Message
+                    </div>
+                }
+
+                <h1>@Model.Article.ArticleTitle</h1>
+
+                <div class="d-flex justify-content-between my-3">
+                    <a class="btn btn-secondary" asp-page="/User-Panel/My-Articles/Index">Back to My Articles</a>
+                    <a class="btn btn-info" asp-page="/Community/Articles/View" asp-route-id="@Model.Article.ArticleId" target="_blank">View Article</a>
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="Article.ArticleTitle" class="form-label">Article Title</label>
+                    <input asp-for="Article.ArticleTitle" class="form-control" required maxlength="50" />
+                    <span asp-validation-for="Article.ArticleTitle" class="text-danger"></span>
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="Article.ArticleContent" class="form-label">Article Content</label>
+                    <textarea asp-for="Article.ArticleContent" class="form-control" rows="12"></textarea>
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="Article.CategoryId" class="form-label">Category</label>
+                    <select asp-for="Article.CategoryId" asp-items="Model.Categories" class="form-select"></select>
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="Article.ContentRatingId" class="form-label">Content Rating</label>
+                    <div class="input-group">
+                        <select asp-for="Article.ContentRatingId" class="form-select">
+                            <option value="1">SFW</option>
+                            <option value="2">NSFW</option>
+                        </select>
+                        <button type="button" class="btn btn-info" data-bs-toggle="modal" data-bs-target="#RatingDescription">
+                            <i class="bi bi-question-circle"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Genres</label>
+                    <div class="border rounded p-2" style="max-height: 200px; overflow-y: auto;">
+                        @for (var i = 0; i < Model.Genres.Count; i++)
+                        {
+                            <div class="form-check">
+                                <input type="checkbox" asp-for="Genres[i].IsSelected" class="form-check-input" />
+                                <label asp-for="Genres[i].IsSelected" class="form-check-label">@Model.Genres[i].GenreName</label>
+                                <input type="hidden" asp-for="Genres[i].GenreId" />
+                                <input type="hidden" asp-for="Genres[i].GenreName" />
+                            </div>
+                        }
+                    </div>
+                </div>
+
+                <div class="form-check mb-3">
+                    <input asp-for="Article.DisableLinkify" class="form-check-input" />
+                    <label asp-for="Article.DisableLinkify" class="form-check-label">Disable auto-spacing and linking.</label>
+                </div>
+
+                @if (Model.Article.OwnerUserId > 0)
+                {
+                    <div class="mb-3">
+                        Owned by: <a asp-page="/Admin-Panel/Users/Index" asp-route-id="@Model.Article.OwnerUserId">@Model.Article.OwnerUserName (@Model.Article.OwnerUserId)</a>
+                    </div>
+                }
+
+                <div class="d-flex justify-content-between my-3">
+                    <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#DeleteArticleModal">Delete Article</button>
+                    <button type="submit" asp-page-handler="Save" class="btn btn-primary">Save Article</button>
+                </div>
+            </form>
+        }
+        else
+        {
+            <div class="alert alert-info">Please select an article from the list to edit it.</div>
+        }
+    </div>
+</div>
+
+@if (Model.Article != null)
+{
+    <div class="modal fade" id="DeleteArticleModal" tabindex="-1" aria-labelledby="DeleteArticleLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="DeleteArticleLabel">Are you sure?</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    Are you sure you want to delete this Article? This action cannot be undone.
+                </div>
+                <div class="modal-footer">
+                    <form method="post">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-danger" asp-page-handler="Delete" asp-route-id="@Model.Article.ArticleId">Delete Article</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+<div class="modal fade" id="RatingDescription" tabindex="-1" aria-labelledby="RatingLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="RatingLabel">Content Ratings</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Content ratings can be defined as so:</p>
+                <ul>
+                    <li>
+                        <strong>SFW:</strong>
+                        Content is suitable for a baseline adult audience. May include mild profanity, suggestive themes, and non-graphic, fantasy-style violence. This is the default rating for general storytelling.
+                    </li>
+                    <li>
+                        <strong>NSFW:</strong>
+                        Intended for mature players. Expect graphic violence, strong language, and potentially disturbing or sexual themes that are not explicitly detailed.
+                    </li>
+                </ul>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

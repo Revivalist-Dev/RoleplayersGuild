@@ -1,0 +1,54 @@
+﻿@page "/User-Panel/My-Articles"
+@model RoleplayersGuild.Site.Directory.User_Panel.My_Articles.IndexMyArticlesModel
+@{
+    ViewData["Title"] = "My Articles";
+    Layout = "_Layout1Col";
+}
+
+@if (!string.IsNullOrEmpty(Model.Message))
+{
+    <div class="alert alert-success" role="alert">
+        @Model.Message
+    </div>
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h1>@ViewData["Title"]</h1>
+    <a asp-page="./Edit" class="btn btn-success">
+        <i class="bi bi-plus-circle"></i> New Article
+    </a>
+</div>
+
+<div class="alert alert-info" role="alert">
+    This is a list of all your created articles. Articles are non-fiction guides, tutorials, or resources for the community.
+</div>
+
+@if (Model.Articles.Any())
+{
+    <div class="list-group">
+        @foreach (var article in Model.Articles)
+        {
+            <a asp-page="./Edit" asp-route-id="@article.ArticleId" class="list-group-item list-group-item-action">
+                <div class="d-flex w-100 justify-content-between">
+                    <h5 class="mb-1">@article.ArticleTitle</h5>
+                </div>
+                <p class="mb-1">
+                    <strong>Category:</strong> @article.CategoryName | <strong>Rating:</strong> @article.ContentRating
+                </p>
+                @if (article.Genres.Any())
+                {
+                    <small class="text-muted">
+                        <strong>Genres:</strong> @string.Join(", ", article.Genres)
+                    </small>
+                }
+            </a>
+        }
+    </div>
+}
+else
+{
+    <div class="text-center p-4 border rounded">
+        <p>You haven't created any articles yet.</p>
+        <a asp-page="./Edit" class="btn btn-primary">Create Your First Article</a>
+    </div>
+}

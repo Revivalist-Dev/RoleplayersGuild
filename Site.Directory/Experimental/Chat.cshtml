@@ -1,0 +1,155 @@
+﻿@page "/Experimental/Chat/{Id:int}"
+@model RoleplayersGuild.Site.Directory.Experimental.Chat.ChatModel
+@{
+    ViewData["Title"] = Model.ChatRoom?.ChatRoomName ?? "Chat";
+    Layout = "_Layout2Col"; // Use your two-column layout
+}
+
+@section cphLeftCol {
+    @* This section will contain the list of active chat rooms, loaded by JavaScript *@
+    <div class="card">
+        <div id="ChatRoomListTitle" class="card-header"><h5 class="mb-0">Active Chat Rooms</h5></div>
+        <div id="ActiveChatRoomList" class="list-group list-group-flush">
+            @* Content will be loaded here by GetChatRooms() *@
+        </div>
+        <div class="card-footer text-end small">
+            <a href="/My-Chat-Rooms">My Chat Rooms</a> | <a href="/Chat-Rooms">View All</a>
+        </div>
+    </div>
+}
+
+@section cphRightCol {
+    @if (!Model.HideAds)
+    {
+        <div class="mb-3">
+            @* A View Component is the modern way to handle ads *@
+            @await Component.InvokeAsync("AdBanner", new { adType = 2 }) @* Assuming adType 2 is for chat *@
+        </div>
+    }
+
+    <fieldset class="Room">
+        <legend>@Model.ChatRoom?.ChatRoomName</legend>
+        <div class="ChatArea">
+            @* The "Send As" control should be converted to a Partial View or View Component *@
+            @* <partial name="_SendAsChanger" /> *@
+
+            <div class="row MakePost g-3 mb-3">
+                <div class="col-12">
+                    <textarea id="txtChatPostContent" class="form-control" rows="4" placeholder="Please be sure to read the chat room's rules before posting."></textarea>
+                </div>
+            </div>
+
+            <div class="d-flex justify-content-between">
+                <a href="#" class="btn btn-info" data-bs-toggle="modal" data-bs-target="#ChatInfoModal">Rules & Information</a>
+                <button id="btnSubmitPost" class="btn btn-primary">Submit Post</button>
+            </div>
+
+            <div id="ChatOutput" class="ChatPosts mt-3">
+                <p class="text-center"><img src="/images/Icons/spin.gif" /> Loading Chat...</p>
+            </div>
+        </div>
+    </fieldset>
+}
+
+@* Modal for Chat Room Rules and Information *@
+<div class="modal fade" id="ChatInfoModal" tabindex="-1" aria-labelledby="ChatInfoLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="ChatInfoLabel">@Model.ChatRoom?.ChatRoomName Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                @Html.Raw(Model.ChatRoom?.ChatRoomDescription)
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        const chatRoomId = @(Model.Id);
+        let lastPostId = 0; // Used to fetch only new posts
+
+        // Fetches new chat posts from the API
+        async function getPosts() {
+            try {
+                const response = await fetch(`/api/GetChatPosts?chatRoomId=${chatRoomId}&lastPostId=${lastPostId}`);
+                if (!response.ok) return;
+
+                const posts = await response.json();
+                if (posts.length > 0) {
+                    // Update the last seen post ID
+                    lastPostId = posts[posts.length - 1].chatPostID;
+
+                    // On initial load, clear the loading message
+                    if (document.getElementById('ChatOutput').querySelector('img')) {
+                        document.getElementById('ChatOutput').innerHTML = '';
+                    }
+
+                    // Append new posts to the chat
+                    posts.forEach(post => appendPost(post));
+                    document.getElementById('ChatOutput').scrollTop = document.getElementById('ChatOutput').scrollHeight;
+                }
+            } catch (error) {
+                console.error("Error fetching posts:", error);
+            }
+        }
+
+        // Submits a new post to the API
+        async function submitPost() {
+            const content = document.getElementById('txtChatPostContent').value.trim();
+            // You'll need to get the current character ID from your "Send As" component
+            const characterId = 1; // Replace with actual ID from SendAs component
+
+            if (content === '') return;
+
+            try {
+                const response = await fetch('/api/AddChatPost', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        ChatRoomId: chatRoomId,
+                        PostContent: content,
+                        CharacterId: characterId
+                    })
+                });
+
+                if (response.ok) {
+                    document.getElementById('txtChatPostContent').value = '';
+                    await getPosts(); // Immediately fetch new posts after submitting
+                }
+            } catch (error) {
+                console.error("Error submitting post:", error);
+            }
+        }
+
+        // Helper function to create and append a post element to the chat window
+        function appendPost(post) {
+            const postHtml = `
+                <div class="Post">
+                    <div class="row">
+                        <div class="col-2 col-xl-1 PostAsImage">
+                            <img src="${post.characterThumbnail || '/images/UserFiles/CharacterImages/NewCharacter.png'}" class="img-fluid" />
+                        </div>
+                        <div class="col-10 col-xl-11 PostText">
+                            <p><strong>${post.characterDisplayName}</strong> <small class="text-muted">${new Date(post.postDateTime).toLocaleString()}</small></p>
+                            <div>${post.postContent}</div>
+                        </div>
+                    </div>
+                </div>`;
+            document.getElementById('ChatOutput').insertAdjacentHTML('beforeend', postHtml);
+        }
+
+        // Start polling for new messages
+        document.addEventListener('DOMContentLoaded', () => {
+            getPosts();
+            setInterval(getPosts, 5000); // Poll every 5 seconds
+
+            document.getElementById('btnSubmitPost').addEventListener('click', submitPost);
+        });
+    </script>
+}

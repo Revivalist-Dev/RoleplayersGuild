@@ -1,0 +1,52 @@
+﻿@page "/User-Panel/My-Proposals"
+@model RoleplayersGuild.Site.Directory.User_Panel.My_Proposals.IndexMyProposalsModel
+@using RoleplayersGuild.Site.Utils
+@{
+    ViewData["Title"] = "My Proposals";
+    Layout = "_Layout1Col";
+}
+
+@if (!string.IsNullOrEmpty(Model.Message))
+{
+    <div class="alert alert-success" role="alert">
+        @Model.Message
+    </div>
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h1>@ViewData["Title"]</h1>
+    <a asp-page="./Edit" class="btn btn-success">
+        <i class="bi bi-plus-circle"></i> New Proposal
+    </a>
+</div>
+
+<div class="alert alert-info" role="alert">
+    Proposals are your "looking for roleplay" posts. This is a list of all proposals you have created.
+</div>
+
+@if (Model.Proposals.Any())
+{
+    <div class="list-group">
+        @foreach (var proposal in Model.Proposals)
+        {
+            <a asp-page="./Edit" asp-route-id="@proposal.ProposalId" class="list-group-item list-group-item-action">
+                <div class="d-flex w-100 justify-content-between">
+                    <h5 class="mb-1">@proposal.Title</h5>
+                    <small class="text-muted">Status: @proposal.StatusName</small>
+                </div>
+                <p class="mb-1">
+                    <strong>Rating:</strong> @proposal.ContentRating
+                </p>
+                @* CORRECTED: Use the "time ago" helper for consistency *@
+                <small class="text-muted">Last Updated: @DateUtils.TimeAgo(proposal.LastUpdated)</small>
+            </a>
+        }
+    </div>
+}
+else
+{
+    <div class="text-center p-4 border rounded">
+        <p>You haven't created any proposals yet.</p>
+        <a asp-page="./Edit" class="btn btn-primary">Create Your First Proposal</a>
+    </div>
+}

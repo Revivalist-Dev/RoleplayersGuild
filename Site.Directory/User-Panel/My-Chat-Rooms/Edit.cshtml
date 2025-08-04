@@ -1,0 +1,78 @@
+﻿@page "{id:int?}"
+@model RoleplayersGuild.Site.Directory.User_Panel.My_Chat_Rooms.EditMyChatRoomsModel
+@{
+    ViewData["Title"] = Model.IsNew ? "New Chat Room" : "Edit Chat Room";
+    Layout = "_Layout2Col";
+}
+
+@section cphLeftCol {
+    @* This section is required by the layout but can be empty. *@
+}
+
+@section cphRightCol {
+    <h1>@ViewData["Title"]</h1>
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <a class="btn btn-secondary" asp-page="./Index">Back to My Chat Rooms</a>
+    </div>
+    <div class="alert alert-info small"><strong>Please Note:</strong> By creating this Chat Room, you agree and understand that your Writer Profile will be publicly displayed on the Chat Room’s details section.</div>
+
+    <form method="post">
+        <input type="hidden" asp-for="Input.ChatRoomId" />
+
+        <div class="mb-3">
+            <label asp-for="Input.ChatRoomName" class="form-label">Chat Room Name</label>
+            <input asp-for="Input.ChatRoomName" class="form-control" placeholder="Chat Room Name (Required)" />
+            <span asp-validation-for="Input.ChatRoomName" class="text-danger"></span>
+        </div>
+
+        <div class="mb-3">
+            <label asp-for="Input.ChatRoomDescription" class="form-label">Chat Room Description</label>
+            <textarea asp-for="Input.ChatRoomDescription" class="form-control" rows="12" placeholder="Include enough information to interest people..."></textarea>
+        </div>
+
+        <div class="mb-3">
+            <label asp-for="Input.ContentRatingId" class="form-label">Content Rating</label>
+            <select asp-for="Input.ContentRatingId" asp-items="Model.Ratings" class="form-select"></select>
+        </div>
+
+        <div class="mb-3">
+            <label asp-for="Input.UniverseId" class="form-label">Universe</label>
+            <select asp-for="Input.UniverseId" asp-items="Model.Universes" class="form-select">
+                <option value="">OOC (No Universe)</option>
+            </select>
+        </div>
+
+        <div class="d-flex justify-content-between align-items-center mt-3">
+            @if (!Model.IsNew)
+            {
+                <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteModal">Delete</button>
+            }
+            <div class="ms-auto">
+                <a asp-page="./Index" class="btn btn-secondary">Cancel</a>
+                <button type="submit" class="btn btn-primary">Save Chat Room</button>
+            </div>
+        </div>
+    </form>
+
+    @if (!Model.IsNew)
+    {
+        <div class="modal fade" id="deleteModal" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content alert-danger">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Are you sure?</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body"><p>Are you sure you want to delete this Chat Room?</p></div>
+                    <div class="modal-footer">
+                        <form method="post">
+                            <input type="hidden" name="id" value="@Model.Input.ChatRoomId" />
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                            <button type="submit" class="btn btn-danger" asp-page-handler="Delete">Delete</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+}

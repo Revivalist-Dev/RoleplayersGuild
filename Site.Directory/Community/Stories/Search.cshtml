@@ -1,0 +1,74 @@
+﻿@page
+@model RoleplayersGuild.Site.Directory.Community.Stories.SearchModel
+@{
+    ViewData["Title"] = "Search Stories";
+    Layout = "_Layout2Col";
+}
+
+@section cphLeftCol {
+    @await Component.InvokeAsync("FilterNav", new { selectedGenreIds = Model.SelectedGenreIds })
+}
+
+@section cphRightCol {
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h1>@ViewData["Title"]</h1>
+        @if (User.Identity?.IsAuthenticated == true)
+        {
+            <a asp-page="/User-Panel/My-Stories/Edit" class="btn btn-success">
+                <i class="bi bi-plus-circle"></i> New Story
+            </a>
+        }
+    </div>
+    <p class="lead text-muted">Explore fictional stories and roleplays written by members of the community.</p>
+
+    <div class="card bg-light mb-4">
+        <div class="card-body">
+            <form method="get">
+                @foreach (var genreId in Model.SelectedGenreIds)
+                {
+                    <input type="hidden" name="SelectedGenreIds" value="@genreId" />
+                }
+                <div class="input-group">
+                    <input asp-for="SearchTerm" class="form-control form-control-lg" placeholder="Story name or ID..." />
+                    <button type="submit" class="btn btn-primary"><i class="bi bi-search"></i> Search</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    @if (Model.StoriesResult is not null && Model.StoriesResult.Items.Any())
+    {
+        <div class="list-group mb-3">
+            @foreach (var story in Model.StoriesResult.Items)
+            {
+                <a asp-page="./View" asp-route-id="@story.StoryId" class="list-group-item list-group-item-action">
+                    <h5 class="mb-1">[@story.ContentRating] @story.StoryTitle</h5>
+                    <p class="mb-2 text-truncate small">@story.StoryDescription</p>
+                    <div class="d-flex justify-content-between">
+                        <small class="text-muted">
+                            <strong>Author:</strong> @story.AuthorUsername
+                        </small>
+                        @if (Model.GenresLookup.Contains(story.StoryId))
+                        {
+                            <div>
+                                @foreach (var genre in Model.GenresLookup[story.StoryId])
+                                {
+                                    <span class="badge bg-info">@genre</span>
+                                }
+                            </div>
+                        }
+                    </div>
+                </a>
+            }
+        </div>
+
+        <partial name="_PagingControls" model="Model.StoriesResult" />
+    }
+    else
+    {
+        <div class="text-center p-5 border rounded bg-light">
+            <p class="h4 text-muted">No stories found</p>
+            <p>Try adjusting your search terms or filters.</p>
+        </div>
+    }
+}

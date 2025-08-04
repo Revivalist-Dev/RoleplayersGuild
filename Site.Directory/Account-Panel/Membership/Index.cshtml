@@ -1,0 +1,52 @@
+﻿@page
+@model RoleplayersGuild.Site.Directory.Account_Panel.Membership.IndexMembershipModel
+@{
+    ViewData["Title"] = "RPG: Memberships";
+    Layout = "_Layout1Col";
+}
+
+@section head {
+    <meta name="description" content="Show your support for RPG while also gaining access to exclusive features by purchasing a paid RPG membership." />
+}
+
+<h1>Role-Players Guild Paid Membership</h1>
+
+<p>Thank you for your interest in becoming a paid member of RPG. We couldn't have made it this far without the support of all of you.</p>
+<p>Your continued support is deeply appreciated and since we've put an official code freeze on RPG, it's time to move on to RPG2. The new system will be written on a much more scalable infrastructure and be able to support our growth and expansion without a problem. We'll also be able to offer much more refined features to our users!</p>
+<p>To celebrate the end of RPG1, we've made a change to the logic of our membership system. Now, if you buy a $5/mo membership, you can cancel it at any time after the initial payment and continue to reap the benefits of a paid membership without having to renew every month. No ads, unlimited images, and even a chance to get a secret badge if the whole community raises $5,000.</p>
+<p>Once you have your membership activated, you can cancel it by going to PayPal and simply telling PayPal to cancel any further payments. Again; this will not get in the way of anything you already have. If you'd like to help RPG reach the $5,000 goal, however, you can also keep the membership active! Members with paid memberships active from September 2017 until the launch of RPG2 will receive another RPG2 exclusive badge!</p>
+<p>So, to recap, here is what you get if you buy a Premium Membership:</p>
+<ul>
+    <li>No Ads</li>
+    <li>Unlimited Image Slots for Account</li>
+    <li>Platinum Member Badge (Blue Name w/ Blue Glow)</li>
+    <li>Unlimited Images Badge (White Name w/ Blue Glow)</li>
+    <li>Secret Badge If $5,000 Funding Goal Is Reached</li>
+    <li>Secret RPG2 Badge If Membership Active From September 2017 To Launch of RPG</li>
+</ul>
+<p>Users with the old Bronze/Silver/Gold memberships will be able to participate in this by canceling their current memberships and purchasing this one.</p>
+
+<div class="mt-4 p-3 border rounded">
+    <form action="https://www.paypal.com/cgi-bin/webscr" method="post" target="_top">
+        <input type="hidden" name="cmd" value="_s-xclick" />
+        <input type="hidden" name="hosted_button_id" value="LDHSVWYTNK8FJ" />
+        <input type="hidden" name="currency_code" value="USD" />
+
+        @if (Model.IsUserLoggedIn)
+        {
+            <input type="hidden" name="custom" value="@Model.CurrentUserId" />
+        }
+
+        <div class="mb-3">
+            <label for="os0" class="form-label">Select Membership Level</label>
+            <select name="os0" id="os0" class="form-select">
+                <option value="Platinum Member">Premium Member : $5.00 USD - monthly</option>
+            </select>
+        </div>
+
+        <div class="text-end">
+            <p class="small text-muted">Please Note: Membership purchases are non-refundable.</p>
+            <button type="submit" class="btn btn-primary">Start My Premium Membership Today</button>
+        </div>
+    </form>
+</div>

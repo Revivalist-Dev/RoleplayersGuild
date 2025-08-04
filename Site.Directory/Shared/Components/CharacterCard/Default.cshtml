@@ -1,0 +1,80 @@
+﻿@model RoleplayersGuild.Site.Model.CharactersForListing
+@{
+    var showAdminControls = (bool)(ViewData["showAdminControls"] ?? false);
+    var defaultAvatarUrl = "/images/UserFiles/CharacterAvatars/NewAvatar.png";
+    var defaultCardUrl = "/images/UserFiles/CharacterImages/NewCharacter.png";
+    var cardId = $"character-card-{Guid.NewGuid()}";
+}
+
+<div id="@cardId" class="character-card-container">
+    @* Main Card (takes up most of the space) *@
+    <div class="card character-card text-center h-100">
+        <div class="card-header p-2">
+            <h6 class="card-title m-0">@Model.CharacterDisplayName</h6>
+        </div>
+
+        <div class="card-content-wrapper">
+            <div class="card-img-wrapper">
+                <img src="@(Model.DisplayImageUrl ?? defaultCardUrl)" class="rpg-img img-fluid" alt="@Model.CharacterDisplayName" />
+            </div>
+
+            <div class="avatar-view-container d-none">
+                <img src="@(Model.AvatarImageUrl ?? defaultAvatarUrl)" class="img-thumbnail" style="width: 150px; height: 150px;" alt="Avatar Large" />
+                <div class="d-flex justify-content-center gap-3">
+                    <img src="@(Model.AvatarImageUrl ?? defaultAvatarUrl)" class="img-thumbnail" style="width: 75px; height: 75px;" alt="Avatar Medium" />
+                    <img src="@(Model.AvatarImageUrl ?? defaultAvatarUrl)" class="img-thumbnail" style="width: 50px; height: 50px;" alt="Avatar Small" />
+                </div>
+            </div>
+        </div>
+
+        @if (showAdminControls)
+        {
+            <div class="card-footer p-1 d-flex justify-content-around">
+                <a class="btn btn-sm btn-primary" asp-page="/User-Panel/My-Characters/Edit" asp-route-id="@Model.CharacterId" title="Edit"><i class="bi bi-pencil"></i> Edit</a>
+                <a class="btn btn-sm btn-secondary" asp-page="/Community/Characters/View" asp-route-id="@Model.CharacterId" title="View"><i class="bi bi-eye"></i> View</a>
+            </div>
+        }
+        else
+        {
+            <a asp-page="/Community/Characters/View" asp-route-id="@Model.CharacterId" class="card-footer p-1 text-decoration-none">
+                <small>View Profile</small>
+            </a>
+        }
+    </div>
+
+    @* Controls Column (the new blue and white sidebar) *@
+    <div class="character-card-controls">
+        <div class="controls-box">
+            <a class="view-toggle-btn active" data-view="card-view" title="Card View"><i class="bi bi-card-image"></i></a>
+            <a class="view-toggle-btn" data-view="avatar-view" title="Avatar View"><i class="bi bi-person-square"></i></a>
+        </div>
+    </div>
+</div>
+
+<script>
+    (function() {
+        const cardContainer = document.getElementById('@cardId');
+        if (!cardContainer) return;
+
+        const cardView = cardContainer.querySelector('.card-img-wrapper');
+        const avatarView = cardContainer.querySelector('.avatar-view-container');
+        const toggleButtons = cardContainer.querySelectorAll('.view-toggle-btn');
+
+        toggleButtons.forEach(button => {
+            button.addEventListener('click', function(e) {
+                e.preventDefault();
+                toggleButtons.forEach(btn => btn.classList.remove('active'));
+                this.classList.add('active');
+                const viewToShow = this.getAttribute('data-view');
+
+                if (viewToShow === 'card-view') {
+                    cardView.classList.remove('d-none');
+                    avatarView.classList.add('d-none');
+                } else {
+                    cardView.classList.add('d-none');
+                    avatarView.classList.remove('d-none');
+                }
+            });
+        });
+    })();
+</script>

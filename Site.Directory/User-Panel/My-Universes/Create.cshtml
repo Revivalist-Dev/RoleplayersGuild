@@ -1,0 +1,80 @@
+﻿@page
+@model RoleplayersGuild.Site.Directory.User_Panel.My_Universes.CreateModel
+@{
+    ViewData["Title"] = "New Universe";
+    Layout = "_Layout2Col";
+}
+
+@section cphLeftCol {
+    <div class="card sticky-top">
+        <div class="card-header">
+            <h5 class="mb-0">Universe Options</h5>
+        </div>
+        <div class="list-group list-group-flush">
+            <a asp-page="./Index" class="list-group-item list-group-item-action">Back to My Universes</a>
+        </div>
+    </div>
+}
+
+@section cphRightCol {
+    <h1>@ViewData["Title"]</h1>
+    <hr />
+
+    <form method="post">
+        <div asp-validation-summary="ModelOnly" class="alert alert-danger mb-3"></div>
+
+        <div class="mb-3">
+            <label asp-for="Input.UniverseName" class="form-label">Universe Name</label>
+            <input asp-for="Input.UniverseName" class="form-control" />
+            <span asp-validation-for="Input.UniverseName" class="text-danger"></span>
+        </div>
+        <div class="mb-3">
+            <label asp-for="Input.UniverseDescription" class="form-label">Universe Description</label>
+            <textarea asp-for="Input.UniverseDescription" class="form-control" rows="8" placeholder="Describe the world, its rules, lore, and any other relevant information for players."></textarea>
+            <span asp-validation-for="Input.UniverseDescription" class="text-danger"></span>
+        </div>
+
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label asp-for="Input.ContentRatingId" class="form-label">Content Rating</label>
+                <select asp-for="Input.ContentRatingId" asp-items="Model.Ratings" class="form-select"></select>
+            </div>
+            <div class="col-md-6 mb-3">
+                <label asp-for="Input.SourceTypeId" class="form-label">Source Material</label>
+                <select asp-for="Input.SourceTypeId" asp-items="Model.Sources" class="form-select"></select>
+            </div>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Genres</label>
+            <div class="border rounded p-3" style="max-height: 200px; overflow-y: auto;">
+                <div class="row">
+                    @foreach (var genre in Model.GenreSelection)
+                    {
+                        <div class="col-md-4">
+                            <div class="form-check">
+                                <input type="checkbox" name="Input.SelectedGenreIds" value="@genre.GenreId" class="form-check-input" id="genre-@genre.GenreId" checked="@genre.IsSelected" />
+                                <label class="form-check-label" for="genre-@genre.GenreId">@genre.GenreName</label>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <div class="form-check form-switch mb-2">
+            <input asp-for="Input.RequiresApprovalOnJoin" class="form-check-input" />
+            <label asp-for="Input.RequiresApprovalOnJoin" class="form-check-label">Character submissions require my approval</label>
+        </div>
+        <div class="form-check form-switch mb-3">
+            <input asp-for="Input.DisableLinkify" class="form-check-input" />
+            <label asp-for="Input.DisableLinkify" class="form-check-label">Disable automatic links in description</label>
+        </div>
+
+        <hr />
+        <div class="d-flex justify-content-end gap-2 mt-3">
+            <a asp-page="./Index" class="btn btn-secondary">Cancel</a>
+            <button type="submit" class="btn btn-primary">Create Universe</button>
+        </div>
+    </form>
+}

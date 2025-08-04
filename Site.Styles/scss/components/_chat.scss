@@ -1,0 +1,32 @@
+// Styles specific to chat and thread message displays
+
+.Post {
+    margin-bottom: 1rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--bs-border-color-translucent);
+    overflow-x: hidden; // Add this line
+}
+
+.Post:last-child {
+    margin-bottom: 0;
+    padding-bottom: 0;
+    border-bottom: none;
+}
+
+.chat-posts-container {
+    height: 600px; /* Or any height you prefer */
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column-reverse; /* Key for keeping view scrolled to the bottom */
+}
+
+.chat-avatar {
+    width: 75px;
+    height: 75px;
+    object-fit: cover; /* Ensures the image fills the square without distortion */
+}
+
+.linkify {
+    overflow-wrap: break-word;
+    word-wrap: break-word;
+}

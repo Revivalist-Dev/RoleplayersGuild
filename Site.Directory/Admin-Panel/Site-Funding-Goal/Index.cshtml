@@ -1,0 +1,28 @@
+﻿@page
+@model RoleplayersGuild.Site.Directory.Admin_Panel.Site_Funding_Goal.IndexModel
+@{
+    ViewData["Title"] = "Update Funding Goal";
+}
+
+<p><a asp-page="../Index">&laquo;&nbsp;Back to Admin Console</a></p>
+
+<h1>Update Funding Goal</h1>
+
+@if (!string.IsNullOrEmpty(Model.Message))
+{
+    var alertClass = Model.IsSuccess ? "alert-success" : "alert-danger";
+    <div class="alert @alertClass" role="alert">
+        @Html.Raw(Model.Message)
+    </div>
+}
+
+<form method="post">
+    <div class="mb-3">
+        <label asp-for="CurrentFundingAmount" class="form-label">Current Amount ($)</label>
+        <input asp-for="CurrentFundingAmount" class="form-control" />
+        <span asp-validation-for="CurrentFundingAmount" class="text-danger"></span>
+    </div>
+    <div class="text-end">
+        <button type="submit" class="btn btn-primary">Save Content</button>
+    </div>
+</form>

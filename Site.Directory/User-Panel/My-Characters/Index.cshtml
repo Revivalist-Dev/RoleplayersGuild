@@ -1,0 +1,61 @@
+﻿@page "{id:int?}"
+@model RoleplayersGuild.Site.Directory.User_Panel.My_Characters.EditMyCharactersModel
+@{
+    ViewData["Title"] = Model.IsNewCharacter ? "New Character" : "Edit Character";
+    Layout = "_Layout1Col";
+}
+
+<h1>@ViewData["Title"]</h1>
+@* ... (Back button, Welcome message, Validation summary, TempData message) ... *@
+
+<div class="card">
+    <div class="card-header">
+        <ul class="nav nav-tabs card-header-tabs" id="editCharTabs" role="tablist">
+            <li class="nav-item" role="presentation"><button class="nav-link active" data-tab-handler="Details">Details</button></li>
+            <li class="nav-item" role="presentation"><button class="nav-link" data-tab-handler="BBFrame" @(Model.IsNewCharacter ? "disabled" : "")>BBFrame & Inlines</button></li>
+            <li class="nav-item" role="presentation"><button class="nav-link" data-tab-handler="Gallery" @(Model.IsNewCharacter ? "disabled" : "")>Gallery</button></li>
+            @* ... (Customize Profile link) ... *@
+        </ul>
+    </div>
+    <div class="card-body">
+        <div id="tab-content-container">
+            @* Content will be loaded here by JavaScript *@
+        </div>
+    </div>
+</div>
+
+@* ... (Delete Modal) ... *@
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const tabsContainer = document.getElementById('editCharTabs');
+            const contentContainer = document.getElementById('tab-content-container');
+            const characterId = @Model.Input.CharacterId;
+
+            const loadTabContent = (handler) => {
+                contentContainer.innerHTML = `<div class="text-center my-5 p-5"><div class="spinner-border" role="status"><span class="visually-hidden">Loading...</span></div></div>`;
+                fetch(`/User-Panel/My-Characters/Edit/${characterId}?handler=${handler}`)
+                    .then(response => response.text())
+                    .then(html => { contentContainer.innerHTML = html; })
+                    .catch(error => {
+                        console.error(`Error loading ${handler}:`, error);
+                        contentContainer.innerHTML = '<div class="alert alert-danger">Could not load tab content.</div>';
+                    });
+            };
+
+            tabsContainer.addEventListener('click', (event) => {
+                const clickedTab = event.target.closest('button.nav-link');
+                if (!clickedTab || clickedTab.classList.contains('active') || clickedTab.disabled) return;
+
+                tabsContainer.querySelectorAll('.nav-link').forEach(tab => tab.classList.remove('active'));
+                clickedTab.classList.add('active');
+                loadTabContent(clickedTab.getAttribute('data-tab-handler'));
+            });
+
+            // Load initial tab
+            loadTabContent('Details');
+        });
+    </script>
+}

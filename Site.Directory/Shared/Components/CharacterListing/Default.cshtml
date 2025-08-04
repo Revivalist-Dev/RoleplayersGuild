@@ -1,0 +1,68 @@
+﻿@model RoleplayersGuild.Site.Model.CharacterListingViewModel
+@{
+    // This function checks if a character is considered "online"
+    string OnlineStatus(DateTime? lastAction, bool showWhenOnline)
+    {
+        if (showWhenOnline && lastAction.HasValue && lastAction.Value >= DateTime.Now.AddMinutes(-15))
+        {
+            return @"<span class='badge bg-success'>Online</span>";
+        }
+        return string.Empty;
+    }
+
+    // This function now handles both horizontal and vertical layouts
+    string GetCharacterColumnClass(string? displaySize)
+    {
+        return displaySize switch
+        {
+            "profile-card-horizontal" => "character-card-col", // For the homepage's horizontal scroll
+            "profile-card-vertical" => "col-6 col-md-4 col-lg-3", // For standard vertical grids
+            _ => "col-12", // A safe fallback
+        };
+    }
+
+    // Fallback image URL in case a character's image is missing
+    var defaultCardUrl = "/images/UserFiles/CharacterImages/NewCharacter.png";
+}
+
+<div class="row g-3">
+    @if (!Model.Characters.Any())
+    {
+        <div class="col-12">
+            <p class="text-muted">No characters to display.</p>
+        </div>
+    }
+
+    @switch (Model.DisplaySize)
+    {
+        case "profile-card-vertical":
+        case "profile-card-horizontal":
+            foreach (var character in Model.Characters)
+            {
+                <div class="@GetCharacterColumnClass(Model.DisplaySize)">
+                    <a asp-page="/Community/Characters/View" asp-route-id="@character.CharacterId" class="card character-card border-0 h-100 text-decoration-none" title="@character.CharacterDisplayName">
+                        <div class="card-img-wrapper">
+                            <img src="@(character.DisplayImageUrl ?? defaultCardUrl)" class="rpg-img img-fluid" alt="@character.CharacterDisplayName" />
+                        </div>
+                        <div class="card-body p-2">
+                            <h6 class="card-title text-truncate @character.CharacterNameClass">@character.CharacterDisplayName</h6>
+                            @Html.Raw(OnlineStatus(character.LastAction, character.ShowWhenOnline))
+                        </div>
+                    </a>
+                </div>
+            }
+            break;
+
+        default:
+            <div class="col-12"><p class="text-danger">Unknown display size: @Model.DisplaySize</p></div>
+            break;
+    }
+</div>
+
+@if (Model.ShowFooter)
+{
+    <div class="text-end small border-top mt-3 pt-2">
+        <a asp-page="/User-Panel/My-Characters/Index">My Characters</a> |
+        <a asp-page="/Community/Characters/Search">View All Characters</a>
+    </div>
+}

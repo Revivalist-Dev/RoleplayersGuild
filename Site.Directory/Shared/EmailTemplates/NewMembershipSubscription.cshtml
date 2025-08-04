@@ -1,0 +1,12 @@
+﻿@model RoleplayersGuild.Site.Services.Models.MembershipEmailModel
+@{
+    Layout = "_EmailLayout.cshtml";
+    ViewData["HeaderClass"] = "success"; // Applies the green header
+}
+<div class="header @ViewData["HeaderClass"]">
+    Congratulations! You are now a @Model.MembershipType Member of RPG!
+</div>
+<div class="content">
+    <p>You now have access to additional image slots and other perks that come with being a paid member of RPG!</p>
+    <p style="font-size: 0.8em; color: #555;">If you did not make this purchase, please contact the RPG Staff right away.</p>
+</div>

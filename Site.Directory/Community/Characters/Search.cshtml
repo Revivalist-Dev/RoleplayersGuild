@@ -1,0 +1,74 @@
+﻿@page
+@model RoleplayersGuild.Site.Directory.Community.Characters.SearchModel
+@{
+    ViewData["Title"] = "Search Characters";
+    Layout = "_Layout2Col";
+}
+
+@section cphLeftCol {
+    @await Component.InvokeAsync("FilterNav", new { selectedGenreIds = Model.Search.SelectedGenreIds })
+}
+
+@section cphRightCol {
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h1>@ViewData["Title"]</h1>
+        @if (User.Identity?.IsAuthenticated == true)
+        {
+            <a asp-page="/User-Panel/My-Characters/Edit" class="btn btn-success">
+                <i class="bi bi-plus-circle"></i> New Character
+            </a>
+        }
+    </div>
+    <p class="lead text-muted">Find the perfect character for your next story.</p>
+
+    <div class="card bg-light mb-4">
+        <div class="card-body">
+            <form method="get">
+                @foreach (var genreId in Model.Search.SelectedGenreIds)
+                {
+                    <input type="hidden" name="Search.SelectedGenreIds" value="@genreId" />
+                }
+                <div class="row g-2 align-items-end">
+                    <div class="col-lg">
+                        <label asp-for="Search.Name" class="form-label small">Name/ID</label>
+                        <input asp-for="Search.Name" class="form-control" />
+                    </div>
+                    <div class="col-lg-3">
+                        <label asp-for="Search.GenderId" class="form-label small">Gender</label>
+                        <select asp-for="Search.GenderId" asp-items="Model.Genders" class="form-select">
+                            <option value="">Any</option>
+                        </select>
+                    </div>
+                    <div class="col-lg-3">
+                        <label asp-for="Search.SortOrder" class="form-label small">Order By</label>
+                        <select asp-for="Search.SortOrder" asp-items="Model.SortOrders" class="form-select"></select>
+                    </div>
+                    <div class="col-lg-2">
+                        <button type="submit" class="btn btn-primary w-100"><i class="bi bi-search"></i> Search</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    @if (Model.PagedResults is not null && Model.PagedResults.Items.Any())
+    {
+        <div class="row g-3 mb-3">
+            @foreach (var character in Model.PagedResults.Items)
+            {
+                <div class="col-6 col-sm-4 col-md-3 col-lg-3 col-xl-2">
+                    @* CORRECTED: Now uses the ViewComponent for consistent rendering logic. *@
+                    @await Component.InvokeAsync("CharacterCard", new { character = character, showAdminControls = false })
+                </div>
+            }
+        </div>
+        <partial name="_PagingControls" model="Model.PagedResults" view-data='@new ViewDataDictionary(ViewData) { { "RouteData", Model.GetRouteDataForPaging() } }' />
+    }
+    else
+    {
+        <div class="text-center p-5 border rounded bg-light">
+            <p class="h4 text-muted">No characters found</p>
+            <p>Try adjusting your search terms or filters.</p>
+        </div>
+    }
+}

@@ -1,0 +1,29 @@
+﻿@page
+@model RoleplayersGuild.Site.Directory.Badges.IndexModel
+@{
+    ViewData["Title"] = "RPG: Badge Listing";
+    Layout = "~/Site.Directory/Shared/_Layout1Col.cshtml";
+}
+
+@section head {
+    <meta name="description" content="Earn badges by joining RPG and completing various achievements!" />
+}
+
+<h1>Available Badges</h1>
+
+<div class="row g-3">
+    @foreach (var badge in Model.Badges)
+    {
+        <div class="col-sm-6 col-md-4 col-lg-3">
+            <div class="card h-100 text-center">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">@badge.BadgeName</h5>
+                </div>
+                <div class="card-body">
+                    <img src="@badge.BadgeImageUrl" class="img-fluid mb-2" alt="@badge.BadgeName" />
+                    <p class="card-text small">@badge.BadgeDescription</p>
+                </div>
+            </div>
+        </div>
+    }
+</div>

@@ -1,0 +1,269 @@
+﻿@page "{id:int}"
+@model RoleplayersGuild.Site.Directory.Community.Chat_Rooms.RoomModel
+@{
+    ViewData["Title"] = Model.ChatRoom?.ChatRoomName ?? "Chat Room";
+    Layout = "_Layout2Col";
+}
+
+@section cphLeftCol {
+    <div class="card mb-4">
+        <div class="card-header"><h5 class="mb-0">Active Chat Rooms</h5></div>
+        <div id="ActiveChatRoomList" class="list-group list-group-flush">
+            <p class="p-3 text-muted">Loading rooms...</p>
+        </div>
+        <div class="card-footer text-end small">
+            <a asp-page="/User-Panel/My-Chat-Rooms/Index">My Chat Rooms</a> |
+            <a asp-page="./Search">View All</a>
+        </div>
+    </div>
+
+    @* --- UPDATED TO SHOW PARTICIPANTS --- *@
+    <div class="card">
+        <div class="card-header"><h5 class="mb-0">Characters in Room</h5></div>
+        <div class="list-group list-group-flush">
+            @if (!Model.Participants.Any())
+            {
+                <div class="list-group-item text-muted small">No participants yet.</div>
+            }
+            else
+            {
+                foreach (var p in Model.Participants)
+                {
+                    <a asp-page="/Community/Characters/View" asp-route-id="@p.CharacterId" class="list-group-item list-group-item-action d-flex align-items-center">
+                        <img src="@(p.AvatarImageUrl ?? "/images/UserFiles/CharacterAvatars/NewAvatar.png")" class="chat-avatar me-2" alt="@p.CharacterDisplayName avatar" />
+                        <span class="text-truncate">@p.CharacterDisplayName</span>
+                    </a>
+                }
+            }
+        </div>
+    </div>
+}
+
+@section cphRightCol {
+    @* --- RESTRUCTURED CHAT PANEL WITH CARD LAYOUT --- *@
+    <div class="card">
+        <div class="card-header">
+            <div class="d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">@Model.ChatRoom!.ChatRoomName</h5>
+                <a href="#" class="btn btn-sm btn-outline-info" data-bs-toggle="modal" data-bs-target="#ChatInfoModal">Rules & Information</a>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="chat-posts-container">
+                <div id="ChatOutput" class="ChatPosts">
+                    <p class="text-center"><img src="/images/Icons/spin.gif" alt="Loading Spinner" /> Loading Chat...</p>
+                </div>
+            </div>
+        </div>
+        <div class="card-footer">
+            <div class="row gx-3 gy-2 align-items-center mb-3">
+                <div class="col-md-5 col-lg-4">
+                    <label class="visually-hidden" for="ddlSendAs">Send As:</label>
+                    <div class="input-group">
+                        <span class="input-group-text">Send As:</span>
+                        <select id="ddlSendAs" class="form-select">
+                            @if (Model.UserCharacters != null && Model.UserCharacters.Any())
+                            {
+                                @foreach (var character in Model.UserCharacters)
+                                {
+                                    <option value="@character.CharacterId" selected="@(character.CharacterId == Model.CurrentSendAsCharacterId)">
+                                        @character.CharacterDisplayName
+                                    </option>
+                                }
+                            }
+                            else
+                            {
+                                <option value="0">No Character</option>
+                            }
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <div class="row MakePost g-2">
+                <div class="col">
+                    <textarea id="txtPostContent" class="form-control" rows="3" placeholder="Type your message..."></textarea>
+                </div>
+                <div class="col-auto">
+                    <button id="btnSubmitPost" class="btn btn-primary h-100">Submit Post</button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+<div class="modal fade" id="ChatInfoModal" tabindex="-1" aria-labelledby="ChatInfoLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="ChatInfoLabel">@Model.ChatRoom!.ChatRoomName Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body linkify">
+                @Html.Raw(Model.ChatRoom.ChatRoomDescription)
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/js/signalr.min.js"></script>
+    <script src="~/js/linkify.min.js"></script>
+    <script>
+        const chatRoomId = @Model.ChatRoom.ChatRoomId;
+        let lastPostId = 0;
+
+        const connection = new signalR.HubConnectionBuilder()
+            .withUrl("/chatHub")
+            .withAutomaticReconnect()
+            .build();
+
+        connection.on("ReceiveMessage", function (post) {
+            appendPost(post);
+        });
+
+        connection.on("ReceiveError", function (error) {
+            console.error("Chat Error:", error);
+            const chatOutput = document.getElementById('ChatOutput');
+            const errorMessage = `<div class="alert alert-danger mt-3" role="alert">Error: ${error}</div>`;
+            chatOutput.insertAdjacentHTML('beforeend', errorMessage);
+        });
+
+        connection.on("RoomJoined", function (roomId) {
+            console.log(`Successfully joined room: ${roomId}`);
+            getInitialPosts();
+        });
+
+        connection.onreconnected(connectionId => {
+            console.log(`SignalR reconnected. Connection ID: ${connectionId}`);
+            connection.invoke("JoinRoom", chatRoomId)
+                .catch(err => console.error("Failed to re-join room on reconnected:", err));
+        });
+
+        async function startSignalRConnection() {
+            try {
+                await connection.start();
+                console.log("SignalR Connected.");
+                await connection.invoke("JoinRoom", chatRoomId);
+            } catch (err) {
+                console.error("SignalR connection error:", err);
+            }
+        }
+
+        async function getInitialPosts() {
+            try {
+                const response = await fetch(`/api/ChatApi/GetPosts?chatRoomId=${chatRoomId}&lastPostId=0`);
+                if (!response.ok) {
+                    throw new Error(`Failed to fetch initial posts: ${response.statusText}`);
+                }
+                const posts = await response.json();
+                const chatOutput = document.getElementById('ChatOutput');
+                chatOutput.innerHTML = '';
+
+                if (posts.length > 0) {
+                    lastPostId = posts[posts.length - 1].chatPostId;
+                    posts.forEach(post => appendPost(post));
+                } else {
+                    chatOutput.innerHTML = '<p class="text-center text-muted">No messages yet.</p>';
+                }
+            } catch (error) {
+                console.error("Error fetching initial posts:", error);
+                document.getElementById('ChatOutput').innerHTML = '<p class="text-center text-danger">Error loading chat history.</p>';
+            }
+        }
+
+        async function submitPost() {
+            const contentInput = document.getElementById('txtPostContent');
+            const content = contentInput.value.trim();
+            const characterId = document.getElementById('ddlSendAs').value;
+            if (content === '' || characterId === '0' || !characterId) {
+                alert("Please enter a message and select a character.");
+                return;
+            }
+            try {
+                await connection.invoke("SendMessage", chatRoomId, parseInt(characterId), content);
+                contentInput.value = '';
+            } catch (error) {
+                console.error("Error sending message:", error);
+                alert("Failed to send message. Please try again.");
+            }
+        }
+
+        function appendPost(post) {
+            // Find an existing "no messages" placeholder and remove it if it exists
+            const noMessagesP = document.querySelector('#ChatOutput .text-muted');
+            if (noMessagesP) {
+                noMessagesP.remove();
+            }
+
+            const postHtml = `
+                <div class="Post">
+                    <div class="row g-2">
+                        <div class="col-2 col-xl-1 text-center">
+                            <a href="/Community/Characters/View/${post.characterId}" class="PostAsImage">
+                            <img src="${post.characterThumbnail || '/images/UserFiles/CharacterAvatars/NewAvatar.png'}" class="chat-avatar" alt="${post.characterDisplayName}" />                            </a>
+                        </div>
+                        <div class="col-10 col-xl-11 PostText">
+                            <a href="/Community/Characters/View/${post.characterId}" class="fw-bold text-decoration-none ${post.characterNameClass}">${post.characterDisplayName}</a>
+                            <small class="text-muted ms-2">${new Date(post.postDateTime).toLocaleString()}</small>
+                            <div class="linkify mt-1">${post.postContent}</div>
+                        </div>
+                    </div>
+                </div>`;
+            const chatOutput = document.getElementById('ChatOutput');
+            chatOutput.insertAdjacentHTML('beforeend', postHtml);
+            if (typeof linkifyStr === 'function') {
+                const lastPostDiv = chatOutput.lastElementChild;
+                const linkifyTarget = lastPostDiv.querySelector('.linkify');
+                if (linkifyTarget) {
+                    linkifyTarget.innerHTML = linkifyStr(linkifyTarget.innerHTML, { target: '_blank' });
+                }
+            }
+        }
+
+        async function getActiveRooms() {
+            const listContainer = document.getElementById('ActiveChatRoomList');
+            try {
+                const response = await fetch('/api/ChatApi/GetActiveRooms');
+                if (!response.ok) {
+                    throw new Error('Failed to fetch active rooms.');
+                }
+                const rooms = await response.json();
+                listContainer.innerHTML = '';
+                if (rooms.length > 0) {
+                    rooms.forEach(room => {
+                        const roomHtml = `<a href="/Community/Chat-Rooms/Room/${room.chatRoomId}" class="list-group-item list-group-item-action">[${room.contentRating}] - ${room.chatRoomName}</a>`;
+                        listContainer.insertAdjacentHTML('beforeend', roomHtml);
+                    });
+                } else {
+                    listContainer.innerHTML = '<p class="p-3 text-muted">No active rooms.</p>';
+                }
+            } catch (error) {
+                console.error('Error fetching active rooms:', error);
+                listContainer.innerHTML = '<p class="p-3 text-danger">Could not load rooms.</p>';
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            startSignalRConnection();
+            getActiveRooms();
+            document.getElementById('btnSubmitPost').addEventListener('click', submitPost);
+            document.getElementById('txtPostContent').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    submitPost();
+                }
+            });
+        });
+
+        window.addEventListener('beforeunload', () => {
+            if (connection.state === signalR.HubConnectionState.Connected) {
+                connection.invoke("LeaveRoom", chatRoomId)
+                    .catch(err => console.error("Failed to leave room on unload:", err));
+                connection.stop();
+            }
+        });
+    </script>
+}

@@ -1,0 +1,25 @@
+﻿@page "/Error"
+@model RoleplayersGuild.Site.Directory.Error.IndexErrorModel
+@{
+    ViewData["Title"] = "RPG: Error";
+    Layout = "_Layout1Col";
+}
+
+@section head {
+    <meta name="description" content="As a site that is constantly under development and growth, errors are often an unfortunate expectation." />
+}
+
+<h1>Error</h1>
+
+<div class="alert alert-danger">
+    @Html.Raw(Model.ErrorMessage)
+</div>
+
+@if (Model.ShowMarketing)
+{
+    <div class="jumbotron mt-4">
+        <h2>While you're here, though...</h2>
+        <p>Have you considered creating an account on the Role-Players Guild? If you haven't already and you like to Role-Play, you really should! RPG is built from the ground up for RPers. This isn't some boxed social media tool or forum tool that's repurposed to fit our needs, it's a fully customized, fully functional interface built solely via the feedback of our users and the experience of our developers.</p>
+        <p><a href="/Register?src=ErrorPage&type=@Model.ErrorType" class="btn btn-primary btn-lg">Join RPG Today!</a></p>
+    </div>
+}

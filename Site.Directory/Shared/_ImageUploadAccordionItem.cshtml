@@ -1,0 +1,41 @@
+﻿@model ImageUploadItemViewModel
+
+<div class="accordion-item">
+    <h2 class="accordion-header" id="heading-@Model.ItemIndex">
+        <button class="accordion-button @(Model.ItemIndex == 1 ? "" : "collapsed")" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-@Model.ItemIndex" aria-expanded="@(Model.ItemIndex == 1 ? "true" : "false")" aria-controls="collapse-@Model.ItemIndex">
+            Image @Model.ItemIndex
+        </button>
+    </h2>
+    <div id="collapse-@Model.ItemIndex" class="accordion-collapse collapse @(Model.ItemIndex == 1 ? "show" : "")" aria-labelledby="heading-@Model.ItemIndex" data-bs-parent="#pnlImageAccordion">
+        <div class="accordion-body">
+
+            <div class="mb-3">
+                <label asp-for="UploadedImage" class="form-label">Image File</label>
+                <input asp-for="UploadedImage" type="file" class="form-control" />
+                <span asp-validation-for="UploadedImage" class="text-danger"></span>
+                <div class="form-text text-danger"><strong>NOTE:</strong> You are responsible for correctly marking any mature (NSFW) content. Failure to do so may result in account action.</div>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="Caption" class="form-label">Image Caption</label>
+                <textarea asp-for="Caption" class="form-control" placeholder="You can be creative with your caption! Type as much as you like!" rows="4"></textarea>
+                <span asp-validation-for="Caption" class="text-danger"></span>
+            </div>
+
+            <div class="form-check">
+                <input asp-for="IsPrimary" type="checkbox" class="form-check-input" />
+                <label asp-for="IsPrimary" class="form-check-label">
+                    Make this image my primary display image.
+                </label>
+            </div>
+
+            <div class="form-check">
+                <input asp-for="IsMature" type="checkbox" class="form-check-input" />
+                <label asp-for="IsMature" class="form-check-label">
+                    This image contains mature (NSFW) content.
+                </label>
+            </div>
+
+        </div>
+    </div>
+</div>

@@ -1,0 +1,11 @@
+﻿@model RoleplayersGuild.Site.Services.ViewComponents.AdBannerViewModel
+
+@* This view will only render if the InvokeAsync method returns a valid model *@
+@if (Model is not null && !string.IsNullOrEmpty(Model.LinkUrl))
+{
+    <div class="ad-banner text-center mb-3">
+        <a href="@Model.LinkUrl" target="_blank" rel="noopener sponsored">
+            <img src="@Model.ImageUrl" alt="Advertisement" class="img-fluid" />
+        </a>
+    </div>
+}

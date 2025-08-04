@@ -1,0 +1,52 @@
+﻿@page "/User-Panel/My-Threads"
+@model RoleplayersGuild.Site.Directory.User_Panel.My_Threads.IndexMyThreadsModel
+@using RoleplayersGuild.Site.Utils
+@{
+    ViewData["Title"] = Model.PageTitle;
+    Layout = "_Layout1Col";
+}
+
+@if (!string.IsNullOrEmpty(Model.Message))
+{
+    <div class="alert alert-success" role="alert">
+        @Model.Message
+    </div>
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h1>@ViewData["Title"]</h1>
+    <a asp-page="./Create" class="btn btn-success">
+        <i class="bi bi-plus-circle"></i> New Thread
+    </a>
+</div>
+
+<div class="alert alert-info" role="alert">
+    These are your private message threads with other users for out-of-character communication or in-character writing sessions.
+</div>
+
+@if (Model.Threads.Any())
+{
+    <div class="list-group">
+        @foreach (var thread in Model.Threads)
+        {
+            <a asp-page="./View" asp-route-id="@thread.ThreadId" class="list-group-item list-group-item-action @(thread.ReadStatusId == 2 ? "list-group-item-info" : "")">
+                <div class="d-flex w-100 justify-content-between">
+                    <h5 class="mb-1">@thread.ThreadTitle</h5>
+                    @* CORRECTED: Using the standard StringUtils helper for consistency *@
+                    <small>@DateUtils.TimeAgo(thread.LastUpdateDate)</small>
+                </div>
+                <p class="mb-1 text-truncate">
+                    <strong>@thread.LastMessageCharacterName:</strong> @thread.LastMessageContent
+                </p>
+                <small class="text-muted">Created by @thread.CreatorUsername</small>
+            </a>
+        }
+    </div>
+}
+else
+{
+    <div class="text-center p-4 border rounded">
+        <p>You aren't participating in any threads yet.</p>
+        <a asp-page="./Create" class="btn btn-primary">Create Your First Thread</a>
+    </div>
+}

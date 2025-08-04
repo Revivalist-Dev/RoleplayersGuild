@@ -1,0 +1,9 @@
+﻿@page
+@model RoleplayersGuild.Site.Directory.Rules.IndexModel
+@{
+    ViewData["Title"] = "Rules and Regulations";
+    ViewData["MetaDescription"] = "We never want to limit your writing creativity, but to make this a better community, we do have some rules...";
+    Layout = "~/Site.Directory/Shared/_Layout1Col.cshtml";
+}
+
+@Html.Raw(Model.RulesContent)

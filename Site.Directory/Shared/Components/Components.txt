@@ -1,0 +1,72 @@
+Shared View Component Documentation
+
+Last Updated: July 20, 2025
+
+This document provides an overview of the reusable View Components located in the Site.Directory/Shared/Components folder. View Components are self-contained units of rendering logic that are ideal for pieces of UI that have their own data requirements, such as navigation menus, login panels, or dynamic data widgets.
+1. AdBanner
+Purpose
+
+The AdBanner component is responsible for displaying a single, rotating advertisement at the top of a page. Its primary logic is to show an ad to non-paying users and hide it for users with an active membership.
+How to Use
+
+To render the ad banner, typically in a layout file like _Layout.cshtml, use the following Razor syntax:
+
+@await Component.InvokeAsync("AdBanner")
+
+Parameters
+
+This component does not accept any parameters.
+Logic Summary
+
+    It injects the IUserService and IDataService.
+
+    It calls _userService.CurrentUserHasActiveMembershipAsync() to check the logged-in user's status.
+
+    If the user has an active membership, the component returns empty content, effectively hiding the ad.
+
+    If the user does not have a membership (or is not logged in), it calls _dataService.GetRandomAdAsync(1) to fetch a random ad designated for the top banner (AdType 1).
+
+    If a valid ad is found, it passes the ad's ImageUrl and LinkUrl to its view for rendering.
+
+    If no ad is found, it returns empty content.
+
+File Locations
+
+    Logic: Site.Services/ViewComponents/AdBannerViewComponent.cs
+
+    View: Site.Directory/Shared/Components/AdBanner/Default.cshtml
+
+2. SiteStats
+Purpose
+
+The SiteStats component displays a summary of site-wide statistics, including the number of online members, total members, and total characters. This replaces the dynamic labels that were previously populated in the Main.Master.cs code-behind.
+How to Use
+
+To render the site statistics, typically in a layout file like _Layout.cshtml below the main navigation, use the following Razor syntax:
+
+@await Component.InvokeAsync("SiteStats")
+
+Parameters
+
+This component does not accept any parameters.
+Logic Summary
+
+    It injects the IDataService.
+
+    It makes three asynchronous calls to the database to get the following counts:
+
+        Users active in the last 3 hours.
+
+        Total registered users.
+
+        Total created characters.
+
+    It uses Task.WhenAll() to run these queries in parallel for maximum efficiency.
+
+    It passes the results as a tuple (int Online, int Total, int Characters) to its view for rendering.
+
+File Locations
+
+    Logic: Site.Services/ViewComponents/SiteStatsViewComponent.cs
+
+    View: Site.Directory/Shared/Components/SiteStats/Default.cshtml

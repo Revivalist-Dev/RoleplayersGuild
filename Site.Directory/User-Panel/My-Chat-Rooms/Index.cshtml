@@ -1,0 +1,56 @@
+﻿@page "/User-Panel/My-Chat-Rooms"
+@model RoleplayersGuild.Site.Directory.User_Panel.My_Chat_Rooms.IndexMyChatroomsModel
+@{
+    ViewData["Title"] = "My Chat Rooms";
+    Layout = "_Layout1Col";
+}
+
+@if (!string.IsNullOrEmpty(Model.Message))
+{
+    <div class="alert alert-success" role="alert">
+        @Model.Message
+    </div>
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h1>@ViewData["Title"]</h1>
+    <a asp-page="./Edit" class="btn btn-success">
+        <i class="bi bi-plus-circle"></i> New Chat Room
+    </a>
+</div>
+
+<div class="alert alert-info" role="alert">
+    Here are all the chat rooms you have created. Use them for in-character conversation or out-of-character planning.
+</div>
+
+@if (Model.ChatRooms.Any())
+{
+    <div class="list-group">
+        @foreach (var room in Model.ChatRooms)
+        {
+            <div class="list-group-item">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <h5 class="mb-1">@room.ChatRoomName</h5>
+                        <ul class="list-inline small text-muted mb-2">
+                            <li class="list-inline-item"><strong>Universe:</strong> @(room.UniverseName ?? "N/A")</li>
+                            <li class="list-inline-item"><strong>Rating:</strong> @room.ContentRating</li>
+                            <li class="list-inline-item"><strong>Last Post:</strong> @Model.GetTimeAgo(room.LastPostTime)</li>
+                        </ul>
+                    </div>
+                    <div class="btn-group ms-3" role="group">
+                        <a asp-page="./Edit" asp-route-id="@room.ChatRoomId" class="btn btn-sm btn-primary">Edit</a>
+                        <a asp-page="/Community/Chat-Rooms/Room" asp-route-id="@room.ChatRoomId" class="btn btn-sm btn-secondary">View</a>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+}
+else
+{
+    <div class="text-center p-4 border rounded">
+        <p>You haven't created any chat rooms yet.</p>
+        <a asp-page="./Edit" class="btn btn-primary">Create Your First Chat Room</a>
+    </div>
+}

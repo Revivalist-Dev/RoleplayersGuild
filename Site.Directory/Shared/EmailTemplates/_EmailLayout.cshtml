@@ -1,0 +1,58 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <title>Role-Players Guild</title>
+    <style>
+        body {
+            font-family: sans-serif;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 600px;
+            margin: 0 auto;
+            border: 1px solid #ccc;
+        }
+
+        .header {
+            background-color: #666;
+            color: #ffffff;
+            padding: 15px;
+            text-align: center;
+            font-size: 1.2em;
+        }
+
+            .header.success {
+                background-color: #077836;
+            }
+
+            .header.danger {
+                background-color: #d62323;
+            }
+
+        .content {
+            padding: 20px;
+        }
+
+        .footer {
+            padding: 15px;
+            font-size: 0.8em;
+            color: #888;
+            text-align: center;
+        }
+
+            .footer a {
+                color: #0959AB;
+            }
+    </style>
+</head>
+<body>
+    <div class="container">
+        @RenderBody()
+        <div class="footer">
+            <p>&copy; @DateTime.Now.Year Role-Players Guild. All rights reserved.</p>
+            <p><a href="https://www.roleplayersguild.com">Visit our site</a> | <a href="https://www.roleplayersguild.com/Legal/TermsOfUse">Privacy Policy</a></p>
+        </div>
+    </div>
+</body>
+</html>

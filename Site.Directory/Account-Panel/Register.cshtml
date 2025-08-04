@@ -1,0 +1,92 @@
+﻿@page
+@model RoleplayersGuild.Site.Directory.Account_Panel.RegisterModel
+@using Microsoft.Extensions.Options
+@using RoleplayersGuild.Project.Configuration
+@inject IOptions<RecaptchaSettings> RecaptchaSettings
+@{
+    ViewData["Title"] = "Register";
+    Layout = "_Layout1Col";
+}
+
+@{
+    var alertClass = "alert-info";
+    var statusText = "";
+    if (!string.IsNullOrEmpty(Model.StatusMessage))
+    {
+        var parts = Model.StatusMessage.Split('|', 2);
+        if (parts.Length == 2)
+        {
+            alertClass = parts[0];
+            statusText = parts[1];
+        }
+    }
+}
+
+@if (!string.IsNullOrEmpty(statusText))
+{
+    <div class="alert @alertClass" role="alert">@statusText</div>
+}
+
+<h3>Register as a Member of RPG</h3>
+<form id="registerForm" method="post">
+    <input type="hidden" id="g-recaptcha-response" name="g-recaptcha-response" />
+
+    <div asp-validation-summary="ModelOnly" class="text-danger small" role="alert"></div>
+    <div class="mb-3">
+        <label asp-for="Input.Username" class="form-label"></label>
+        <input asp-for="Input.Username" class="form-control" placeholder="This is your username, not a character name." autocomplete="username" aria-required="true" autofocus />
+        <span asp-validation-for="Input.Username" class="d-block text-danger small"></span>
+    </div>
+    <div class="mb-3">
+        <label asp-for="Input.Email" class="form-label"></label>
+        <input asp-for="Input.Email" class="form-control" placeholder="Email Address" autocomplete="email" aria-required="true" />
+        <span asp-validation-for="Input.Email" class="d-block text-danger small"></span>
+    </div>
+    <div class="mb-3">
+        <label asp-for="Input.Password" class="form-label"></label>
+        <input asp-for="Input.Password" class="form-control" placeholder="Password" autocomplete="new-password" aria-required="true" />
+        <span asp-validation-for="Input.Password" class="d-block text-danger small"></span>
+    </div>
+    <div class="mb-3">
+        <label asp-for="Input.ConfirmPassword" class="form-label"></label>
+        <input asp-for="Input.ConfirmPassword" class="form-control" placeholder="Password Again" autocomplete="new-password" aria-required="true" />
+        <span asp-validation-for="Input.ConfirmPassword" class="d-block text-danger small"></span>
+    </div>
+
+    <a href="#" class="d-sm-none btn btn-info mb-2" data-bs-toggle="modal" data-bs-target="#InfoModal">What am I agreeing to?</a>
+    <button id="registerSubmit" type="submit" class="w-100 btn btn-primary">Complete Registration</button>
+</form>
+
+<div class="modal fade" id="InfoModal" tabindex="-1" aria-labelledby="InfoLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content alert-info">
+            <div class="modal-header">
+                <h5 class="modal-title" id="InfoLabel">What am I agreeing to?</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" style="max-height: 300px; overflow: auto;">
+                <p>By clicking on <strong>"Complete Registration"</strong> you are acknowledging that you understand that as you become aware of particular rules of this community, you will follow them. If rules change you are agreeing that you will follow the new rules without exception and that it is your responsibility to ensure that you are up to date on the rules as the community grows.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://www.google.com/recaptcha/api.js?render=@RecaptchaSettings.Value.SiteKey"></script>
+    <script>
+        document.getElementById('registerForm').addEventListener('submit', function (e) {
+            e.preventDefault();
+            var form = this;
+
+            grecaptcha.ready(function () {
+                grecaptcha.execute('@RecaptchaSettings.Value.SiteKey', { action: 'register' }).then(function (token) {
+                    document.getElementById('g-recaptcha-response').value = token;
+                    form.submit();
+                });
+            });
+        });
+    </script>
+}

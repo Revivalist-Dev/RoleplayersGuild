@@ -1,0 +1,56 @@
+﻿@page "/User-Panel/My-Universes"
+@model RoleplayersGuild.Site.Directory.User_Panel.My_Universes.IndexMyUniversesModel
+@{
+    ViewData["Title"] = "My Universes";
+    Layout = "_Layout1Col";
+}
+
+@if (!string.IsNullOrEmpty(Model.Message))
+{
+    <div class="alert alert-success" role="alert">
+        @Model.Message
+    </div>
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h1>@ViewData["Title"]</h1>
+    <a asp-page="./Create" class="btn btn-success">
+        <i class="bi bi-plus-circle"></i> New Universe
+    </a>
+</div>
+
+<div class="alert alert-info" role="alert">
+    A Universe is a collection of related content, including characters and stories, that exist within the same fictional setting.
+</div>
+
+@if (Model.Universes.Any())
+{
+    <div class="list-group">
+        @foreach (var universe in Model.Universes)
+        {
+            <a asp-page="./Edit" asp-route-id="@universe.UniverseId" class="list-group-item list-group-item-action">
+                <h5 class="mb-1">@universe.UniverseName</h5>
+                <p class="mb-1 text-truncate">@universe.UniverseDescription</p>
+                <small class="text-muted">
+                    Source: @universe.SourceType | Rating: @universe.ContentRating | Characters: @universe.CharacterCount
+                </small>
+                @if (universe.Genres.Any())
+                {
+                    <div class="mt-2">
+                        @foreach (var genre in universe.Genres)
+                        {
+                            <span class="badge bg-secondary">@genre</span>
+                        }
+                    </div>
+                }
+            </a>
+        }
+    </div>
+}
+else
+{
+    <div class="text-center p-4 border rounded">
+        <p>You haven't created any universes yet.</p>
+        <a asp-page="./Create" class="btn btn-primary">Create Your First Universe</a>
+    </div>
+}

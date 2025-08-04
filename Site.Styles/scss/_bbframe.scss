@@ -1,0 +1,170 @@
+// F:\Visual Studio\RoleplayersGuild\Site.Styles\scss\_bbframe.scss
+// An F-List compatibility frame for rendering BBCode profiles.
+
+// This is the main container for the BBCode content.
+.bbframe {
+    // F-List's content area has a minimum width that allows images to be larger.
+    // This rule forces our container to have a similar minimum width.
+    min-width: 730px;
+    // These properties ensure that wide elements like images or long text strings
+    // don't break out of their container.
+    overflow-wrap: break-word;
+    word-wrap: break-word;
+    word-break: break-word;
+    // This rule creates consistent vertical spacing between all block-level
+    // elements rendered by the parser, just like on F-List.
+    > * + * {
+        margin-top: 0.5rem;
+    }
+}
+
+
+/* --- Base BBCode Styles from F-List --- */
+.bbframe sup {
+    vertical-align: top;
+}
+
+.bbframe hr {
+    border: 0;
+    height: 1px;
+    border-top: 1px solid;
+}
+
+/* --- BBCode Text Styles --- */
+.bbframe .bigtext {
+    font-size: 1.4em;
+}
+
+.bbframe .smalltext {
+    font-size: 0.8em;
+}
+
+.bbframe .lefttext, .bbframe .centertext, .bbframe .righttext {
+    display: block;
+}
+
+.bbframe .lefttext {
+    text-align: left;
+}
+
+.bbframe .centertext {
+    text-align: center;
+}
+
+.bbframe .righttext {
+    text-align: right;
+}
+
+.bbframe .JustifyBlock {
+    text-align: justify;
+}
+
+/* --- BBCode Font Colors --- */
+.bbframe .bluefont {
+    color: #1E90FF !important;
+    text-shadow: #000 0px 1px 2px;
+}
+
+.bbframe .whitefont {
+    color: white !important;
+    text-shadow: #000 0px 1px 2px;
+}
+
+.bbframe .redfont {
+    color: #f44 !important;
+    text-shadow: #000 0px 1px 2px;
+}
+
+.bbframe .yellowfont {
+    color: yellow !important;
+    text-shadow: #000 0px 1px 2px;
+}
+
+.bbframe .greenfont {
+    color: #4f4 !important;
+    text-shadow: #000 0px 1px 2px;
+}
+
+.bbframe .pinkfont {
+    color: #FFCBDB !important;
+    text-shadow: #000 0px 1px 2px;
+}
+
+.bbframe .grayfont {
+    color: #D3D3D3 !important;
+    text-shadow: #000 0px 1px 2px;
+}
+
+.bbframe .orangefont {
+    color: orange !important;
+    text-shadow: #000 0px 1px 2px;
+}
+
+.bbframe .purplefont {
+    color: #DD00FF !important;
+    text-shadow: #000 0px 1px 2px;
+}
+
+.bbframe .brownfont {
+    color: #AA840C !important;
+    text-shadow: #000 0px 1px 2px;
+}
+
+.bbframe .cyanfont {
+    color: #00FFFF !important;
+    text-shadow: #000 0px 1px 2px;
+}
+
+.bbframe .blackfont {
+    color: #333 !important;
+    text-shadow: #777 0px 1px 2px, #9E9E9E 0px 0px 2px;
+}
+
+
+/* --- BBCode Block Elements --- */
+.bbframe blockquote.blockquote {
+    padding: 10px;
+    margin: 0;
+    font-style: italic;
+    border: 1px solid;
+    border-radius: 0;
+    box-shadow: #111 0px 0px 1px;
+}
+
+.bbframe .CollapseHeader {
+    border: 1px solid var(--bs-border-color);
+    border-radius: 5px;
+    margin: 0;
+}
+
+.bbframe .CollapseHeaderText {
+    min-height: 15px;
+    font-weight: bold;
+    font-size: 1.2em;
+    cursor: pointer;
+    padding: 0.5rem 1rem;
+}
+
+.bbframe .CollapseBlock {
+    display: none;
+    margin: 10px;
+    font-weight: normal;
+    border-top: 0;
+}
+
+.bbframe .ImageBlock {
+    display: inline-block;
+    vertical-align: middle;
+    max-width: 100%;
+    height: auto;
+    border: 0;
+    margin: 0;
+    border-radius: 0;
+}
+
+.bbframe .ParsedLink {
+    padding-left: 22px;
+    background-repeat: no-repeat;
+    background-position: 2px center;
+    background-image: url('/images/icons/external-link-icon.png');
+}

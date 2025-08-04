@@ -1,0 +1,12 @@
+﻿@model RoleplayersGuild.Site.Services.Models.PaymentReceivedEmailModel
+@{
+    Layout = "_EmailLayout.cshtml";
+    ViewData["HeaderClass"] = ""; // Default header
+}
+<div class="header @ViewData["HeaderClass"]">
+    We have successfully received your @Model.PurchasedItem payment of @Model.PaymentAmount!
+</div>
+<div class="content">
+    <p>This email is to confirm that your purchase has been made and approved. If you did not make this purchase, please contact the RPG Staff right away.</p>
+    <p><strong>Transaction ID:</strong> @Model.TransactionId</p>
+</div>

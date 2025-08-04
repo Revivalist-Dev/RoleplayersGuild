@@ -1,0 +1,77 @@
+﻿@page
+@model RoleplayersGuild.Site.Directory.Account_Panel.Quick_Links.IndexQuickLinksModel
+@{
+    ViewData["Title"] = "My Quick Links";
+    // CHANGED: Switched to the 1-column layout for consistency.
+    Layout = "_Layout1Col";
+}
+
+@if (!string.IsNullOrEmpty(Model.Message))
+{
+    <div class="alert alert-@Model.MessageType alert-dismissible fade show" role="alert">
+        @Model.Message
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0">Add New Quick Link</h5>
+    </div>
+    <div class="card-body">
+        <form method="post">
+            <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+            <div class="row g-3">
+                <div class="col-sm-4">
+                    <label asp-for="NewLink.LinkName" class="form-label"></label>
+                    <input asp-for="NewLink.LinkName" class="form-control" />
+                    <span asp-validation-for="NewLink.LinkName" class="text-danger"></span>
+                </div>
+                <div class="col-sm-5">
+                    <label asp-for="NewLink.LinkAddress" class="form-label"></label>
+                    <input asp-for="NewLink.LinkAddress" class="form-control" placeholder="https://..." />
+                    <span asp-validation-for="NewLink.LinkAddress" class="text-danger"></span>
+                </div>
+                <div class="col-sm-3">
+                    <label asp-for="NewLink.OrderNumber" class="form-label"></label>
+                    <input asp-for="NewLink.OrderNumber" class="form-control" />
+                </div>
+            </div>
+            <div class="text-end mt-3">
+                <button type="submit" class="btn btn-success">
+                    <i class="bi bi-plus-circle"></i> Add Quick Link
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <h5 class="mb-0">My Quick Links</h5>
+    </div>
+    <div class="list-group list-group-flush">
+        @if (Model.QuickLinks.Any())
+        {
+            @foreach (var link in Model.QuickLinks)
+            {
+                <div class="list-group-item d-flex justify-content-between align-items-center">
+                    <div>
+                        <span class="badge bg-secondary me-2" style="width: 30px;">@link.OrderNumber</span>
+                        <a href="@link.LinkAddress" target="_blank" rel="noopener noreferrer">@link.LinkName</a>
+                    </div>
+                    <form method="post" asp-page-handler="Delete">
+                        <input type="hidden" name="linkId" value="@link.QuickLinkId" />
+                        <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Are you sure you want to delete this link?');">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </form>
+                </div>
+            }
+        }
+        else
+        {
+            <div class="list-group-item">You haven't added any quick links yet.</div>
+        }
+    </div>
+</div>

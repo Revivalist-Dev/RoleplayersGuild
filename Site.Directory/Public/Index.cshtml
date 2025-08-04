@@ -1,0 +1,35 @@
+﻿@page
+@model RoleplayersGuild.Site.Directory.PublicAreas.IndexModel
+@{
+    ViewData["Title"] = "Public Areas";
+    Layout = "~/Site.Directory/Shared/_Layout2Col.cshtml";
+}
+
+@section LeftCol {
+    @* This replaces the old UserNav.ascx control.
+       I'm assuming you have a _UserNav.cshtml partial in your Shared folder. *@
+    <partial name="Shared/_UserNav" />
+}
+
+<fieldset class="PublicAreas">
+    <legend>Public Areas</legend>
+    <div class="alert alert-info">The areas listed below should be understood to be completely public. Anything found in these areas of RPG will be visible to all users (and in some cases, un-registered visitors). Please be respectful of others and be sure to follow any listed rules of each area.</div>
+
+    <div class="row g-2">
+        <div class="col-sm-4 col-xl-2">
+            <a asp-page="/Articles/Index" class="btn btn-secondary w-100">Articles</a>
+        </div>
+        <div class="col-sm-4 col-xl-2">
+            <a asp-page="/Universes/Index" class="btn btn-secondary w-100">Universes</a>
+        </div>
+        <div class="col-sm-4 col-xl-2">
+            <a asp-page="/Chat-Rooms/Index" class="btn btn-secondary w-100">Chat Rooms</a>
+        </div>
+        <div class="col-sm-4 col-xl-2">
+            <a asp-page="/Stories/Index" class="btn btn-secondary w-100">Stories</a>
+        </div>
+        <div class="col-sm-4 col-xl-2">
+            <a asp-page="/Characters/Search" class="btn btn-secondary w-100">Character Search</a>
+        </div>
+    </div>
+</fieldset>

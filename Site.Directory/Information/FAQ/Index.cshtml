@@ -1,0 +1,122 @@
+﻿@page
+@model RoleplayersGuild.Site.Directory.FAQ.IndexModel
+@{
+    ViewData["Title"] = "RPG: FAQ";
+    Layout = "~/Site.Directory/Shared/_Layout1Col.cshtml";
+}
+
+@section head {
+    <meta name="description" content="This website is built to easily and effectively allow us to pursue our hobby. Because of that, we try to make sure nothing is hard to find or do. In spirit of that, this page has answers to questions we hear most often." />
+}
+
+<h1>Frequently Asked Questions</h1>
+
+<div class="accordion" id="faqAccordion">
+    <div class="accordion-item">
+        <h2 class="accordion-header" id="headingOne">
+            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne" aria-expanded="false" aria-controls="collapseOne">
+                Is account registration required?
+            </button>
+        </h2>
+        <div id="collapseOne" class="accordion-collapse collapse" aria-labelledby="headingOne" data-bs-parent="#faqAccordion">
+            <div class="accordion-body">
+                To view general content on the website, registration is not required. However, in order to view anything that is flagged as "Mature Content" you must be a member of the website.
+            </div>
+        </div>
+    </div>
+    <div class="accordion-item">
+        <h2 class="accordion-header" id="headingTen">
+            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTen" aria-expanded="false" aria-controls="collapseTen">
+                Do I have to make a character?
+            </button>
+        </h2>
+        <div id="collapseTen" class="accordion-collapse collapse" aria-labelledby="headingTen" data-bs-parent="#faqAccordion">
+            <div class="accordion-body">
+                If you want to message other users or upload images, yes, you have to create at least one character.
+            </div>
+        </div>
+    </div>
+    <div class="accordion-item">
+        <h2 class="accordion-header" id="headingSeven">
+            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseSeven" aria-expanded="false" aria-controls="collapseSeven">
+                Is there a help resource for custom layouts?
+            </button>
+        </h2>
+        <div id="collapseSeven" class="accordion-collapse collapse" aria-labelledby="headingSeven" data-bs-parent="#faqAccordion">
+            <div class="accordion-body">
+                <p>Feel free to file a report for help on layouts.</p>
+            </div>
+        </div>
+    </div>
+    <div class="accordion-item">
+        <h2 class="accordion-header" id="headingThree">
+            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseThree" aria-expanded="false" aria-controls="collapseThree">
+                Do I have to use Placeholders when customizing my profile?
+            </button>
+        </h2>
+        <div id="collapseThree" class="accordion-collapse collapse" aria-labelledby="headingThree" data-bs-parent="#faqAccordion">
+            <div class="accordion-body">
+                Not at all. RPG offers customizable profiles to our members is to allow them full (yet safe) flexibility when creating their profiles. The placeholders are there for your convenience, but by no means do we suggest or expect for any placeholder to be used. If you have an idea for a placeholder, though, or a suggestion to make one of them better, please let us know!
+            </div>
+        </div>
+    </div>
+    <div class="accordion-item">
+        <h2 class="accordion-header" id="headingSix">
+            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseSix" aria-expanded="false" aria-controls="collapseSix">
+                How do I block someone if they have a custom layout?
+            </button>
+        </h2>
+        <div id="collapseSix" class="accordion-collapse collapse" aria-labelledby="headingSix" data-bs-parent="#faqAccordion">
+            <div class="accordion-body">
+                <p>A character's custom layout can be disabled by adding the following string to the end of the user's URL. After the layout is disabled, the block button will become available.</p>
+                <pre><code>&disablecustom=1</code></pre>
+            </div>
+        </div>
+    </div>
+    <div class="accordion-item">
+        <h2 class="accordion-header" id="headingEight">
+            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseEight" aria-expanded="false" aria-controls="collapseEight">
+                Why do I have to pay for uploading more than 12 images?
+            </button>
+        </h2>
+        <div id="collapseEight" class="accordion-collapse collapse" aria-labelledby="headingEight" data-bs-parent="#faqAccordion">
+            <div class="accordion-body">
+                <p>The Role-Players Guild is proud to say that while we may resize uploaded images, we strive to never destroy the quality of the images uploaded to our site. Unfortunately, the large number of high quality images can easily take up a lot of space in terms of data storage. We allow our users to upload up to 12 images for each character, but if they want to upload more images, we ask that they contribute to the cost of the data storage.</p>
+                <p>It should also be noted that RPG considers ourselves a website for writers. While image galleries and editing may be a fun side to the Role-Play world, RPG does not consider them particularly necessary to the building of a writer's abilities. RPG members are also encouraged to use other free image hosting providers and link to them if they cannot afford <a href="/Memberships">our paid memberships</a>.</p>
+            </div>
+        </div>
+    </div>
+    <div class="accordion-item">
+        <h2 class="accordion-header" id="headingNine">
+            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseNine" aria-expanded="false" aria-controls="collapseNine">
+                How can I donate to RPG?
+            </button>
+        </h2>
+        <div id="collapseNine" class="accordion-collapse collapse" aria-labelledby="headingNine" data-bs-parent="#faqAccordion">
+            <div class="accordion-body">
+                <p>One way to show support for RPG is to send in donations or purchase a paid membership. If you are not logged in, you can make an anonymous donation. However, if you log in and make a donation, you will receive a Donation badge. Each of these badges allow you to change the color of the name of any one of your characters to green. Donations of $100 USD or higher receive Large Donation badges, allowing you to use a green name with a glow around it.</p>
+                <form action="https://www.paypal.com/cgi-bin/webscr" method="post" target="_top">
+                    <input type="hidden" name="cmd" value="_s-xclick" />
+                    <input type="hidden" name="hosted_button_id" value="D4UR4R8SFH79C" />
+                    <input type="hidden" name="custom" value="@Model.CurrentUserId" />
+                    <button type="submit" class="btn btn-primary">
+                        @(Model.IsUserLoggedIn ? "Donate via PayPal" : "Make Anonymous Donation via PayPal")
+                    </button>
+                </form>
+                <p class="mt-3">Otherwise, you can log in to <a href="/Memberships">learn more about purchasing a paid membership</a>.</p>
+            </div>
+        </div>
+    </div>
+    <div class="accordion-item">
+        <h2 class="accordion-header" id="headingTwo">
+            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTwo" aria-expanded="false" aria-controls="collapseTwo">
+                I saw an error! What do I do?!
+            </button>
+        </h2>
+        <div id="collapseTwo" class="accordion-collapse collapse" aria-labelledby="headingTwo" data-bs-parent="#faqAccordion">
+            <div class="accordion-body">
+                Tell Us! <a href="/Report">Submit a report</a> and include steps on what happened. If you can include screenshots of the problem, please add the links to those. If we need more information, we will contact you via a private thread.
+            </div>
+        </div>
+    </div>
+</div>

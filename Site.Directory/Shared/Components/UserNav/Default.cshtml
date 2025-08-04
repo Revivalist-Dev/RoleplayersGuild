@@ -1,0 +1,211 @@
+﻿@model RoleplayersGuild.Site.Model.UserNavViewModel
+
+@* --- Mobile Nav (Visible on small screens) --- *@
+<div class="d-lg-none">
+    <button class="btn btn-primary mobile-nav-toggle" type="button" data-bs-toggle="offcanvas" data-bs-target="#mobileUserNav" aria-controls="mobileUserNav">
+        <i class="bi bi-list"></i>
+    </button>
+    <div class="offcanvas offcanvas-start" tabindex="-1" id="mobileUserNav" aria-labelledby="mobileUserNavLabel">
+        <div class="offcanvas-header">
+            <h5 class="offcanvas-title" id="mobileUserNavLabel">Navigation</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+        </div>
+        <div class="offcanvas-body">
+            @* ADDED: A link to the main dashboard for mobile users *@
+            <div class="list-group list-group-flush mb-3">
+                <a asp-page="/Dashboard/Index" class="list-group-item list-group-item-action"><i class="bi bi-house-fill me-2"></i>Dashboard</a>
+            </div>
+            <partial name="_UserNavPanel" model="Model" />
+        </div>
+    </div>
+</div>
+
+@* --- Desktop Floating Nav (Visible on large screens) --- *@
+<div class="d-none d-lg-block">
+    <div id="userNavFlyout" class="user-nav-flyout" style="visibility: hidden;">
+        <partial name="_UserNavPanel" model="Model" />
+        <div class="user-nav-controls">
+            @if (User.Identity?.IsAuthenticated == true)
+            {
+                <a asp-page="/Dashboard/Index" class="user-nav-settings" title="Dashboard"><i class="bi bi-house-fill"></i></a>
+            }
+            else
+            {
+
+                <a asp-page="/Index" class="user-nav-settings" title="Login"><i class="bi bi-key-fill"></i></a>
+            }
+            <div id="userNavDragHandle" class="user-nav-drag-handle" title="Drag to move panel"><i class="bi bi-grip-vertical"></i></div>
+            <a href="#" id="userNavToggle" class="user-nav-toggle" title="Toggle User Menu"><i id="userNavIcon" class="bi" style="visibility: hidden;"></i></a>
+        </div>
+    </div>
+</div>
+
+@* --- Settings Modal (Used by Desktop Nav) --- *@
+<div class="modal fade" id="userNavSettingsModal" tabindex="-1" aria-labelledby="userNavSettingsModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h1 class="modal-title fs-5" id="userNavSettingsModalLabel">Pin UserNav</h1>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body text-center">
+                <p>Choose where to pin the UserNav panel:</p>
+                <div class="d-flex justify-content-around align-items-center mt-3 user-nav-settings-buttons">
+                    <button class="btn btn-lg btn-outline-primary" type="button" data-orientation="left" title="Pin to Left"><i class="bi bi-arrow-left-square"></i></button>
+                    <button class="btn btn-lg btn-outline-primary" type="button" data-orientation="right" title="Pin to Right"><i class="bi bi-arrow-right-square"></i></button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const flyout = document.getElementById('userNavFlyout');
+        if (!flyout) return;
+
+        const toggleButton = document.getElementById('userNavToggle');
+        const toggleIcon = document.getElementById('userNavIcon');
+        const dragHandle = document.getElementById('userNavDragHandle');
+        const accordion = document.getElementById('userNavAccordion');
+        const settingsModalEl = document.getElementById('userNavSettingsModal');
+
+        const posStoreKey = 'userNavPosition';
+        const accordionStorageKey = 'userNavActiveAccordion';
+        // UPDATED: Default "top" position changed to 75px.
+        let state = { top: 75, left: 10, orientation: 'left', isCollapsed: true };
+        let drag = {};
+
+        function saveState() {
+            localStorage.setItem(posStoreKey, JSON.stringify({
+                top: state.top,
+                left: state.left,
+                orientation: state.orientation,
+                isCollapsed: state.isCollapsed
+            }));
+        }
+
+        function loadState() {
+            const savedState = JSON.parse(localStorage.getItem(posStoreKey));
+            if (savedState) {
+                state.orientation = (savedState.orientation === 'right') ? 'right' : 'left';
+                state.isCollapsed = savedState.isCollapsed !== false;
+                state.top = parseInt(savedState.top, 10) || 75; // Default to 75 if value is invalid
+                let loadedLeft = parseInt(savedState.left, 10) || 10;
+                if (state.orientation === 'right' && loadedLeft > (window.innerWidth / 2)) {
+                    state.left = 10;
+                } else {
+                    state.left = loadedLeft;
+                }
+            }
+            const activeCollapseId = localStorage.getItem(accordionStorageKey);
+            if (!state.isCollapsed && activeCollapseId) {
+                const elementToOpen = document.getElementById(activeCollapseId);
+                const button = document.querySelector(`[data-bs-target="#${activeCollapseId}"]`);
+                if (elementToOpen && button) {
+                    elementToOpen.classList.add('show');
+                    button.classList.remove('collapsed');
+                    button.setAttribute('aria-expanded', 'true');
+                }
+            }
+        }
+
+        function updateDOM() {
+            flyout.className = `user-nav-flyout dock-${state.orientation}`;
+            flyout.classList.toggle('collapsed', state.isCollapsed);
+            flyout.style.top = state.top + 'px';
+            flyout.style.left = '';
+            flyout.style.right = '';
+            if (state.orientation === 'right') {
+                flyout.style.right = state.left + 'px';
+            } else {
+                flyout.style.left = state.left + 'px';
+            }
+            updateToggleIcon();
+            flyout.style.visibility = 'visible';
+        }
+
+        function updateToggleIcon() {
+            const icons = {
+                left: { collapsed: 'bi-chevron-right', open: 'bi-chevron-left' },
+                right: { collapsed: 'bi-chevron-left', open: 'bi-chevron-right' }
+            };
+            toggleIcon.className = `bi ${state.isCollapsed ? icons[state.orientation].collapsed : icons[state.orientation].open}`;
+            toggleIcon.style.visibility = 'visible';
+        }
+
+        function handleToggleClick(e) {
+            e.preventDefault();
+            const wasCollapsed = state.isCollapsed;
+            state.isCollapsed = !state.isCollapsed;
+            saveState();
+            if (wasCollapsed) {
+                const panel = flyout.querySelector('.user-nav-panel');
+                const margin = 10;
+                if (state.top + panel.offsetHeight > window.innerHeight - margin) {
+                    state.top = window.innerHeight - panel.offsetHeight - margin;
+                }
+            }
+            updateDOM();
+        }
+
+        function handleDragStart(e) {
+            e.preventDefault();
+            drag = {
+                initialY: e.clientY,
+                initialTop: flyout.offsetTop
+            };
+            document.body.classList.add('is-dragging');
+            window.addEventListener('mousemove', handleDragMove);
+            window.addEventListener('mouseup', handleDragEnd);
+        }
+
+        function handleDragMove(e) {
+            const dy = e.clientY - drag.initialY;
+            state.top = drag.initialTop + dy;
+            updateDOM();
+        }
+
+        function handleDragEnd() {
+            window.removeEventListener('mousemove', handleDragMove);
+            window.removeEventListener('mouseup', handleDragEnd);
+            document.body.classList.remove('is-dragging');
+            const margin = 10;
+            const flyoutRect = flyout.getBoundingClientRect();
+            if (state.top < margin) state.top = margin;
+            if (state.top > window.innerHeight - flyoutRect.height - margin) state.top = window.innerHeight - flyoutRect.height - margin;
+            saveState();
+            updateDOM();
+        }
+
+        function handleOrientationChange(e) {
+            const target = e.currentTarget;
+            const newOrientation = target.dataset.orientation;
+            if (!newOrientation || newOrientation === state.orientation) return;
+            state.orientation = newOrientation;
+            const margin = 10;
+            state.left = margin;
+            saveState();
+            updateDOM();
+            const modalInstance = bootstrap.Modal.getInstance(settingsModalEl);
+            if (modalInstance) modalInstance.hide();
+        }
+
+        function init() {
+            loadState();
+            updateDOM();
+            if (toggleButton) toggleButton.addEventListener('click', handleToggleClick);
+            if (dragHandle) dragHandle.addEventListener('mousedown', handleDragStart);
+            if (settingsModalEl) {
+                settingsModalEl.querySelectorAll('[data-orientation]').forEach(btn => {
+                    btn.addEventListener('click', handleOrientationChange);
+                });
+            }
+            if (accordion) {
+                accordion.addEventListener('shown.bs.collapse', e => localStorage.setItem(accordionStorageKey, e.target.id));
+            }
+        }
+
+        init();
+    });
+</script>

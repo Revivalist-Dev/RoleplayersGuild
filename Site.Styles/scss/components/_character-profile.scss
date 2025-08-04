@@ -1,0 +1,16 @@
+// Styles for the main character profile page
+
+.profile-sidebar {
+    flex: 0 0 250px;
+    min-width: 250px;
+}
+
+.profile-statbox {
+    font-size: 0.9rem;
+
+    .stat-label {
+        font-weight: bold;
+        display: inline-block;
+        min-width: 100px; /* Aligns the values vertically */
+    }
+}

@@ -1,0 +1,45 @@
+﻿@page
+@model RoleplayersGuild.Site.Directory.Admin_Panel.Mass_Message.IndexModel
+@{
+    ViewData["Title"] = "Send Mass Message";
+}
+
+@section Scripts {
+    <script>
+        function deactivateButton(theBtn) {
+            // This ensures the button is disabled after validation passes and the form submits.
+            setTimeout(function () {
+                theBtn.setAttribute("disabled", "disabled");
+                theBtn.classList.add("disabled");
+                theBtn.value = "Please Wait...";
+            }, 50); // Small delay to allow form submission to start
+            return true; // Allow the form to submit
+        };
+    </script>
+}
+
+<p><a asp-page="../Index">&laquo;&nbsp;Back to Admin Console</a></p>
+
+@if (!string.IsNullOrEmpty(Model.Message))
+{
+    var alertClass = Model.IsSuccess ? "alert-success" : "alert-danger";
+    <div class="alert @alertClass" role="alert">
+        @Model.Message
+    </div>
+}
+
+<form method="post" onsubmit="return deactivateButton(this.querySelector('input[type=submit]'))">
+    <div class="mb-3">
+        <label asp-for="Input.Title" class="form-label"></label>
+        <input asp-for="Input.Title" class="form-control" />
+        <span asp-validation-for="Input.Title" class="text-danger"></span>
+    </div>
+    <div class="mb-3">
+        <label asp-for="Input.MessageContent" class="form-label">Message</label>
+        <textarea asp-for="Input.MessageContent" class="form-control" rows="15"></textarea>
+        <span asp-validation-for="Input.MessageContent" class="text-danger"></span>
+    </div>
+    <div class="text-end">
+        <input type="submit" value="Send Mass Message" class="btn btn-primary" />
+    </div>
+</form>

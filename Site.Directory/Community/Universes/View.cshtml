@@ -1,0 +1,147 @@
+﻿@page "{id:int}"
+@model RoleplayersGuild.Site.Directory.Community.Universes.ViewUniverseModel
+@{
+    Layout = "_Layout1Col";
+}
+
+@if (Model.Universe is not null)
+{
+    @if (Model.IsBlocked)
+    {
+        <div class="alert alert-danger">
+            You and the owner of this Universe have blocked each other, which prevents you from viewing or interacting with it.
+        </div>
+    }
+    else
+    {
+        <div class="ButtonPanel row g-2 mb-3">
+            <div class="col-12 col-sm-4 col-xl-3">
+                <a asp-page="./Search" class="btn btn-secondary w-100">Back To Universes</a>
+            </div>
+        </div>
+
+        <h1>@Model.Universe.UniverseName</h1>
+        @if (Model.Genres.Any())
+        {
+            <p class="text-muted">
+                @foreach (var genre in Model.Genres)
+                {
+                    <span class="badge bg-info me-1">@genre</span>
+                }
+            </p>
+        }
+
+        <div class="ButtonPanel row g-2 my-3">
+            <div class="col-12 col-sm-4 col-xl-3">
+                <button type="button" class="btn btn-success w-100" data-bs-toggle="modal" data-bs-target="#joinModal">Join Universe</button>
+            </div>
+            <div class="col-12 col-sm-4 col-xl-3">
+                <button type="button" class="btn btn-danger w-100" data-bs-toggle="modal" data-bs-target="#leaveModal">Leave Universe</button>
+            </div>
+            <div class="col-12 col-sm-4 col-xl-3">
+                <a asp-page="/Community/Characters/Search" asp-route-universeId="@Model.Universe.UniverseId" class="btn btn-primary w-100">Character List</a>
+            </div>
+            <div class="col-12 col-sm-4 col-xl-3">
+                <a asp-page="/Community/Stories/Search" asp-route-universeId="@Model.Universe.UniverseId" class="btn btn-primary w-100">Story List</a>
+            </div>
+        </div>
+
+        <div class="row g-3">
+            <div class="col-lg-4">
+                <div class="card border-primary h-100">
+                    <div class="card-header"><h3 class="card-title h5">Objects</h3></div>
+                    <ul class="list-group list-group-flush ScrollingListGroup">
+                        @foreach (var item in Model.Objects)
+                        {
+                            <li class="list-group-item"><a asp-page="/Community/Articles/View" asp-route-id="@item.ArticleId">@item.ArticleTitle</a></li>
+                        }
+                    </ul>
+                </div>
+            </div>
+            <div class="col-lg-4">
+                <div class="card border-primary h-100">
+                    <div class="card-header"><h3 class="card-title h5">Creatures</h3></div>
+                    <ul class="list-group list-group-flush ScrollingListGroup">
+                        @foreach (var creature in Model.Creatures)
+                        {
+                            <li class="list-group-item"><a asp-page="/Community/Articles/View" asp-route-id="@creature.ArticleId">@creature.ArticleTitle</a></li>
+                        }
+                    </ul>
+                </div>
+            </div>
+            <div class="col-lg-4">
+                <div class="card border-primary h-100">
+                    <div class="card-header"><h3 class="card-title h5">Areas</h3></div>
+                    <ul class="list-group list-group-flush ScrollingListGroup">
+                        @foreach (var area in Model.Areas)
+                        {
+                            <li class="list-group-item"><a asp-page="/Community/Articles/View" asp-route-id="@area.ArticleId">@area.ArticleTitle</a></li>
+                        }
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="my-3 StyledArticle linkify">
+            @Html.Raw(Model.Universe.UniverseDescription)
+        </div>
+
+        <div class="modal fade" id="joinModal" tabindex="-1" aria-labelledby="joinModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <form method="post" asp-page-handler="Join">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="joinModalLabel">Join Universe</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <p>Select the character(s) you would like to have added to this universe.</p>
+                            <div class="SelectableCharacterList">
+                                @foreach (var character in Model.CharactersToJoin)
+                                {
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" name="SelectedCharacterIds" value="@character.CharacterId" id="join-char-@character.CharacterId">
+                                        <label class="form-check-label" for="join-char-@character.CharacterId">@character.CharacterDisplayName</label>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                            <button type="submit" class="btn btn-success">Add Selected Characters</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal fade" id="leaveModal" tabindex="-1" aria-labelledby="leaveModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <form method="post" asp-page-handler="Leave">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="leaveModalLabel">Leave Universe</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <p>Select the character(s) you would like to remove from this universe.</p>
+                            <div class="SelectableCharacterList">
+                                @foreach (var character in Model.CharactersToLeave)
+                                {
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" name="SelectedCharacterIds" value="@character.CharacterId" id="leave-char-@character.CharacterId">
+                                        <label class="form-check-label" for="leave-char-@character.CharacterId">@character.CharacterDisplayName</label>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                            <button type="submit" class="btn btn-danger">Remove Selected Characters</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    }
+}

@@ -1,0 +1,12 @@
+﻿@model RoleplayersGuild.Site.Services.Models.PaymentFailedEmailModel
+@{
+    Layout = "_EmailLayout.cshtml";
+    ViewData["HeaderClass"] = "danger"; // Applies the red header
+}
+<div class="header @ViewData["HeaderClass"]">
+    There has been a problem with your payment!
+</div>
+<div class="content">
+    <p>Please make sure your card information is correct. If you feel you've received this message in error, please contact RPG staff right away.</p>
+    <p><strong>Transaction ID:</strong> @Model.TransactionId</p>
+</div>

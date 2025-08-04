@@ -1,0 +1,93 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
+
+	<PropertyGroup>
+		<TargetFramework>net9.0</TargetFramework>
+		<Nullable>enable</Nullable>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<UserSecretsId>58b8e9f1-1b57-4c46-b1d3-1420c9ef25b6</UserSecretsId>
+		<LangVersion>latest</LangVersion>
+		<Configurations>Debug;Release;Development;PublicTest</Configurations>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<Content Include="Site.Styles\scss\**\*.scss" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <Compile Remove=".legacy\**" />
+	  <Compile Remove="Site.Database\**" />
+	  <Compile Remove="Site.Model\DataModels\**" />
+	  <Compile Remove="User.Files\**" />
+	  <Content Remove=".legacy\**" />
+	  <Content Remove="Site.Database\**" />
+	  <Content Remove="Site.Model\DataModels\**" />
+	  <Content Remove="User.Files\**" />
+	  <EmbeddedResource Remove=".legacy\**" />
+	  <EmbeddedResource Remove="Site.Database\**" />
+	  <EmbeddedResource Remove="Site.Model\DataModels\**" />
+	  <EmbeddedResource Remove="User.Files\**" />
+	  <None Remove=".legacy\**" />
+	  <None Remove="Site.Database\**" />
+	  <None Remove="Site.Model\DataModels\**" />
+	  <None Remove="User.Files\**" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <None Remove="Site.Model\.Site.Model.md" />
+	  <None Remove="Site.Services\.Site.Services.md" />
+	  <None Remove="Site.Styles\scss\.README_SassCompiling.md" />
+	  <None Remove="Site.Utils\.Site.Packages.md" />
+	  <None Remove="Site.Utils\.Site.Recommends.md" />
+	  <None Remove="Site.Utils\.Site.Utils.md" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<Content Update="Site.Directory\**\*.cshtml">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</Content>
+	</ItemGroup>
+	<ItemGroup>
+		<PackageReference Include="AWSSDK.Extensions.NETCore.Setup" Version="4.0.2.1" />
+		<PackageReference Include="AWSSDK.S3" Version="4.0.6" />
+		<PackageReference Include="Dapper" Version="2.1.66" />
+		<PackageReference Include="MailKit" Version="4.13.0" />
+		<PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="9.0.7" />
+		<PackageReference Include="Microsoft.AspNetCore.Mvc.Razor.RuntimeCompilation" Version="9.0.7" />
+		<PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+		<PackageReference Include="Npgsql" Version="9.0.3" />
+		<PackageReference Include="SixLabors.ImageSharp" Version="3.1.11" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<None Include=".ebextensions\01-https-binding.config" />
+		<None Include=".ebextensions\certificate.pfx" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<Folder Include="Site.Directory\Admin-Panel\Proposals\" />
+		<Folder Include="Site.Directory\Shared\Components\SiteMargin\" />
+		<Folder Include="Site.Styles\scss\components\" />
+		<Folder Include="wwwroot\css\" />
+		<Folder Include="wwwroot\images\UserFiles\CharacterInlines\" />
+	</ItemGroup>
+
+	<Target Name="CopyFrontendAssetsAndCompileSass" BeforeTargets="Publish">
+		<Exec Command="node Project.Tools/Scripts/copy-assets.js" WorkingDirectory="$(ProjectDir)" />
+		<Exec Command="node node_modules/sass/sass.js Site.Styles/scss/site.scss:wwwroot/css/site.css --style=expanded" WorkingDirectory="$(ProjectDir)" />
+		<Exec Command="node node_modules/sass/sass.js Site.Styles/scss/site.scss:wwwroot/css/site.min.css --style=compressed" WorkingDirectory="$(ProjectDir)" />
+	</Target>
+
+	<Target Name="CopyCertificateForPublish" AfterTargets="Build">
+		<ItemGroup>
+			<CertificateFile Include="Site.Certificates\rds-combined-ca-bundle.pem" />
+		</ItemGroup>
+		<Copy SourceFiles="@(CertificateFile)" DestinationFolder="$(PublishDir)\Site.Certificates" SkipUnchangedFiles="true" />
+	</Target>
+
+	<ProjectExtensions>
+		<PostgreSqlInAString>
+			<Enabled>true</Enabled>
+		</PostgreSqlInAString>
+	</ProjectExtensions>
+
+</Project>

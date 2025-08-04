@@ -1,0 +1,68 @@
+﻿@page
+@model RoleplayersGuild.Site.Directory.Community.Articles.SearchArticlesModel
+@{
+    ViewData["Title"] = "Search Articles";
+    Layout = "_Layout2Col";
+}
+
+@section cphLeftCol {
+    @await Component.InvokeAsync("FilterNav", new { selectedGenreIds = Model.SearchInput.SelectedGenreIds })
+}
+
+@section cphRightCol {
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h1>@ViewData["Title"]</h1>
+        @if (User.Identity?.IsAuthenticated == true)
+        {
+            <a asp-page="/User-Panel/My-Articles/Edit" class="btn btn-success">
+                <i class="bi bi-plus-circle"></i> New Article
+            </a>
+        }
+    </div>
+    <p class="lead text-muted">Search for guides, resources, and other non-fiction articles written by the community.</p>
+
+    <div class="card bg-light mb-4">
+        <div class="card-body">
+            <form method="get">
+                @foreach (var genreId in Model.SearchInput.SelectedGenreIds)
+                {
+                    <input type="hidden" name="SearchInput.SelectedGenreIds" value="@genreId" />
+                }
+                <div class="input-group">
+                    <input asp-for="SearchInput.SearchTerm" class="form-control form-control-lg" placeholder="Article title..." />
+                    <button type="submit" class="btn btn-primary"><i class="bi bi-search"></i> Search</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    @if (Model.SearchResults is not null && Model.SearchResults.Items.Any())
+    {
+        <div class="list-group mb-3">
+            @foreach (var article in Model.SearchResults.Items)
+            {
+                <a asp-page="./View" asp-route-id="@article.ArticleId" class="list-group-item list-group-item-action">
+                    <h5 class="mb-1">@article.ArticleTitle</h5>
+                    <p class="mb-1 small">
+                        <strong>Category:</strong> @article.CategoryName | <strong>Rating:</strong> @article.ContentRating
+                    </p>
+                    @if (article.Genres.Any())
+                    {
+                        <small class="text-muted">
+                            <strong>Genres:</strong> @string.Join(", ", article.Genres)
+                        </small>
+                    }
+                </a>
+            }
+        </div>
+
+        <partial name="_PagingControls" model="Model.SearchResults" />
+    }
+    else
+    {
+        <div class="text-center p-5 border rounded bg-light">
+            <p class="h4 text-muted">No articles found</p>
+            <p>Try adjusting your search terms or filters.</p>
+        </div>
+    }
+}

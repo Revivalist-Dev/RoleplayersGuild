@@ -1,0 +1,108 @@
+﻿@page
+@model RoleplayersGuild.Site.Directory.Account_Panel.Settings.IndexModel
+@{
+    ViewData["Title"] = "My Settings";
+    Layout = "_Layout2Col";
+}
+
+@section cphLeftCol {
+    <div class="card sticky-top">
+        <div class="card-header">
+            <h5 class="mb-0">Account Panel</h5>
+        </div>
+        <div class="list-group list-group-flush">
+            <a asp-page="/Account-Panel/Index" class="list-group-item list-group-item-action">Account Home</a>
+            <a asp-page="/Account-Panel/Settings/Index" class="list-group-item list-group-item-action active">My Settings</a>
+            <a asp-page="/Account-Panel/Membership/Index" class="list-group-item list-group-item-action">Membership</a>
+            <a asp-page="/Account-Panel/Password/Change-Password" class="list-group-item list-group-item-action">Change Password</a>
+        </div>
+    </div>
+}
+
+@section cphRightCol {
+    @if (!string.IsNullOrEmpty(Model.Message))
+    {
+        <div class="alert alert-success">@Model.Message</div>
+    }
+    <div asp-validation-summary="ModelOnly" class="alert alert-danger" style="@(ViewData.ModelState.IsValid ? "display:none;" : "")"></div>
+
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h1>My Settings</h1>
+    </div>
+
+    <form method="post">
+        <fieldset>
+            <legend>Account Info</legend>
+            <div class="mb-3">
+                <label asp-for="Input.Username" class="form-label"></label>
+                <input asp-for="Input.Username" class="form-control" />
+                <span asp-validation-for="Input.Username" class="text-danger"></span>
+            </div>
+            <div class="mb-3">
+                <label asp-for="Input.EmailAddress" class="form-label"></label>
+                <input asp-for="Input.EmailAddress" class="form-control" />
+                <span asp-validation-for="Input.EmailAddress" class="text-danger"></span>
+            </div>
+        </fieldset>
+
+        <fieldset class="mt-4">
+            <legend>Privacy</legend>
+            <div class="form-check form-switch">
+                <input asp-for="Input.ShowWhenOnline" class="form-check-input" />
+                <label asp-for="Input.ShowWhenOnline" class="form-check-label">Show other users when I'm online.</label>
+            </div>
+            <div class="form-check form-switch">
+                <input asp-for="Input.ShowWriterLinkOnCharacters" class="form-check-input" />
+                <label asp-for="Input.ShowWriterLinkOnCharacters" class="form-check-label">Show link to Writer Profile on Character Profiles.</label>
+            </div>
+        </fieldset>
+
+        <fieldset class="mt-4">
+            <legend>Email Notifications</legend>
+            <div class="form-check form-switch">
+                <input asp-for="Input.ReceivesThreadNotifications" class="form-check-input" />
+                <label asp-for="Input.ReceivesThreadNotifications" class="form-check-label">Send me emails for my threads.</label>
+            </div>
+            <div class="form-check form-switch">
+                <input asp-for="Input.ReceivesImageCommentNotifications" class="form-check-input" />
+                <label asp-for="Input.ReceivesImageCommentNotifications" class="form-check-label">Send me emails for my images.</label>
+            </div>
+        </fieldset>
+
+        <fieldset class="mt-4">
+            <legend>Content & Theme</legend>
+            <div class="form-check form-switch">
+                <input asp-for="Input.ShowMatureContent" class="form-check-input" />
+                <label asp-for="Input.ShowMatureContent" class="form-check-label">Unblur potentially NSFW character images site-wide.</label>
+            </div>
+            <div class="form-check form-switch">
+                <input asp-for="Input.UseDarkTheme" class="form-check-input" />
+                <label asp-for="Input.UseDarkTheme" class="form-check-label">Use the Dark RPG Theme.</label>
+            </div>
+        </fieldset>
+
+        <div class="d-flex justify-content-between mt-4">
+            <a asp-page="/Account-Panel/Membership/Index" class="btn btn-info">Manage Membership</a>
+            <button type="submit" class="btn btn-primary">Save My Settings</button>
+        </div>
+    </form>
+}
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const themeToggle = document.getElementById('Input_UseDarkTheme');
+
+            if (themeToggle) {
+                themeToggle.addEventListener('change', function () {
+                    if (this.checked) {
+                        document.body.setAttribute('data-theme', 'dark');
+                    } else {
+                        // FIXED: Set the theme to 'light' instead of removing the attribute.
+                        document.body.setAttribute('data-theme', 'light');
+                    }
+                });
+            }
+        });
+    </script>
+}

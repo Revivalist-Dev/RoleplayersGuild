@@ -1,0 +1,167 @@
+﻿@page "/"
+@model RoleplayersGuild.Site.Directory.IndexModel
+@{
+    ViewData["Title"] = "RPG: For Role-Players By Role-Players";
+    Layout = "_Layout2Col";
+}
+
+@section head {
+    <meta name="description" content="For Role-Players by Role-Players. RPG is a role-playing community built with the desires and needs of role-players in mind." />
+}
+
+@section cphLeftCol {
+    @if (!string.IsNullOrEmpty(Model.Message))
+    {
+        <div class="alert alert-danger" role="alert">@Model.Message</div>
+    }
+
+    <form method="post" class="rpg-LoginForm">
+        <div class="mb-2">
+            <input asp-for="Input.Email" class="form-control" placeholder="Email Address" required autofocus />
+            <span asp-validation-for="Input.Email" class="text-danger"></span>
+        </div>
+        <div class="mb-2">
+            <input asp-for="Input.Password" class="form-control" placeholder="Password" required />
+            <span asp-validation-for="Input.Password" class="text-danger"></span>
+        </div>
+        <div class="d-grid gap-2">
+            <button type="submit" class="btn btn-primary">Login</button>
+            <a asp-page="/Account-Panel/Register" class="btn btn-secondary">Register</a>
+        </div>
+        <div class="text-center mt-2">
+            <a class="btn btn-link" asp-page="/Account-Panel/Password/Recover-Password">Forgot your password?</a>
+        </div>
+    </form>
+
+    <div class="d-grid gap-2 mt-3">
+        <a href="https://www.reddit.com/r/RolePlayersGuild/" class="btn btn-danger" target="_blank" rel="noopener noreferrer"><i class="bi bi-reddit"></i> Visit our SubReddit</a>
+        <a href="https://discord.gg/bWXBvCUBew" class="btn btn-info" target="_blank" rel="noopener noreferrer"><i class="bi bi-discord"></i> Join us on Discord</a>
+        <a href="https://x.com/RPers_Guild" class="btn btn-dark" target="_blank" rel="noopener noreferrer"><i class="bi bi-twitter-x"></i> Follow us on X</a>
+    </div>
+
+    <div class="text-center mt-3 d-none d-sm-block">
+        <a class="twitter-timeline" href="https://x.com/RPers_Guild">Posts by @@RPers_Guild</a>
+    </div>
+    <script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
+}
+
+@section cphRightCol {
+    <div class="card bg-light p-4 mb-4">
+        <div class="card-body">
+            <h2 class="card-title text-center mt-0">Welcome to the Role-Players Guild</h2>
+            <p class="lead">
+                Thank you for visiting our little site. The Role-Players Guild was built in order to deliver a community to Role-Players that is actually built from the ground up for their needs and desires. It's a website built on the feedback of the users and because of that, we are always, actively making changes to the website to make it better for role-play and not littering it with features that no one wants.
+            </p>
+        </div>
+    </div>
+
+    <div class="card mb-4">
+        <div class="card-header"><h5 class="card-title mb-0">New Articles</h5></div>
+        <ul class="list-group list-group-flush">
+            @if (Model.RecentArticles.Any())
+            {
+                foreach (var article in Model.RecentArticles)
+                {
+                    <li class="list-group-item">[@article.ContentRating] - <a asp-page="/Community/Articles/View" asp-route-id="@article.ArticleId">@article.ArticleTitle</a> by @article.AuthorUsername</li>
+                }
+            }
+            else
+            {
+                <li class="list-group-item">No new articles to display.</li>
+            }
+        </ul>
+        <div class="card-footer text-end small">
+            <a asp-page="/Community/Articles/Search">View All Articles</a>
+        </div>
+    </div>
+
+    @* --- NEW CHARACTER PANEL --- *@
+    <div class="card mb-4">
+        <div class="card-header">
+            <ul class="nav nav-tabs card-header-tabs" id="characterTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" data-screenstatus="OnlineCharacters" type="button" role="tab">
+                        <i class="bi bi-person-check-fill"></i> Online
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" data-screenstatus="NewCharacters" type="button" role="tab">
+                        <i class="bi bi-person-plus-fill"></i> New
+                    </button>
+                </li>
+            </ul>
+        </div>
+        <div class="card-body horizontal-scroll-container">
+            <div id="character-list-container">
+                @* Content will be loaded here via JavaScript *@
+                <div class="text-center my-5">
+                    <div class="spinner-border" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="text-center d-sm-none">
+        <a class="twitter-timeline" href="https://x.com/RPers_Guild">Posts by @@RPers_Guild</a>
+    </div>
+}
+
+@section Scripts {
+    <style>
+        .horizontal-scroll-container {
+            overflow-x: auto;
+            padding-bottom: 1rem;
+        }
+
+            .horizontal-scroll-container .row {
+                flex-wrap: nowrap !important;
+            }
+
+            .horizontal-scroll-container .character-card-col {
+                flex: 0 0 200px;
+            }
+    </style>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const tabContainer = document.getElementById('characterTabs');
+            const contentContainer = document.getElementById('character-list-container');
+
+            const loadContent = (screenStatus) => {
+                contentContainer.innerHTML = `<div class="text-center my-5 w-100"><div class="spinner-border" role="status"><span class="visually-hidden">Loading...</span></div></div>`;
+
+                fetch(`/?handler=CharacterList&screenStatus=${screenStatus}`)
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Network response was not ok');
+                        }
+                        return response.text();
+                    })
+                    .then(html => {
+                        contentContainer.innerHTML = html;
+                    })
+                    .catch(error => {
+                        console.error('Error loading character list:', error);
+                        contentContainer.innerHTML = '<div class="alert alert-danger">Could not load characters.</div>';
+                    });
+            };
+
+            if (tabContainer) {
+                tabContainer.addEventListener('click', function(event) {
+                    const clickedTab = event.target.closest('button.nav-link');
+                    if (!clickedTab || clickedTab.classList.contains('active')) return;
+
+                    const screenStatus = clickedTab.getAttribute('data-screenstatus');
+
+                    tabContainer.querySelectorAll('.nav-link').forEach(tab => tab.classList.remove('active'));
+                    clickedTab.classList.add('active');
+
+                    loadContent(screenStatus);
+                });
+
+                loadContent('OnlineCharacters');
+            }
+        });
+    </script>
+}

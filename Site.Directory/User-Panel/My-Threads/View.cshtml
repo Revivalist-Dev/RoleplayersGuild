@@ -1,0 +1,58 @@
+﻿@page "{id:int}"
+@model RoleplayersGuild.Site.Directory.User_Panel.My_Threads.ViewThreadModel
+@{
+    ViewData["Title"] = Model.Thread.ThreadTitle;
+    Layout = "_Layout2Col";
+}
+
+@section cphLeftCol {
+    <h5>Participants</h5>
+    <ul class="list-unstyled">
+        @foreach (var participant in Model.Participants)
+        {
+            <li><a asp-page="/Community/Characters/View" asp-route-id="@participant.CharacterId">@participant.CharacterDisplayName</a></li>
+        }
+    </ul>
+}
+
+@section cphRightCol {
+    <h1>@Model.Thread.ThreadTitle</h1>
+    <hr />
+
+    @foreach (var message in Model.Messages)
+    {
+        <div class="d-flex align-items-start mb-4">
+            <a asp-page="/Community/Characters/View" asp-route-id="@message.CreatorId" class="me-3">
+                <img src="@(message.DisplayImageUrl ?? "/images/UserFiles/CharacterAvatars/NewAvatar.png")" class="thread-avatar" />
+            </a>
+            <div class="flex-grow-1">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <a asp-page="/Community/Characters/View" asp-route-id="@message.CreatorId" class="fw-bold text-decoration-none @message.CharacterNameClass">@message.CharacterDisplayName</a>
+                    </div>
+                    <small class="text-muted">@message.Timestamp.ToString("g")</small>
+                </div>
+                <div class="mt-1">
+                    @Html.Raw(message.MessageContent)
+                </div>
+            </div>
+        </div>
+    }
+
+    <hr />
+
+    <form method="post">
+        <h4>Reply</h4>
+        <input type="hidden" asp-for="NewMessage.ThreadId" value="@Model.Thread.ThreadId" />
+        <div class="mb-3">
+            <label class="form-label">Posting as:</label>
+            <select asp-for="NewMessage.CharacterId" asp-items="Model.UserCharacters" class="form-select"></select>
+        </div>
+        <div class="mb-3">
+            <textarea asp-for="NewMessage.Content" class="form-control" rows="8"></textarea>
+        </div>
+        <div class="text-end">
+            <button type="submit" class="btn btn-primary">Submit Reply</button>
+        </div>
+    </form>
+}

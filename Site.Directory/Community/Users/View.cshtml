@@ -1,0 +1,131 @@
+﻿@page "{id:int}"
+@model RoleplayersGuild.Site.Directory.Community.Users.ViewUserModel
+@using RoleplayersGuild.Site.Utils
+@{
+    ViewData["Title"] = Model.ProfileUser?.Username ?? "User Profile";
+    Layout = "_Layout1Col";
+}
+
+@if (Model.ProfileUser is null)
+{
+    <div class="alert alert-danger">User not found.</div>
+    return;
+}
+
+@if (!string.IsNullOrEmpty(TempData["Message"] as string))
+{
+    <div class="alert alert-success">@TempData["Message"]</div>
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h1 class="mb-0">@Model.ProfileUser.Username</h1>
+    <div>
+        @if (Model.CurrentUserId > 0 && !Model.IsViewingOwnProfile)
+        {
+            <form method="post" class="d-inline">
+                @if (Model.IsBlockedByCurrentUser)
+                {
+                    <button type="submit" asp-page-handler="Unblock" asp-route-id="@Model.ProfileUser.UserId" class="btn btn-success">Unblock User</button>
+                }
+                else
+                {
+                    <button type="submit" asp-page-handler="Block" asp-route-id="@Model.ProfileUser.UserId" class="btn btn-danger">Block User</button>
+                }
+            </form>
+        }
+        @if (Model.IsViewingOwnProfile)
+        {
+            <a asp-page="/User-Panel/My-Profile/Edit" class="btn btn-primary">Edit My Profile</a>
+        }
+    </div>
+</div>
+
+@if (Model.IsCurrentUserBlocked)
+{
+    <div class="alert alert-warning">This user has blocked you. You cannot view their profile details.</div>
+}
+else if (Model.IsBlockedByCurrentUser)
+{
+    <div class="alert alert-info">You have blocked this user.</div>
+}
+
+<div class="card mb-4">
+    <div class="card-body">
+        <p class="mb-1"><strong>Member Since:</strong> @Model.ProfileUser.MemberJoinedDate.ToLongDateString()</p>
+        <p class="mb-0"><strong>Last Active:</strong> @(Model.ProfileUser.ShowWhenOnline? DateUtils.TimeAgo(Model.ProfileUser.LastAction) : "Hidden")</p>
+    </div>
+</div>
+
+@if (!Model.IsBlockedByCurrentUser && !Model.IsCurrentUserBlocked)
+{
+    <div class="card mb-4">
+        <div class="card-header"><h5 class="mb-0">About Me</h5></div>
+        <div class="card-body">
+            @if (!string.IsNullOrWhiteSpace(Model.ProfileUser.AboutMe))
+            {
+                @Html.Raw(Model.ProfileUser.AboutMe)
+            }
+            else
+            {
+                <p class="text-muted">This user hasn't written anything about themselves yet.</p>
+            }
+        </div>
+    </div>
+
+    @if (Model.Badges.Any())
+    {
+        <div class="card mb-4">
+            <div class="card-header"><h5 class="mb-0">Badges</h5></div>
+            <div class="card-body">
+                <div class="d-flex flex-wrap gap-2">
+                    @foreach (var badge in Model.Badges)
+                    {
+                        <img src="@badge.BadgeImageUrl" alt="@badge.BadgeName" title="@badge.BadgeDescription" class="img-thumbnail" style="width: 64px; height: 64px;" />
+                    }
+                </div>
+            </div>
+        </div>
+    }
+
+    <div class="card mb-4">
+        <div class="card-header"><h5 class="mb-0">Public Characters</h5></div>
+        <div class="card-body">
+            @if (Model.Characters.Any())
+            {
+                <div class="row g-3">
+                    @foreach (var character in Model.Characters)
+                    {
+                        <div class="col-xl-2 col-lg-3 col-sm-4 col-6">
+                            <partial name="/Site.Directory/Shared/Components/CharacterCard/Default.cshtml" model="character" />
+                        </div>
+                    }
+                </div>
+            }
+            else
+            {
+                <p class="text-muted">This user has no public characters.</p>
+            }
+        </div>
+    </div>
+
+    <div class="card mb-4">
+        <div class="card-header"><h5 class="mb-0">Public Articles</h5></div>
+        @if (Model.Articles.Any())
+        {
+            <div class="list-group list-group-flush">
+                @foreach (var article in Model.Articles)
+                {
+                    <a asp-page="/Community/Articles/View" asp-route-id="@article.ArticleId" class="list-group-item list-group-item-action">
+                        [@article.ContentRating] @article.ArticleTitle
+                    </a>
+                }
+            </div>
+        }
+        else
+        {
+            <div class="card-body">
+                <p class="text-muted">This user has not published any articles.</p>
+            </div>
+        }
+    </div>
+}

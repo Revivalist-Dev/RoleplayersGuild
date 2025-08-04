@@ -1,0 +1,38 @@
+﻿// Add to Site.Model\InputModels.cs
+public class UniverseInputModel
+{
+    public int Id { get; set; }
+
+    [Required]
+    public string Name { get; set; } = string.Empty;
+
+    public string? Description { get; set; }
+
+    [Display(Name="Content Rating")]
+    public int ContentRatingId { get; set; }
+
+    [Display(Name="Source Material")]
+    public int SourceTypeId { get; set; }
+
+    public bool RequiresApproval { get; set; }
+
+    public bool DisableLinkify { get; set; }
+
+    public List<int>
+    SelectedGenreIds { get; set; } = new();
+
+    // Default constructor for creating a new universe
+    public UniverseInputModel() { }
+
+    // Constructor to map from a database model
+    public UniverseInputModel(Universe dbModel)
+    {
+    Id = dbModel.UNIVERSEID; // Changed to ALL CAPS
+    Name = dbModel.UNIVERSENAME ?? string.Empty; // Changed to ALL CAPS
+    Description = dbModel.UNIVERSEDESCRIPTION; // Changed to ALL CAPS
+    ContentRatingId = dbModel.CONTENTRATINGID ?? 0; // Changed to ALL CAPS
+    SourceTypeId = dbModel.SOURCETYPEID ?? 0; // Changed to ALL CAPS
+    RequiresApproval = dbModel.REQUIRESAPPROVALONJOIN; // Changed to ALL CAPS
+    DisableLinkify = dbModel.DISABLELINKIFY; // Changed to ALL CAPS
+    }
+    }

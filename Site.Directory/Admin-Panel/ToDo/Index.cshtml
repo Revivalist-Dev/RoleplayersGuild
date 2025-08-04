@@ -1,0 +1,61 @@
+﻿@page
+@model RoleplayersGuild.Site.Directory.Admin_Panel.ToDo.IndexModel
+@{
+    ViewData["Title"] = "Manage To-Do Items";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <p class="mb-0"><a asp-page="../Index">&laquo;&nbsp;Back to Admin Console</a></p>
+    <a asp-page="./Create" class="btn btn-success"><i class="bi bi-plus-circle"></i> Add To-Do Item</a>
+</div>
+
+<form method="get" class="card card-body mb-3">
+    <div class="row g-3">
+        <div class="col-md-4">
+            <label asp-for="AssignedToFilter" class="form-label">Assigned To</label>
+            <select asp-for="AssignedToFilter" asp-items="Model.AssignableUsers" class="form-select"><option value="0">All</option></select>
+        </div>
+        <div class="col-md-4">
+            <label asp-for="StatusFilter" class="form-label">Status</label>
+            <select asp-for="StatusFilter" asp-items="Model.Statuses" class="form-select"><option value="0">All Open</option></select>
+        </div>
+        <div class="col-md-4">
+            <label asp-for="TypeFilter" class="form-label">Type</label>
+            <select asp-for="TypeFilter" asp-items="Model.Types" class="form-select"><option value="0">All</option></select>
+        </div>
+        <div class="col-12 text-end">
+            <button type="submit" class="btn btn-primary">Filter</button>
+        </div>
+    </div>
+</form>
+
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Item</th>
+            <th>Status</th>
+            <th>Type</th>
+            <th>Assigned To</th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var item in Model.ToDoItems)
+        {
+            <tr>
+                <td>@item.ItemId</td>
+                <td>
+                    <a asp-page="./Edit" asp-route-id="@item.ItemId"><strong>@item.ItemName</strong></a>
+                    <div class="small text-muted">@item.ItemDescription</div>
+                </td>
+                <td>@item.StatusName</td>
+                <td>@item.TypeName</td>
+                <td>@item.AssignedToUsername</td>
+                <td class="text-end">
+                    <a asp-page="./Edit" asp-route-id="@item.ItemId" class="btn btn-sm btn-secondary">Edit</a>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>

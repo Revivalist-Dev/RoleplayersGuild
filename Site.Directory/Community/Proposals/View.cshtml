@@ -1,0 +1,50 @@
+﻿@page "{id:int}"
+@model RoleplayersGuild.Site.Directory.Community.Proposals.ViewProposalModel
+@{
+    Layout = "_Layout1Col";
+}
+
+@if (Model.Proposal is not null)
+{
+    <div class="row g-2 mb-3">
+        <div class="col-12 col-sm-3">
+            <a asp-page="./Search" class="btn btn-secondary w-100">Back To Proposals</a>
+        </div>
+        @if (!Model.Proposal.IsPrivate)
+        {
+            <div class="col-12 col-sm-3">
+                <a asp-page="/Community/Users/View" asp-route-id="@Model.Proposal.UserId" class="btn btn-primary w-100">View Author</a>
+            </div>
+        }
+        @if (Model.Proposal.UniverseId.HasValue && Model.Proposal.UniverseId > 0)
+        {
+            <div class="col-12 col-sm-3">
+                <a asp-page="/Community/Universes/View" asp-route-id="@Model.Proposal.UniverseId" class="btn btn-primary w-100">View Universe</a>
+            </div>
+        }
+        @if (Model.IsStaff)
+        {
+            <div class="col-12 col-sm-3">
+                <a asp-page="/User-Panel/My-Proposals/Edit" asp-route-id="@Model.Proposal.ProposalId" class="btn btn-danger w-100">Admin: Edit Proposal</a>
+            </div>
+        }
+    </div>
+
+    <h1 class="text-center">@Model.Proposal.Title</h1>
+
+    @if (Model.Genres.Any())
+    {
+        <div class="text-center my-3">
+            @foreach (var genre in Model.Genres)
+            {
+                <span class="badge bg-info me-1 fs-6">@genre</span>
+            }
+        </div>
+    }
+
+    <div class="card">
+        <div class="card-body StyledArticle @(Model.Proposal.DisableLinkify ? "" : "linkify")">
+            @Html.Raw(Model.Proposal.Description)
+        </div>
+    </div>
+}

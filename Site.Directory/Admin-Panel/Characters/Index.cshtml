@@ -1,0 +1,96 @@
+﻿@page "{SearchCharacterId:int?}"
+@model RoleplayersGuild.Site.Directory.Admin_Panel.Characters.IndexModel
+@{
+    ViewData["Title"] = "Manage Characters";
+}
+
+<p><a asp-page="/Admin-Panel/Index">&laquo;&nbsp;Back to Admin Console</a></p>
+
+<div class="row">
+    <div class="col-md-3">
+        <form method="get">
+            <div class="mb-3">
+                <label asp-for="SearchCharacterId" class="form-label">Character ID</label>
+                <input asp-for="SearchCharacterId" class="form-control" />
+            </div>
+            <button type="submit" class="btn btn-primary">Get Character</button>
+        </form>
+    </div>
+    <div class="col-md-9">
+        @if (!string.IsNullOrEmpty(Model.Message))
+        {
+            var alertClass = Model.IsSuccess ? "alert-success" : "alert-danger";
+            <div class="alert @alertClass" role="alert">
+                @Model.Message
+            </div>
+        }
+
+        @if (Model.Character != null)
+        {
+            <h1>@Model.Character.CharacterDisplayName</h1>
+
+            <div class="my-3 d-flex flex-wrap gap-2">
+                <a class="btn btn-secondary" asp-page="/Community/Characters/View" asp-route-id="@Model.Character.CharacterId" target="_blank">View Profile</a>
+                <a class="btn btn-secondary" asp-page="/User-Panel/My-Threads/Create" asp-route-ToCharacters="@Model.Character.CharacterId" target="_blank">Send Message</a>
+                <a class="btn btn-secondary" asp-page="/Admin-Panel/Users/Index" asp-route-id="@Model.Character.UserId">Jump To User</a>
+                <button type="button" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#ReviewConfirmation">Mark For Review</button>
+                <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#DeleteCharacter">Delete Character</button>
+            </div>
+
+            <form method="post" asp-page-handler="SaveChanges">
+                <input type="hidden" asp-for="Character.CharacterId" />
+                <input type="hidden" asp-for="Character.CharacterDisplayName" />
+                <input type="hidden" asp-for="Character.UserId" />
+
+                <div class="mb-3">
+                    <label asp-for="Character.TypeId" class="form-label">Profile Type</label>
+                    <select asp-for="Character.TypeId" asp-items="Model.CharacterTypes" class="form-select"></select>
+                </div>
+
+                <div class="text-end">
+                    <button type="submit" class="btn btn-success">Save Changes</button>
+                </div>
+            </form>
+
+            <div class="modal fade" id="DeleteCharacter" tabindex="-1">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">Are you sure?</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body">
+                            <p>This will delete the character permanently. This should only be done for rule violations.</p>
+                        </div>
+                        <div class="modal-footer">
+                            <form method="post" asp-page-handler="Delete" asp-route-id="@Model.Character.CharacterId">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                <button type="submit" class="btn btn-danger">Delete Character</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal fade" id="ReviewConfirmation" tabindex="-1">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">Mark for Review?</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body">
+                            <p>This will lock the profile and place it in the "Under Review" queue.</p>
+                        </div>
+                        <div class="modal-footer">
+                            <form method="post" asp-page-handler="MarkForReview" asp-route-id="@Model.Character.CharacterId">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                <button type="submit" class="btn btn-warning">Mark For Review</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+</div>

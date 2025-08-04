@@ -1,0 +1,101 @@
+﻿@page
+@model RoleplayersGuild.Site.Directory.User_Panel.IndexUserPanelModel
+@{
+    ViewData["Title"] = "User Panel";
+    Layout = "_Layout1Col";
+}
+
+<div class="text-center mb-4">
+    <h1>@ViewData["Title"]</h1>
+    <p class="lead">Manage all of your content and settings from one place.</p>
+</div>
+
+<div class="row g-4">
+    <div class="col-md-6 col-lg-4">
+        <div class="card h-100 shadow-sm">
+            <div class="card-body text-center d-flex flex-column">
+                <i class="bi bi-person-badge fs-1 text-primary"></i>
+                <h5 class="card-title mt-3">My Profile</h5>
+                <p class="card-text text-muted">Update your public profile and account settings.</p>
+                <a asp-page="/User-Panel/My-Profile/Index" class="stretched-link mt-auto"></a>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6 col-lg-4">
+        <div class="card h-100 shadow-sm">
+            <div class="card-body text-center d-flex flex-column">
+                <i class="bi bi-people-fill fs-1 text-success"></i>
+                <h5 class="card-title mt-3">My Characters</h5>
+                <p class="card-text text-muted">Create, edit, and manage all of your characters.</p>
+                <a asp-page="/User-Panel/My-Characters/Index" class="stretched-link mt-auto"></a>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6 col-lg-4">
+        <div class="card h-100 shadow-sm">
+            <div class="card-body text-center d-flex flex-column">
+                <i class="bi bi-book-half fs-1 text-info"></i>
+                <h5 class="card-title mt-3">My Stories</h5>
+                <p class="card-text text-muted">Write and manage your collaborative stories.</p>
+                <a asp-page="/User-Panel/My-Stories/Index" class="stretched-link mt-auto"></a>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6 col-lg-4">
+        <div class="card h-100 shadow-sm">
+            <div class="card-body text-center d-flex flex-column">
+                <i class="bi bi-megaphone-fill fs-1 text-warning"></i>
+                <h5 class="card-title mt-3">My Proposals</h5>
+                <p class="card-text text-muted">Create and manage your "looking for roleplay" posts.</p>
+                <a asp-page="/User-Panel/My-Proposals/Index" class="stretched-link mt-auto"></a>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6 col-lg-4">
+        <div class="card h-100 shadow-sm">
+            <div class="card-body text-center d-flex flex-column">
+                <i class="bi bi-journal-richtext fs-1 text-danger"></i>
+                <h5 class="card-title mt-3">My Articles</h5>
+                <p class="card-text text-muted">Manage your guides, lore, and other written articles.</p>
+                <a asp-page="/User-Panel/My-Articles/Index" class="stretched-link mt-auto"></a>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6 col-lg-4">
+        <div class="card h-100 shadow-sm">
+            <div class="card-body text-center d-flex flex-column">
+                <i class="bi bi-chat-dots-fill fs-1" style="color: #6f42c1;"></i>
+                <h5 class="card-title mt-3">My Threads</h5>
+                <p class="card-text text-muted">View and reply to your private messages and threads.</p>
+                <a asp-page="/User-Panel/My-Threads/Index" class="stretched-link mt-auto"></a>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6 col-lg-4">
+        <div class="card h-100 shadow-sm">
+            <div class="card-body text-center d-flex flex-column">
+                <i class="bi bi-globe2 fs-1 text-secondary"></i>
+                <h5 class="card-title mt-3">My Universes</h5>
+                <p class="card-text text-muted">Build and manage your own unique roleplaying worlds.</p>
+                <a asp-page="/User-Panel/My-Universes/Index" class="stretched-link mt-auto"></a>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6 col-lg-4">
+        <div class="card h-100 shadow-sm">
+            <div class="card-body text-center d-flex flex-column">
+                <i class="bi bi-chat-square-text-fill fs-1" style="color: #fd7e14;"></i>
+                <h5 class="card-title mt-3">My Chat Rooms</h5>
+                <p class="card-text text-muted">Create and manage your public or private chat rooms.</p>
+                <a asp-page="/User-Panel/My-Chat-Rooms/Index" class="stretched-link mt-auto"></a>
+            </div>
+        </div>
+    </div>
+</div>

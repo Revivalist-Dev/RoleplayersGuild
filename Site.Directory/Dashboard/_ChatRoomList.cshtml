@@ -1,0 +1,17 @@
+﻿@model IEnumerable<RoleplayersGuild.Site.Model.DashboardChatRoom>
+
+<div class="list-group list-group-flush">
+    @if (!Model.Any())
+    {
+        <div class="list-group-item">No chat rooms to display.</div>
+    }
+    else
+    {
+        foreach (var room in Model)
+        {
+            <a href="/Community/Chat-Rooms/Room/@room.ChatRoomId" class="list-group-item list-group-item-action">
+                [@room.ContentRating] - @room.ChatRoomName
+            </a>
+        }
+    }
+</div>

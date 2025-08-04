@@ -1,0 +1,173 @@
+﻿@page "{id:int}"
+@model RoleplayersGuild.Site.Directory.Community.Characters.ViewCharacterModel
+@using RoleplayersGuild.Site.Utils
+@{
+    ViewData["Title"] = Model.Character.CharacterDisplayName;
+    Layout = "_Layout2Col";
+    ViewData["UseProfileSidebar"] = true;
+    var defaultAvatarUrl = "/images/UserFiles/CharacterAvatars/NewAvatar.png";
+    var defaultCardUrl = "/images/UserFiles/CharacterImages/NewCharacter.png";
+}
+
+@section head {
+    <meta name="description" content="@Model.MetaDescription" />
+}
+
+@section cphLeftCol {
+    <div class="card character-card sticky-top">
+        <ul class="nav nav-tabs nav-fill" id="leftProfileTab" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="card-tab" data-bs-toggle="tab" data-bs-target="#card-tab-pane" type="button" role="tab">Card</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="avatar-tab" data-bs-toggle="tab" data-bs-target="#avatar-tab-pane" type="button" role="tab">Avatar</button>
+            </li>
+        </ul>
+        <div class="tab-content profile-tab-content" id="leftProfileTabContent">
+            <div class="tab-pane fade show active" id="card-tab-pane" role="tabpanel">
+                <div class="card-img-wrapper">
+                    @* CORRECTED: Use null-coalescing for a cleaner fallback *@
+                    <img src="@(Model.Character.DisplayImageUrl ?? defaultCardUrl)" class="rpg-img lazyload" alt="Display Image for @Model.Character.CharacterDisplayName">
+                </div>
+                <div class="card-body p-2">
+                    <h6 class="card-title text-truncate @Model.Character.CharacterNameClass">@Model.Character.CharacterDisplayName</h6>
+                </div>
+            </div>
+            <div class="tab-pane fade" id="avatar-tab-pane" role="tabpanel">
+                <div class="p-3 text-center">
+                    <h6 class="mb-3">Full Size Avatar</h6>
+                    <img src="@(Model.Character.AvatarImageUrl ?? defaultAvatarUrl)" class="rpg-thumbnail mb-4" alt="Full size avatar" style="width: 200px; height: 200px;">
+                    <h6 class="mb-3">Card Preview</h6>
+                    <img src="@(Model.Character.AvatarImageUrl ?? defaultAvatarUrl)" class="rpg-avatar" alt="Avatar preview">
+                </div>
+            </div>
+        </div>
+        <div class="card-body border-top">
+            @if (Model.IsOnline)
+            {
+                <span class="badge bg-success mb-2 d-block">Currently Online</span>
+            }
+            <div class="d-grid gap-2 mb-3">
+                @if (Model.IsOwner)
+                {
+                    <a asp-page="/User-Panel/My-Characters/Edit" asp-route-id="@Model.Character.CharacterId" class="btn btn-primary">Edit Character</a>
+                }
+                else
+                {
+                    <a asp-page="/User-Panel/My-Threads/Create" asp-route-toCharacterId="@Model.Character.CharacterId" class="btn btn-primary">Message</a>
+                }
+                <a asp-page="/Community/Users/View" asp-route-id="@Model.Character.UserId" class="btn btn-secondary">View Writer</a>
+            </div>
+            <div class="profile-statbox text-start">
+                <p class="mb-1"><span class="stat-label">Created:</span> @(Model.Character.DateSubmitted.HasValue? DateUtils.TimeAgo(Model.Character.DateSubmitted.Value) : "N/A")</p>
+                <p class="mb-1"><span class="stat-label">Last updated:</span> @(Model.Character.LastUpdated.HasValue? DateUtils.TimeAgo(Model.Character.LastUpdated.Value) : "N/A")</p>
+                <p class="mb-1"><span class="stat-label">Views:</span> @Model.Character.ViewCount.ToString("N0")</p>
+                <p class="mb-1"><span class="stat-label">Timezone:</span> @(Model.Character.Timezone ?? "Not Set")</p>
+                <p class="mb-1"><span class="stat-label">Bookmarked by:</span> @Model.Character.BookmarkCount</p>
+            </div>
+        </div>
+    </div>
+}
+
+@section cphRightCol {
+    @if (!string.IsNullOrEmpty(Model.Message))
+    {
+        <div class="alert alert-@Model.MessageType">@Model.Message</div>
+    }
+
+    @if (!Model.IsOwner && Model.IsLoggedIn)
+    {
+        <div class="float-end">
+            <form method="post">
+                <input type="hidden" name="id" value="@Model.Character.CharacterId" />
+                @if (Model.IsBlocked)
+                {
+                    <button type="submit" asp-page-handler="Unblock" class="btn btn-success">Unblock User</button>
+                }
+                else
+                {
+                    <button type="submit" asp-page-handler="Block" class="btn btn-danger">Block User</button>
+                }
+            </form>
+        </div>
+    }
+
+    <div class="card">
+        <div class="card-header">
+            <ul class="nav nav-tabs card-header-tabs" id="profileTab" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="overview-tab" data-bs-toggle="tab" data-bs-target="#overview-tab-pane" type="button" role="tab">Overview</button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="details-tab" data-bs-toggle="tab" data-bs-target="#details-tab-pane" type="button" role="tab">Details</button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="gallery-tab" data-bs-toggle="tab" data-bs-target="#gallery-tab-pane" type="button" role="tab">Gallery</button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="data-tab" data-bs-toggle="tab" data-bs-target="#data-tab-pane" type="button" role="tab">Data</button>
+                </li>
+            </ul>
+        </div>
+        <div class="card-body">
+            <div class="tab-content" id="profileTabContent">
+                <div class="tab-pane fade show active p-3" id="overview-tab-pane" role="tabpanel">
+                    @if (Model.Character.MatureContent && !Model.UserCanViewMatureContent)
+                    {
+                        <div class="alert alert-warning">This character's bio contains mature content. You can enable mature content in your account settings.</div>
+                    }
+                    else
+                    {
+                        @Html.Raw(Model.CharacterBioHtml)
+                    }
+                </div>
+                <div class="tab-pane fade p-3" id="details-tab-pane" role="tabpanel">
+                    <p class="mb-1"><strong>Full Name:</strong> @Model.Character.CharacterFirstName @Model.Character.CharacterMiddleName @Model.Character.CharacterLastName</p>
+                    <p class="mb-1"><strong>Gender:</strong> @Model.Character.Gender</p>
+                    <p class="mb-1"><strong>Sexual Orientation:</strong> @Model.Character.SexualOrientation</p>
+                    @if (!string.IsNullOrEmpty(Model.Character.UniverseName))
+                    {
+                        <p class="mb-0"><strong>Universe:</strong> <a asp-page="/Community/Universes/View" asp-route-id="@Model.Character.UniverseId">@Model.Character.UniverseName</a></p>
+                    }
+                    <hr />
+                    <ul class="list-unstyled">
+                        <li><strong>Contact Pref:</strong> @Model.Character.LfrpStatusName</li>
+                        <li><strong>Source:</strong> @Model.Character.CharacterSource</li>
+                        <li><strong>Post Length:</strong> @Model.Character.PostLengthMin to @Model.Character.PostLengthMax</li>
+                        <li><strong>Literacy Level:</strong> @Model.Character.LiteracyLevel</li>
+                        <li><strong>Genres:</strong> @string.Join(", ", Model.Genres)</li>
+                    </ul>
+                </div>
+                <div class="tab-pane fade p-3" id="gallery-tab-pane" role="tabpanel">
+                    @if (!Model.Images.Any())
+                    {
+                        <div class="alert alert-info">This character's gallery is empty.</div>
+                    }
+                    else
+                    {
+                        <div class="row row-cols-2 row-cols-md-3 row-cols-lg-4 g-3">
+                            @foreach (var image in Model.Images)
+                            {
+                                <div class="col">
+                                    <a asp-page="/Community/Characters/Galleries/Image/Image" asp-route-id="@image.CharacterImageId" class="card h-100 text-decoration-none text-dark">
+                                        @* CORRECTED: Use null-coalescing for a cleaner fallback *@
+                                        <img src="@(image.CharacterImageUrl ?? defaultCardUrl)" class="card-img-top" alt="@image.ImageCaption" style="height: 200px; object-fit: cover;" />
+                                        @if (!string.IsNullOrEmpty(image.ImageCaption))
+                                        {
+                                            <div class="card-body p-2">
+                                                <p class="card-text small text-truncate">@image.ImageCaption</p>
+                                            </div>
+                                        }
+                                    </a>
+                                </div>
+                            }
+                        </div>
+                    }
+                </div>
+                <div class="tab-pane fade p-3" id="data-tab-pane" role="tabpanel">
+                    <p class="text-muted">Data section coming soon.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+}

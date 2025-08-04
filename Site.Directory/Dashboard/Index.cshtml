@@ -1,0 +1,138 @@
+﻿@page
+@model RoleplayersGuild.Site.Directory.Dashboard.IndexDashboardModel
+@{
+    ViewData["Title"] = "My Dashboard";
+    Layout = "_Layout2Col";
+}
+
+@section cphLeftCol {
+    <div class="mb-4">
+        @await Component.InvokeAsync("SiteStats")
+    </div>
+
+    <div class="card border-primary">
+        <div class="card-header">
+            <ul class="nav nav-tabs card-header-tabs justify-content-center" id="characterTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" data-screenstatus="OnlineCharacters" type="button" role="tab">
+                        <i class="bi bi-person-check-fill"></i> Online Characters
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" data-screenstatus="NewCharacters" type="button" role="tab">
+                        <i class="bi bi-person-plus-fill"></i> New Characters
+                    </button>
+                </li>
+            </ul>
+        </div>
+        <div class="tab-content" id="characterTabContent">
+            <div id="character-list-container" class="p-3">
+                <div class="text-center my-5"><div class="spinner-border" role="status"><span class="visually-hidden">Loading...</span></div></div>
+            </div>
+        </div>
+    </div>
+}
+
+@section cphRightCol {
+    <div class="p-4 p-md-5 mb-4 rounded bg-body-tertiary">
+        <div class="col-lg-10">
+            <h1 class="display-5">@ViewData["Title"]</h1>
+            <p class="lead my-3">Welcome back! Here's a quick overview of the latest activity on the Guild.</p>
+        </div>
+    </div>
+
+    @* SIMPLIFIED Chat Room Panel *@
+    <div class="card border-primary mb-4">
+        <div class="card-header">
+            <h5 class="mb-0">Popular Chat Rooms</h5>
+        </div>
+        <div id="chatroom-list-container">
+            <div class="text-center my-4 p-4"><div class="spinner-border" role="status"><span class="visually-hidden">Loading...</span></div></div>
+        </div>
+    </div>
+
+    @* Existing Content Panel *@
+    <div class="card border-primary">
+        <div class="card-header">
+            <div class="d-flex justify-content-between">
+                <ul class="nav nav-tabs card-header-tabs" id="content-type-tabs">
+                    <li class="nav-item"><button class="nav-link active" data-type="articles">Articles</button></li>
+                    <li class="nav-item"><button class="nav-link" data-type="stories">Stories</button></li>
+                    <li class="nav-item"><button class="nav-link" data-type="proposals">Proposals</button></li>
+                </ul>
+                <ul class="nav nav-pills" id="content-filter-tabs">
+                    <li class="nav-item"><button class="nav-link active" data-filter="newest">Newest</button></li>
+                    <li class="nav-item"><button class="nav-link" data-filter="popular">Popular/Active</button></li>
+                </ul>
+            </div>
+        </div>
+        <div id="dashboard-list-container">
+            <div class="text-center my-5 p-5"><div class="spinner-border" role="status"><span class="visually-hidden">Loading...</span></div></div>
+        </div>
+    </div>
+}
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // --- Character Panel Logic (Unchanged) ---
+            const characterTabContainer = document.getElementById('characterTabs');
+            const characterContentContainer = document.getElementById('character-list-container');
+            const loadCharacterContent = (screenStatus) => {
+                characterContentContainer.innerHTML = `<div class="text-center my-5"><div class="spinner-border" role="status"><span class="visually-hidden">Loading...</span></div></div>`;
+                fetch(`/Dashboard?handler=CharacterList&screenStatus=${screenStatus}`)
+                    .then(response => response.text()).then(html => { characterContentContainer.innerHTML = html; })
+                    .catch(error => { console.error('Error loading character list:', error); characterContentContainer.innerHTML = '<div class="alert alert-danger mx-3">Could not load characters.</div>'; });
+            };
+            if (characterTabContainer) {
+                characterTabContainer.addEventListener('click', function(event) {
+                    const clickedTab = event.target.closest('button.nav-link');
+                    if (!clickedTab || clickedTab.classList.contains('active')) return;
+                    characterTabContainer.querySelectorAll('.nav-link').forEach(tab => tab.classList.remove('active'));
+                    clickedTab.classList.add('active');
+                    loadCharacterContent(clickedTab.getAttribute('data-screenstatus'));
+                });
+                loadCharacterContent('OnlineCharacters');
+            }
+
+            // --- SIMPLIFIED Chat Room Panel Logic ---
+            const chatroomContainer = document.getElementById('chatroom-list-container');
+            const loadChatroomContent = () => {
+                chatroomContainer.innerHTML = `<div class="text-center my-4 p-4"><div class="spinner-border" role="status"><span class="visually-hidden">Loading...</span></div></div>`;
+                fetch(`/Dashboard?handler=ChatRoomList`)
+                    .then(response => response.text()).then(html => { chatroomContainer.innerHTML = html; })
+                    .catch(error => { console.error('Error loading chatroom list:', error); chatroomContainer.innerHTML = '<div class="alert alert-danger m-3">Could not load chat rooms.</div>'; });
+            };
+            loadChatroomContent();
+
+
+            // --- Main Content Panel Logic (Unchanged) ---
+            const typeTabs = document.getElementById('content-type-tabs');
+            const filterTabs = document.getElementById('content-filter-tabs');
+            const contentContainer = document.getElementById('dashboard-list-container');
+            const loadDashboardContent = () => {
+                const activeType = typeTabs.querySelector('.active').getAttribute('data-type');
+                const activeFilter = filterTabs.querySelector('.active').getAttribute('data-filter');
+                contentContainer.innerHTML = `<div class="text-center my-5 p-5"><div class="spinner-border" role="status"><span class="visually-hidden">Loading...</span></div></div>`;
+                fetch(`/Dashboard?handler=DashboardList&itemType=${activeType}&filter=${activeFilter}`)
+                    .then(response => response.text()).then(html => { contentContainer.innerHTML = html; })
+                    .catch(error => { console.error('Error loading dashboard list:', error); contentContainer.innerHTML = '<div class="alert alert-danger m-3">Could not load content.</div>'; });
+            };
+            typeTabs.addEventListener('click', (event) => {
+                const clickedTab = event.target.closest('button.nav-link');
+                if (!clickedTab || clickedTab.classList.contains('active')) return;
+                typeTabs.querySelectorAll('.nav-link').forEach(tab => tab.classList.remove('active'));
+                clickedTab.classList.add('active');
+                loadDashboardContent();
+            });
+             filterTabs.addEventListener('click', (event) => {
+                const clickedTab = event.target.closest('button.nav-link');
+                if (!clickedTab || clickedTab.classList.contains('active')) return;
+                filterTabs.querySelectorAll('.nav-link').forEach(tab => tab.classList.remove('active'));
+                clickedTab.classList.add('active');
+                loadDashboardContent();
+            });
+            loadDashboardContent();
+        });
+    </script>
+}

@@ -1,0 +1,20 @@
+﻿@* File: Site.Directory/Shared/_Layout1Col.cshtml *@
+@{
+    Layout = "_Layout";
+}
+
+<div class="row">
+    <div class="col-12">
+        @RenderBody()
+    </div>
+</div>
+
+@* FIXED: This block passes the 'Scripts' section from the content page up to the main layout. *@
+@section Scripts {
+    @await RenderSectionAsync("Scripts", required: false)
+}
+
+@* FIXED: This block passes the 'head' section from the content page up to the main layout. *@
+@section head {
+    @await RenderSectionAsync("head", required: false)
+}

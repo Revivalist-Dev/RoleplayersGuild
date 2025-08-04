@@ -1,0 +1,84 @@
+﻿body, body[data-theme=light] {
+  background-color: #aecee1 !important;
+  background-image: linear-gradient(to bottom, #aecee1 0%, #57aee0 100%) !important;
+  color: #212529;
+  --bs-body-color: #212529;
+  --bs-primary: #337ab7;
+  --bs-link-color: #337ab7;
+  --bs-link-hover-color: rgb(39.8846153846, 95.4102564103, 143.1153846154);
+  --bs-card-bg: #dbe7f0;
+  --bs-tertiary-bg: #dbe7f0;
+  --bs-list-group-bg: #dbe7f0;
+  --bs-border-color: rgb(165, 195, 217.5);
+  --bs-card-border-color: #b7cfe1;
+  --bs-card-cap-bg: rgb(204.6, 221.4, 234);
+  --bs-list-group-border-color: var(--bs-card-border-color);
+  --bs-accordion-bg: #dbe7f0;
+}
+body .user-nav-flyout .user-nav-panel, body[data-theme=light] .user-nav-flyout .user-nav-panel {
+  background-color: #fff;
+}
+body .user-nav-flyout .user-nav-controls, body[data-theme=light] .user-nav-flyout .user-nav-controls {
+  background-color: #337ab7;
+  color: #fff;
+}
+body .user-nav-flyout .user-nav-controls .user-nav-settings,
+body .user-nav-flyout .user-nav-controls .user-nav-drag-handle,
+body .user-nav-flyout .user-nav-controls .user-nav-toggle, body[data-theme=light] .user-nav-flyout .user-nav-controls .user-nav-settings,
+body[data-theme=light] .user-nav-flyout .user-nav-controls .user-nav-drag-handle,
+body[data-theme=light] .user-nav-flyout .user-nav-controls .user-nav-toggle {
+  color: #fff;
+}
+body .user-nav-flyout .user-nav-controls .user-nav-drag-handle, body[data-theme=light] .user-nav-flyout .user-nav-controls .user-nav-drag-handle {
+  color: rgba(255, 255, 255, 0.7);
+}
+body .user-nav-flyout .user-nav-footer, body[data-theme=light] .user-nav-flyout .user-nav-footer {
+  background-color: #337ab7;
+  border-top: 1px solid rgb(39.8846153846, 95.4102564103, 143.1153846154);
+}
+body .user-nav-flyout .user-nav-footer .user-nav-settings, body[data-theme=light] .user-nav-flyout .user-nav-footer .user-nav-settings {
+  color: #fff;
+}
+body .user-nav-flyout .user-nav-footer .user-nav-settings:hover, body[data-theme=light] .user-nav-flyout .user-nav-footer .user-nav-settings:hover {
+  color: rgba(255, 255, 255, 0.75);
+}
+body .list-group-item-action, body[data-theme=light] .list-group-item-action {
+  color: var(--bs-body-color);
+}
+body blockquote.blockquote, body[data-theme=light] blockquote.blockquote {
+  background-color: rgb(211.8, 226.2, 237);
+  border-color: var(--bs-border-color);
+}
+body .character-card .card-header, body .character-card .card-footer, body[data-theme=light] .character-card .card-header, body[data-theme=light] .character-card .card-footer {
+  background-color: #fff;
+  border-color: var(--bs-card-border-color);
+}
+body .character-card .card-footer a.btn, body[data-theme=light] .character-card .card-footer a.btn { /* Target specifically Bootstrap buttons within the footer */
+  color: #fff; /* White text for the buttons themselves */
+}
+body .character-card .card-footer a.btn:hover, body[data-theme=light] .character-card .card-footer a.btn:hover {
+  color: rgba(255, 255, 255, 0.75); /* Lighter on hover */
+}
+body .character-card .card-footer a.card-footer, body[data-theme=light] .character-card .card-footer a.card-footer { /* Target the direct link if it's acting as the whole footer */
+  color: var(--bs-link-color); /* Use standard link color for this text */
+}
+body .character-card .card-footer a.card-footer:hover, body[data-theme=light] .character-card .card-footer a.card-footer:hover {
+  color: var(--bs-link-hover-color);
+}
+body .character-card .card-footer a.card-footer small, body[data-theme=light] .character-card .card-footer a.card-footer small {
+  color: inherit; /* Ensure small tag inherits color */
+}
+body .character-card-controls, body[data-theme=light] .character-card-controls {
+  background-color: #337ab7;
+}
+body .controls-box, body[data-theme=light] .controls-box {
+  background-color: #fff;
+}
+body .view-toggle-btn, body[data-theme=light] .view-toggle-btn {
+  background-color: var(--bs-tertiary-bg);
+  color: var(--bs-body-color);
+}
+body .view-toggle-btn.active, body[data-theme=light] .view-toggle-btn.active {
+  background-color: var(--bs-primary);
+  color: #fff;
+}

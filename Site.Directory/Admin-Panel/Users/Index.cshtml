@@ -1,0 +1,138 @@
+﻿@page "{id:int?}"
+@model RoleplayersGuild.Site.Directory.Admin_Panel.Users.IndexModel
+@{
+    ViewData["Title"] = "Manage Users";
+}
+
+<p><a asp-page="../Index">&laquo;&nbsp;Back to Admin Console</a></p>
+
+<div class="row">
+    <div class="col-md-3">
+        <div class="list-group" style="max-height: 80vh; overflow-y: auto;">
+            @foreach (var user in Model.AllUsers)
+            {
+                var activeClass = (Model.SelectedUser?.UserId == user.UserId) ? "active" : "";
+                <a asp-page="./Index" asp-route-id="@user.UserId" class="list-group-item list-group-item-action @activeClass">
+                    @user.UserId - @user.Username
+                </a>
+            }
+        </div>
+    </div>
+    <div class="col-md-9">
+        @if (!string.IsNullOrEmpty(Model.Message))
+        {
+            var alertClass = Model.IsSuccess ? "alert-success" : "alert-danger";
+            <div class="alert @alertClass" role="alert">
+                @Model.Message
+            </div>
+        }
+
+        @if (Model.SelectedUser != null)
+        {
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h1>@Model.SelectedUser.Username</h1>
+                @if (Model.IsSuperAdmin)
+                {
+                    <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#BanUserModal">Ban User</button>
+                }
+            </div>
+
+            @if (Model.IsSuperAdmin)
+            {
+                <form method="post" asp-page-handler="UpdateUserType" asp-route-id="@Model.SelectedUser.UserId">
+                    <div class="mb-3">
+                        <label asp-for="UserTypeId" class="form-label">User Type</label>
+                        <div class="input-group">
+                            <select asp-for="UserTypeId" asp-items="Model.UserTypes" class="form-select"></select>
+                            <button type="submit" class="btn btn-outline-secondary">Save Type</button>
+                        </div>
+                    </div>
+                </form>
+            }
+
+            <h2 class="mt-4">Characters</h2>
+            <ul class="list-group mb-3">
+                @foreach (var character in Model.UserCharacters)
+                {
+                    <li class="list-group-item"><a asp-page="/Admin-Panel/Characters/Index" asp-route-id="@character.CharacterId">@character.CharacterDisplayName &raquo;</a></li>
+                }
+            </ul>
+
+            <h2 class="mt-4">User Badges</h2>
+            <button type="button" class="btn btn-success mb-3" data-bs-toggle="modal" data-bs-target="#NewBadgeModal">Award New Badge</button>
+            @foreach (var badge in Model.UserBadges)
+            {
+                <div class="d-flex justify-content-between align-items-center list-group-item">
+                    <div>
+                        <img src="@badge.BadgeImageUrl" style="width: 32px; height: 32px; margin-right: 10px;" />
+                        @badge.BadgeName
+                    </div>
+                    <form method="post" asp-page-handler="RemoveBadge" asp-route-id="@Model.SelectedUser.UserId" asp-route-userBadgeId="@badge.UserBadgeId">
+                        <button type="submit" class="btn btn-sm btn-danger">Remove</button>
+                    </form>
+                </div>
+            }
+
+            <h2 class="mt-4">User Notes</h2>
+            <button type="button" class="btn btn-success mb-3" data-bs-toggle="modal" data-bs-target="#NewNoteModal">Add Note</button>
+            @foreach (var note in Model.UserNotes)
+            {
+                <div class="card card-body mb-2">
+                    <p class="mb-0">@note.NoteContent</p>
+                    <small class="text-muted text-end mt-1">By @note.CreatedByUsername on @note.NoteTimestamp.ToString("g")</small>
+                </div>
+            }
+
+            <div class="modal fade" id="BanUserModal" tabindex="-1">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header"><h5 class="modal-title">Ban User?</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+                        <div class="modal-body"><p>This will permanently ban the user and scramble their credentials. This action cannot be undone.</p></div>
+                        <div class="modal-footer">
+                            <form method="post" asp-page-handler="BanUser" asp-route-id="@Model.SelectedUser.UserId">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                <button type="submit" class="btn btn-danger">Confirm Ban</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal fade" id="NewBadgeModal" tabindex="-1">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <form method="post" asp-page-handler="AwardBadge" asp-route-id="@Model.SelectedUser.UserId">
+                            <div class="modal-header"><h5 class="modal-title">Award Badge</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+                            <div class="modal-body">
+                                <label asp-for="BadgeToAwardId" class="form-label">Select a Badge</label>
+                                <select asp-for="BadgeToAwardId" asp-items="Model.AllBadges" class="form-select"></select>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                <button type="submit" class="btn btn-success">Award Badge</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal fade" id="NewNoteModal" tabindex="-1">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <form method="post" asp-page-handler="AddNote" asp-route-id="@Model.SelectedUser.UserId">
+                            <div class="modal-header"><h5 class="modal-title">Add Note</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+                            <div class="modal-body">
+                                <label asp-for="NewNoteContent" class="form-label">Note Content</label>
+                                <textarea asp-for="NewNoteContent" class="form-control" rows="5"></textarea>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                <button type="submit" class="btn btn-success">Add Note</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+</div>

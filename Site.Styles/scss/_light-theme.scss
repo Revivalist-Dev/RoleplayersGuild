@@ -1,0 +1,114 @@
+@import 'variables';
+
+// _light-theme.scss
+// Sets the page gradient and styles the content boxes separately.
+
+body, body[data-theme="light"] {
+    // 1. Set the main page background gradient.
+    background-color: #aecee1 !important;
+    background-image: linear-gradient(to bottom, #aecee1 0%, #57aee0 100%) !important;
+    // 2. Set the default text and link colors for the light theme.
+    color: $dark;
+    --bs-body-color: #{$dark};
+    --bs-primary: #{$primary};
+    --bs-link-color: #{$primary};
+    --bs-link-hover-color: #{darken($primary, 10%)};
+    // 3. Set the background color for content "boxes".
+    --bs-card-bg: #dbe7f0;
+    --bs-tertiary-bg: #dbe7f0;
+    --bs-list-group-bg: #dbe7f0;
+    // 4. Adjust component colors to match the new box color.
+    --bs-border-color: #{darken(#dbe7f0, 15%)};
+    --bs-card-border-color: #{darken(#dbe7f0, 10%)};
+    --bs-card-cap-bg: #{darken(#dbe7f0, 4%)};
+    --bs-list-group-border-color: var(--bs-card-border-color);
+    --bs-accordion-bg: #dbe7f0;
+    // --- UserNav Component Styles ---
+    .user-nav-flyout {
+        .user-nav-panel {
+            background-color: #fff;
+        }
+
+        .user-nav-controls {
+            background-color: $primary;
+            color: #fff;
+
+            .user-nav-settings,
+            .user-nav-drag-handle,
+            .user-nav-toggle {
+                color: #fff;
+            }
+
+            .user-nav-drag-handle {
+                color: rgba(255,255,255,0.7);
+            }
+        }
+
+        .user-nav-footer {
+            background-color: $primary;
+            border-top: 1px solid darken($primary, 10%);
+
+            .user-nav-settings {
+                color: #fff;
+
+                &:hover {
+                    color: rgba(255, 255, 255, 0.75);
+                }
+            }
+        }
+    }
+    // --- Other Component Color Fixes ---
+    .list-group-item-action {
+        color: var(--bs-body-color);
+    }
+
+    blockquote.blockquote {
+        background-color: #{darken(#dbe7f0, 2%)};
+        border-color: var(--bs-border-color);
+    }
+    
+    // Character Card Specific Overrides
+    .character-card {
+        .card-header, .card-footer {
+            background-color: #fff;
+            border-color: var(--bs-card-border-color);
+        }
+    
+        .card-footer {
+            a.btn { /* Target specifically Bootstrap buttons within the footer */
+                color: #fff; /* White text for the buttons themselves */
+                &:hover {
+                    color: rgba(255, 255, 255, 0.75); /* Lighter on hover */
+                }
+            }
+            a.card-footer { /* Target the direct link if it's acting as the whole footer */
+                color: var(--bs-link-color); /* Use standard link color for this text */
+                &:hover {
+                    color: var(--bs-link-hover-color);
+                }
+                small {
+                    color: inherit; /* Ensure small tag inherits color */
+                }
+            }
+        }
+    }
+
+    .character-card-controls {
+        // This makes the absolutely positioned blue line solid primary blue.
+        background-color: #{$primary}; 
+        // REMOVED: The linear-gradient that was previously here for this element.
+    }
+
+    .controls-box {
+        background-color: #fff; // Ensures the panel is white
+    }
+    .view-toggle-btn {
+        background-color: var(--bs-tertiary-bg);
+        color: var(--bs-body-color);
+
+        &.active {
+            background-color: var(--bs-primary);
+            color: #fff;
+        }
+    }
+}

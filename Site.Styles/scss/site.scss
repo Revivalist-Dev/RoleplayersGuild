@@ -1,0 +1,17 @@
+/*
+    site.scss
+    This is the main entry point for your site's styles.
+    It should only contain imports to maintain a clean structure.
+*/
+
+// 1. Import SASS variables first
+@import 'variables';
+
+// 2. Import structural, non-themed styles
+@import 'base';
+@import 'components';
+@import 'bbframe';
+
+// 3. Import theme-specific color styles
+@import 'light-theme'; // This is the default theme (your blue gradient)
+@import 'dark-theme'; // This contains overrides for the dark theme

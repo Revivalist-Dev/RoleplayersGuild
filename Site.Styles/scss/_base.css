@@ -1,0 +1,15 @@
+﻿html {
+  height: 100%;
+}
+
+body {
+  height: 100%;
+  margin: 0;
+  padding-bottom: 20px;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+}
+body.is-dragging {
+  user-select: none;
+  cursor: move;
+}

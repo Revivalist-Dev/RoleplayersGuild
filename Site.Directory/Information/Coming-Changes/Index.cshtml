@@ -1,0 +1,38 @@
+﻿@page
+@model RoleplayersGuild.Site.Directory.Coming_Changes.IndexModel
+@{
+    ViewData["Title"] = "RPG: Coming Changes";
+    Layout = "~/Site.Directory/Shared/_Layout1Col.cshtml";
+}
+
+@section head {
+    <meta name="description" content="This website is built soley based on the desires, needs and preferences of the community. Here is a public list of features under consideration and changes that are on the way!" />
+}
+
+<h1>Coming Changes</h1>
+<p>Below are publicly displayed the features that are coming to RPG. The first list shows what items are currently under development and the second list shows the features that are suggested and being voted for by the community and are currently under consideration.</p>
+
+<h2 class="mt-4">Under Development</h2>
+<div class="list-group">
+    @foreach (var item in Model.DevelopmentItems)
+    {
+        <div class="list-group-item">
+            <h5 class="mb-1">@item.ItemName</h5>
+            <p class="mb-1">@Html.Raw(item.ItemDescription)</p>
+        </div>
+    }
+</div>
+
+<h2 class="mt-4">Under Consideration</h2>
+<div class="list-group">
+    @foreach (var item in Model.ConsiderationItems)
+    {
+        <div class="list-group-item">
+            <div class="d-flex w-100 justify-content-between">
+                <h5 class="mb-1">@item.ItemName</h5>
+                <span class="badge bg-primary rounded-pill">@item.VoteCount Votes</span>
+            </div>
+            <p class="mb-1">@Html.Raw(item.ItemDescription)</p>
+        </div>
+    }
+</div>

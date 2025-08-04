@@ -1,0 +1,71 @@
+﻿@page "{id:int?}"
+@model RoleplayersGuild.Site.Directory.User_Panel.My_Stories.EditMyStoriesModel
+@{
+    ViewData["Title"] = Model.IsNew ? "New Story" : "Edit Story";
+    Layout = "_Layout2Col";
+}
+
+@section cphRightCol {
+    <h1>@ViewData["Title"]</h1>
+    <hr />
+
+    <form method="post">
+        <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+        <input type="hidden" asp-for="Input.StoryId" />
+
+        <div class="mb-3">
+            <label asp-for="Input.StoryTitle" class="form-label"></label>
+            <input asp-for="Input.StoryTitle" class="form-control" />
+            <span asp-validation-for="Input.StoryTitle" class="text-danger"></span>
+        </div>
+
+        <div class="mb-3">
+            <label asp-for="Input.StoryDescription" class="form-label"></label>
+            <textarea asp-for="Input.StoryDescription" class="form-control" rows="5"></textarea>
+            <span asp-validation-for="Input.StoryDescription" class="text-danger"></span>
+        </div>
+
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label asp-for="Input.UniverseId" class="form-label">Universe (Optional)</label>
+                <select asp-for="Input.UniverseId" asp-items="Model.Universes" class="form-select">
+                    <option value="">-- None --</option>
+                </select>
+            </div>
+            <div class="col-md-6 mb-3">
+                <label asp-for="Input.ContentRatingId" class="form-label">Content Rating</label>
+                <select asp-for="Input.ContentRatingId" asp-items="Model.Ratings" class="form-select"></select>
+            </div>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Genres</label>
+            <div class="border rounded p-3" style="max-height: 200px; overflow-y: auto;">
+                <div class="row">
+                    @foreach (var genre in Model.GenreSelection)
+                    {
+                        <div class="col-md-4">
+                            <div class="form-check">
+                                <input type="checkbox" name="Input.SelectedGenreIds" value="@genre.GenreId" class="form-check-input" id="genre-@genre.GenreId" checked="@genre.IsSelected" />
+                                <label class="form-check-label" for="genre-@genre.GenreId">@genre.GenreName</label>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <div class="form-check mb-3">
+            <input asp-for="Input.IsPrivate" class="form-check-input" />
+            <label asp-for="Input.IsPrivate" class="form-check-label">Make this story private</label>
+        </div>
+
+        <div class="d-flex justify-content-between align-items-center">
+            <button type="submit" class="btn btn-primary">Save Story</button>
+            @if (!Model.IsNew)
+            {
+                <button type="submit" class="btn btn-danger" asp-page-handler="Delete" asp-route-id="@Model.Input.StoryId" onclick="return confirm('Are you sure you want to delete this story?')">Delete Story</button>
+            }
+        </div>
+    </form>
+}

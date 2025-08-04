@@ -1,0 +1,40 @@
+﻿@page
+@model RoleplayersGuild.Site.Directory.Contact.IndexModel
+@{
+    ViewData["Title"] = "Contact Staff";
+    Layout = "~/Site.Directory/Shared/_Layout1Col.cshtml";
+}
+
+@section LeftCol {
+    <partial name="Shared/_UserNav" />
+}
+
+<h1>Contact Staff</h1>
+
+@if (Model.MessageSent)
+{
+    <div class="alert alert-success">
+        Your report has been submitted. The staff will look into it as soon as possible. If a response is needed, they will contact you via a thread. Thank you!
+    </div>
+}
+else
+{
+    <form method="post">
+        <div asp-validation-summary="ModelOnly" class="text-danger" role="alert"></div>
+        <div class="row">
+            <div class="col-12 mb-3">
+                <label asp-for="Input.Title" class="form-label"></label>
+                <input asp-for="Input.Title" class="form-control" />
+                <span asp-validation-for="Input.Title" class="text-danger small"></span>
+            </div>
+            <div class="col-12 mb-3">
+                <label asp-for="Input.Description" class="form-label"></label>
+                <textarea asp-for="Input.Description" class="form-control" rows="5" placeholder="Please include as much detail about the problem as you can."></textarea>
+                <span asp-validation-for="Input.Description" class="text-danger small"></span>
+            </div>
+            <div class="col-12 text-end">
+                <button type="submit" class="btn btn-primary">Send Message</button>
+            </div>
+        </div>
+    </form>
+}

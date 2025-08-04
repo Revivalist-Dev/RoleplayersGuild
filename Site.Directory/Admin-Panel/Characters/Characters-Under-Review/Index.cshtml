@@ -1,0 +1,42 @@
+﻿@page "{id?}"
+@model RoleplayersGuild.Site.Directory.Admin_Panel.Characters.Characters_Under_Review.IndexModel
+@{
+    ViewData["Title"] = "Characters Under Review";
+}
+
+<p><a asp-page="/Admin-Panel/Index">&laquo;&nbsp;Back to Admin Console</a></p>
+
+<div class="row">
+    <div class="col-md-3">
+        <div class="list-group">
+            @foreach (var character in Model.CharactersUnderReview)
+            {
+                var activeClass = (Model.SelectedCharacter?.CharacterId == character.CharacterId) ? "active" : "";
+                <a asp-page="/Admin-Panel/Characters/Characters-Under-Review/Index" asp-route-id="@character.CharacterId" class="list-group-item list-group-item-action @activeClass">
+                    @character.CharacterId - @character.CharacterDisplayName
+                </a>
+            }
+        </div>
+    </div>
+
+    <div class="col-md-9">
+        @if (Model.SelectedCharacter != null)
+        {
+            <h1>@Model.SelectedCharacter.CharacterDisplayName</h1>
+
+            <div class="my-3 d-flex flex-wrap gap-2">
+                <a class="btn btn-secondary" asp-page="/Admin-Panel/Users/Index" asp-route-id="@Model.SelectedCharacterUserId">Jump To User</a>
+            </div>
+
+            <form method="post" asp-page-handler="UnlockCharacter" asp-route-id="@Model.SelectedCharacter.CharacterId">
+                <button type="submit" class="btn btn-primary">Unlock Character</button>
+            </form>
+        }
+        else
+        {
+            <div class="alert alert-info">
+                Select a character from the list to review them.
+            </div>
+        }
+    </div>
+</div>

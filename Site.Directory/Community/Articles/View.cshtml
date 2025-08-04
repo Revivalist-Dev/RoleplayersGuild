@@ -1,0 +1,72 @@
+﻿@page "{id:int}"
+@model RoleplayersGuild.Site.Directory.Community.Articles.ViewArticleModel
+@{
+    ViewData["Title"] = Model.Article?.ArticleTitle ?? "Article";
+    Layout = "_Layout1Col";
+}
+
+@if (Model.Article is not null)
+{
+    <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap">
+        <a asp-page="./Index" class="btn btn-secondary mb-2"><i class="bi bi-arrow-left"></i> Back To Articles</a>
+
+        <div class="d-flex flex-wrap">
+            @if (!Model.Article.IsPrivate)
+            {
+                <a asp-page="/Community/Users/View" asp-route-id="@Model.Article.OwnerUserId" class="btn btn-primary mb-2 me-2">View Author</a>
+            }
+            @if (Model.Article.UniverseId.HasValue && Model.Article.UniverseId > 0)
+            {
+                <a asp-page="/Community/Universes/View" asp-route-id="@Model.Article.UniverseId" class="btn btn-info mb-2 me-2">View Universe</a>
+            }
+            @if (Model.IsAdmin)
+            {
+                <a asp-page="/Admin-Panel/Articles/Edit" asp-route-id="@Model.Article.ArticleId" class="btn btn-danger mb-2">Admin Console</a>
+            }
+        </div>
+    </div>
+
+    <div class="text-center">
+        <h1>@Model.Article.ArticleTitle</h1>
+        <p class="text-muted">
+            By <a asp-page="/Community/Users/View" asp-route-id="@Model.Article.OwnerUserId">@Model.Article.OwnerUsername</a> in category: @Model.Article.CategoryName
+        </p>
+        @if (Model.Genres.Any())
+        {
+            <p>
+                @foreach (var genre in Model.Genres)
+                {
+                    <span class="badge bg-secondary">@genre</span>
+                }
+            </p>
+        }
+    </div>
+    <hr />
+    <div id="articleContent" class="@(Model.Article.DisableLinkify ? "" : "styled-content")">
+        @Html.Raw(Model.Article.ArticleContent)
+    </div>
+}
+else
+{
+    <div class="alert alert-danger">
+        @Model.Message ?? "This article could not be found or is private."
+    </div>
+    <a asp-page="./Index" class="btn btn-secondary">Back To Articles</a>
+}
+
+@section Scripts {
+    @if (Model.Article is not null && !Model.Article.DisableLinkify)
+    {
+        <script>
+            // Ensure linkify is loaded before calling it
+            document.addEventListener("DOMContentLoaded", function() {
+                if (typeof($) !== 'undefined' && typeof($.fn.linkify) === 'function') {
+                    $('#articleContent').linkify({
+                        target: '_blank',
+                        nl2br: true
+                    });
+                }
+            });
+        </script>
+    }
+}

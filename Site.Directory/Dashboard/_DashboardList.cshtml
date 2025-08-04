@@ -1,0 +1,22 @@
+﻿@model IEnumerable<RoleplayersGuild.Site.Model.DashboardItemViewModel>
+@using RoleplayersGuild.Site.Utils
+
+<div class="list-group list-group-flush">
+    @if (!Model.Any())
+    {
+        <div class="list-group-item">No items to display.</div>
+    }
+    else
+    {
+        foreach (var item in Model)
+        {
+            <a href="@item.Url" class="list-group-item list-group-item-action">
+                <div class="d-flex w-100 justify-content-between">
+                    <h6 class="mb-1 text-truncate">@item.Title</h6>
+                    <small class="text-nowrap ms-2">@item.DetailRight</small>
+                </div>
+                <small class="text-muted">@item.DetailLeft</small>
+            </a>
+        }
+    }
+</div>

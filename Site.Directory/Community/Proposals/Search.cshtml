@@ -1,0 +1,50 @@
+﻿@page
+@model RoleplayersGuild.Site.Directory.Community.Proposals.SearchModel
+@{
+    ViewData["Title"] = "Search Roleplay Proposals";
+    Layout = "_Layout2Col";
+}
+
+@section cphLeftCol {
+    @await Component.InvokeAsync("FilterNav", new { selectedGenreIds = Model.SelectedGenreIds })
+}
+
+@section cphRightCol {
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h1>Roleplay Proposals</h1>
+        @if (User.Identity?.IsAuthenticated == true)
+        {
+            <a asp-page="/User-Panel/My-Proposals/Edit" class="btn btn-success">
+                <i class="bi bi-plus-circle"></i> New Proposal
+            </a>
+        }
+    </div>
+    <p class="lead text-muted">Browse "looking for group" style posts to find your next adventure.</p>
+
+    @if (Model.ProposalsResult is not null && Model.ProposalsResult.Items.Any())
+    {
+        <div class="list-group mb-3">
+            @foreach (var proposal in Model.ProposalsResult.Items)
+            {
+                <a asp-page="./View" asp-route-id="@proposal.ProposalId" class="list-group-item list-group-item-action">
+                    <div class="d-flex w-100 justify-content-between">
+                        <h5 class="mb-1">@proposal.Title</h5>
+                        <small class="text-muted">@proposal.LastUpdated.ToShortDateString()</small>
+                    </div>
+                    <p class="mb-1">
+                        By @proposal.Username <span class="badge bg-info ms-2">@proposal.StatusName</span>
+                    </p>
+                </a>
+            }
+        </div>
+
+        <partial name="_PagingControls" model="Model.ProposalsResult" />
+    }
+    else
+    {
+        <div class="text-center p-5 border rounded bg-light">
+            <p class="h4 text-muted">No proposals found</p>
+            <p>Try adjusting your filters, or be the first to <a asp-page="/User-Panel/My-Proposals/Edit">create one</a>!</p>
+        </div>
+    }
+}

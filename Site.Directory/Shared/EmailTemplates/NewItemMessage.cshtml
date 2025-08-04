@@ -1,0 +1,15 @@
+﻿@model RoleplayersGuild.Site.Services.Models.NewItemEmailModel
+@{
+    Layout = "_EmailLayout.cshtml";
+    ViewData["HeaderClass"] = "";
+}
+<div class="header @ViewData["HeaderClass"]">
+    @Model.SenderName has sent you a new @Model.ContentType on RPG!
+</div>
+<div class="content">
+    <p>To view/reply to the new @Model.ContentType, please log in to your account at the <a href="https://www.roleplayersguild.com/">Role-Players Guild</a>.</p>
+    <hr />
+    <p style="font-size: 0.9em; color: #555;">
+        If you would like to no longer receive these notifications, <a href="@Model.UnsubscribeUrl">click here</a>.
+    </p>
+</div>

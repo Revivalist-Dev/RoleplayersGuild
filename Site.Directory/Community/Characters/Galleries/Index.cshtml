@@ -1,0 +1,55 @@
+﻿@page
+@model RoleplayersGuild.Site.Directory.Admin_Panel.IndexModel
+@{
+    ViewData["Title"] = "Admin Console";
+}
+
+<div class="container py-4">
+    <h1 class="mb-4 text-center">Admin Console</h1>
+
+    <div class="row g-4">
+        @if (Model.IsUserStaff)
+        {
+            <div class="col-lg-6">
+                <div class="card h-100 shadow-sm">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0"><i class="bi bi-person-fill-gear me-2"></i>Staff Tools</h5>
+                    </div>
+                    <div class="card-body">
+                        <ul class="list-group list-group-flush">
+                            <li class="list-group-item"><a asp-page="/Admin-Panel/Characters/Characters-Under-Review/Index">Characters Under Review</a></li>
+                            <li class="list-group-item"><a asp-page="/Admin-Panel/Characters/Index">Character Listing</a></li>
+                            <li class="list-group-item"><a asp-page="/Admin-Panel/Users/Index">User Listing</a></li>
+                            <li class="list-group-item"><a asp-page="/Admin-Panel/ToDo/Index">To-Do Items</a></li>
+                            <li class="list-group-item"><a asp-page="/Admin-Panel/Articles/Index">Articles</a></li>
+                            <li class="list-group-item"><a asp-page="/Admin-Panel/Universes/Index">Universes</a></li>
+                            <li class="list-group-item"><a asp-page="/Admin-Panel/Chat-Rooms/Index">Chat Rooms</a></li>
+                            <li class="list-group-item"><a asp-page="/Admin-Panel/Stories/Index">Stories</a></li>
+                            <li class="list-group-item"><a asp-page="/Admin-Panel/Proposals/Index">Proposals</a></li>
+                            <li class="list-group-item"><a asp-page="/Admin-Panel/Resources/Index">Resources</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        }
+
+        @if (Model.IsUserAdmin)
+        {
+            <div class="col-lg-6">
+                <div class="card h-100 shadow-sm">
+                    <div class="card-header bg-success text-white">
+                        <h5 class="mb-0"><i class="bi bi-gear-fill me-2"></i>Site Administration</h5>
+                    </div>
+                    <div class="card-body">
+                        <ul class="list-group list-group-flush">
+                            <li class="list-group-item"><a asp-page="/Admin-Panel/Mass-Message/Index">Mass Message</a></li>
+                            <li class="list-group-item"><a asp-page="/Admin-Panel/Site-Rules/Index">Site Rules</a></li>
+                            <li class="list-group-item"><a asp-page="/Admin-Panel/Site-Funding-Goal/Index">Funding Goal</a></li>
+                            <li class="list-group-item"><a asp-page="/Admin-Panel/Site-Privacy-Policy/Index">Privacy Policy</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+</div>

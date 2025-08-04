@@ -1,0 +1,65 @@
+﻿@page
+@model RoleplayersGuild.Site.Directory.Community.Users.SearchModel
+@using RoleplayersGuild.Site.Utils
+@{
+    ViewData["Title"] = "Search Users";
+    Layout = "_Layout2Col";
+}
+
+@section cphLeftCol {
+    <div class="card mt-3">
+        <div class="card-header">
+            Quick Links
+        </div>
+        <div class="list-group list-group-flush">
+            <a class="list-group-item list-group-item-action" asp-page="/Community/Characters/Search">Search Characters</a>
+            <a class="list-group-item list-group-item-action" asp-page="/Community/Articles/Search">Search Articles</a>
+            <a class="list-group-item list-group-item-action" asp-page="/Community/Proposals/Search">Find Roleplays</a>
+        </div>
+    </div>
+}
+
+@section cphRightCol {
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h1>@ViewData["Title"]</h1>
+    </div>
+
+    <div class="card bg-light mb-4">
+        <div class="card-body">
+            <form method="get">
+                <div class="input-group">
+                    <input asp-for="Username" class="form-control form-control-lg" placeholder="Find a user by name..." />
+                    <button type="submit" class="btn btn-primary"><i class="bi bi-search"></i> Search</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    @if (Model.SearchResults is not null && Model.SearchResults.Items.Any())
+    {
+        <div class="list-group mb-3">
+            @foreach (var user in Model.SearchResults.Items)
+            {
+                <a asp-page="./View" asp-route-id="@user.UserId" class="list-group-item list-group-item-action">
+                    <div class="d-flex align-items-center">
+                        @if (user.ShowWhenOnline && DateUtils.IsOnline(user.LastAction))
+                        {
+                            <span class="badge bg-success me-2">Online</span>
+                        }
+                        <h5 class="mb-0">@user.Username</h5>
+                    </div>
+                    <small class="text-muted">Joined: @user.MemberJoinedDate.ToShortDateString()</small>
+                </a>
+            }
+        </div>
+
+        <partial name="_PagingControls" model="Model.SearchResults" />
+    }
+    else
+    {
+        <div class="text-center p-5 border rounded bg-light">
+            <p class="h4 text-muted">No users found</p>
+            <p>Try adjusting your search terms.</p>
+        </div>
+    }
+}

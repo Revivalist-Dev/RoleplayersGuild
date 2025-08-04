@@ -1,0 +1,50 @@
+﻿@page "/User-Panel/My-Stories"
+@model RoleplayersGuild.Site.Directory.User_Panel.My_Stories.IndexMyStoriesModel
+@using RoleplayersGuild.Site.Utils
+@{
+    ViewData["Title"] = "My Stories";
+    Layout = "_Layout1Col";
+}
+
+@if (!string.IsNullOrEmpty(Model.Message))
+{
+    <div class="alert alert-success" role="alert">
+        @Model.Message
+    </div>
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h1>@ViewData["Title"]</h1>
+    <a asp-page="./Edit" class="btn btn-success">
+        <i class="bi bi-plus-circle"></i> New Story
+    </a>
+</div>
+
+<div class="alert alert-info" role="alert">
+    Manage your fictional stories here. Stories are creative writing pieces that are not part of an interactive roleplay.
+</div>
+
+@if (Model.Stories.Any())
+{
+    <div class="list-group">
+        @foreach (var story in Model.Stories)
+        {
+            <a asp-page="./Edit" asp-route-id="@story.StoryId" class="list-group-item list-group-item-action">
+                <div class="d-flex w-100 justify-content-between">
+                    <h5 class="mb-1">@story.StoryTitle</h5>
+                    @* CORRECTED: Call the standard helper and handle null dates *@
+                    <small>Last Updated: @(story.LastUpdated.HasValue? DateUtils.TimeAgo(story.LastUpdated.Value) : "Never")</small>
+                </div>
+                <p class="mb-1 text-truncate">@story.StoryDescription</p>
+                <small class="text-muted">Rating: @story.ContentRating</small>
+            </a>
+        }
+    </div>
+}
+else
+{
+    <div class="text-center p-4 border rounded">
+        <p>You haven't created any stories yet.</p>
+        <a asp-page="./Edit" class="btn btn-primary">Create Your First Story</a>
+    </div>
+}

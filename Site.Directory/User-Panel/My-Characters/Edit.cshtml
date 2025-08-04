@@ -1,0 +1,168 @@
+﻿@page "{id:int?}"
+@model RoleplayersGuild.Site.Directory.User_Panel.My_Characters.EditMyCharactersModel
+@{
+    ViewData["Title"] = Model.IsNewCharacter ? "New Character" : "Edit Character";
+    Layout = "_Layout1Col";
+}
+
+<div class="card">
+    <div class="card-header">
+        <ul class="nav nav-tabs card-header-tabs" id="editCharTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" data-tab-handler="Details" type="button" role="tab">Details</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" data-tab-handler="BBFrame" type="button" @(Model.IsNewCharacter ? "disabled" : "") role="tab">BBFrame & Inlines</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" data-tab-handler="Gallery" type="button" @(Model.IsNewCharacter ? "disabled" : "") role="tab">Gallery</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <a class="nav-link @(Model.IsNewCharacter ? "disabled" : "")" asp-page="./Custom-Profile" asp-route-id="@Model.Input.CharacterId">Customize Profile</a>
+            </li>
+        </ul>
+    </div>
+    <div class="card-body">
+        <div id="tab-content-container" class="p-3">
+            <div class="text-center my-5"><output class="spinner-border" role="status"><span class="visually-hidden">Loading...</span></output></div>
+        </div>
+    </div>
+</div>
+
+@if (!Model.IsNewCharacter)
+{
+    <div class="modal fade" id="deleteModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content alert-danger">
+                <div class="modal-header">
+                    <h5 class="modal-title">Are you sure?</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p>This will delete the character and all associated data permanently.</p>
+                </div>
+                <div class="modal-footer">
+                    <form method="post" asp-page-handler="Delete" asp-route-id="@Model.Input.CharacterId">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-danger">Delete Forever</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        // Helper function for BBCode text wrapping
+        function wrapText(elementId, openTag, closeTag) { /* ... */ }
+        function copyToClipboard(elementId) { /* ... */ }
+
+        document.addEventListener('DOMContentLoaded', function () {
+            const tabsContainer = document.getElementById('editCharTabs');
+            const contentContainer = document.getElementById('tab-content-container');
+            const statusContainer = document.getElementById('status-messages-container');
+            const characterId = @Model.Input.CharacterId;
+            let currentHandler = 'Details';
+
+            const handleAjaxFormSubmit = async (form) => {
+                const submitButton = form.querySelector('button[type="submit"]');
+                if(submitButton) submitButton.disabled = true;
+
+                try {
+                    const response = await fetch(form.action, {
+                        method: 'POST',
+                        body: new FormData(form),
+                        headers: { 'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value }
+                    });
+
+                    if (response.headers.get('content-type')?.includes('application/json')) {
+                        const data = await response.json();
+                        if (data.success) {
+                            statusContainer.innerHTML = `<div class="alert alert-success alert-dismissible fade show">${data.message}<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>`;
+                            if (data.redirectUrl) {
+                                window.location.href = data.redirectUrl;
+                            } else {
+                                loadTabContent(currentHandler); // Reload on success
+                            }
+                        }
+                    } else {
+                        // Validation failed, server sent back the partial view with errors
+                        const html = await response.text();
+                        contentContainer.innerHTML = html;
+                        initializeScriptsIn(contentContainer);
+                    }
+                } catch (error) {
+                    console.error('Form submission error:', error);
+                } finally {
+                    if(submitButton) submitButton.disabled = false;
+                }
+            };
+            
+            const initializeScriptsIn = (container) => {
+                // Attach submit handlers to all forms within the loaded content
+                container.querySelectorAll('form').forEach(form => {
+                    form.addEventListener('submit', (e) => {
+                        e.preventDefault();
+                        handleAjaxFormSubmit(form);
+                    });
+                });
+
+                // Re-initialize BBCode Previewer if it exists
+                const editor = container.querySelector('#bbframe-editor');
+                if (editor) {
+                    const preview = container.querySelector('#bbframe-preview');
+                    const antiForgeryToken = document.querySelector('input[name="__RequestVerificationToken"]').value;
+                    let debounceTimer;
+
+                    const updatePreview = () => {
+                         fetch('/User-Panel/My-Characters/Edit?handler=Preview', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': antiForgeryToken },
+                            body: JSON.stringify({ Text: editor.value, CharacterId: characterId })
+                        })
+                        .then(res => res.json()).then(data => preview.innerHTML = data.html)
+                        .catch(err => console.error('Preview error:', err));
+                    };
+
+                    editor.addEventListener('input', () => {
+                        clearTimeout(debounceTimer);
+                        debounceTimer = setTimeout(updatePreview, 500);
+                    });
+
+                    if(editor.value) { updatePreview(); }
+                }
+            };
+            
+            const loadTabContent = (handler) => {
+                currentHandler = handler;
+                contentContainer.innerHTML = `<div class="text-center my-5 p-5"><div class="spinner-border" role="status"></div></div>`;
+                const cacheBuster = `&_=${new Date().getTime()}`;
+                const url = characterId > 0 
+                    ? `/User-Panel/My-Characters/Edit/${characterId}?handler=${handler}${cacheBuster}` 
+                    : `/User-Panel/My-Characters/Edit?handler=${handler}${cacheBuster}`;
+
+                fetch(url)
+                    .then(response => response.text())
+                    .then(html => { 
+                        contentContainer.innerHTML = html;
+                        initializeScriptsIn(contentContainer);
+                    })
+                    .catch(error => {
+                        contentContainer.innerHTML = '<div class="alert alert-danger">Could not load tab content.</div>';
+                    });
+            };
+
+            tabsContainer.addEventListener('click', (event) => {
+                const clickedTab = event.target.closest('button.nav-link');
+                if (!clickedTab || clickedTab.classList.contains('active') || clickedTab.disabled) return;
+                tabsContainer.querySelectorAll('.nav-link').forEach(tab => tab.classList.remove('active'));
+                clickedTab.classList.add('active');
+                loadTabContent(clickedTab.getAttribute('data-tab-handler'));
+            });
+
+            loadTabContent('Details');
+        });
+    </script>
+}
