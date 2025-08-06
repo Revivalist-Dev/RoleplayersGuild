@@ -7,7 +7,7 @@ using System.Net;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
-using Microsoft.Extensions.Options;
+using RoleplayersGuild.Site.Model; // Added for CharacterInline model
 
 namespace RoleplayersGuild.Site.Services
 {
@@ -45,17 +45,18 @@ namespace RoleplayersGuild.Site.Services
     public class BBCodeService : IBBCodeService
     {
         private readonly IDataService _dataService;
-        private readonly ImageSettings _imageSettings;
+        private readonly IImageService _imageService; // Correctly inject IImageService
         private readonly Dictionary<string, BBTag> _tags;
         private string _currentText = "";
 
         private static readonly Regex UrlRegex = new Regex(@"^\s*((?:https?|ftps?|irc):\/\/[^\s/$.?#""][^\s]*)\s*$", RegexOptions.Compiled);
         private static readonly Regex EmoteRegex = BuildEmoteRegex();
 
-        public BBCodeService(IDataService dataService, IOptions<ImageSettings> imageSettings)
+        // CORRECTED: Constructor now injects IImageService instead of obsolete ImageSettings
+        public BBCodeService(IDataService dataService, IImageService imageService)
         {
             _dataService = dataService;
-            _imageSettings = imageSettings.Value;
+            _imageService = imageService;
             _tags = InitializeTags();
         }
 
@@ -66,6 +67,8 @@ namespace RoleplayersGuild.Site.Services
             return new Regex(pattern, RegexOptions.IgnoreCase | RegexOptions.Compiled);
         }
 
+        // Unchanged methods: InitializeTags, ParseAsync, AST Generation, AST Normalization, HTML Rendering...
+        #region Unchanged Methods (for brevity)
         private Dictionary<string, BBTag> InitializeTags()
         {
             var tags = new Dictionary<string, BBTag>(StringComparer.OrdinalIgnoreCase)
@@ -372,25 +375,42 @@ namespace RoleplayersGuild.Site.Services
                 "</div>"
             );
         }
+        #endregion
+        #endregion
+
+        // --- METHOD WITH CORRECTIONS ---
         private async Task<string> RenderImgTag(TagNode node, string content, int characterId)
         {
-            if (int.TryParse(node.Attribute, out int inlineId))
+            // Case 1: Inline image by ID, e.g., [img=123]alt text[/img]
+            if (!string.IsNullOrEmpty(node.Attribute) && int.TryParse(node.Attribute, out int inlineId))
             {
-                // Corrected: SQL query now uses PascalCase
                 var inline = (await _dataService.GetRecordsAsync<CharacterInline>(
                     """SELECT * FROM "CharacterInlines" WHERE "CharacterId" = @characterId AND "InlineId" = @inlineId""",
                     new { characterId, inlineId })).FirstOrDefault();
 
                 if (inline != null)
                 {
-                    // Corrected: Property access is now PascalCase (ImageUrl not ImageURL)
-                    string url = _imageSettings.DisplayCharacterInlinesFolder + inline.InlineImageUrl;
-                    string altText = WebUtility.HtmlEncode(content);
+                    // Use the IImageService to get the full, correct URL
+                    string? url = _imageService.GetImageUrl(inline.InlineImageUrl);
+                    // The content of the tag is used as alt text, with a fallback to the inline name
+                    string altText = WebUtility.HtmlEncode(string.IsNullOrWhiteSpace(content) ? inline.InlineName : content);
                     return $"<img class=\"ImageBlock\" src=\"{url}\" alt=\"{altText}\" />";
                 }
+                return $"[Invalid Inline Image ID: {inlineId}]";
             }
-            return $"[Invalid Image: {WebUtility.HtmlEncode(node.Attribute)}]";
+            // Case 2: External image URL, e.g., [img]http://example.com/image.png[/img]
+            else if (!string.IsNullOrEmpty(content) && UrlRegex.IsMatch(content))
+            {
+                var match = UrlRegex.Match(content);
+                string cleanUrl = WebUtility.HtmlEncode(match.Groups[1].Value);
+                return $"<img class=\"ImageBlock\" src=\"{cleanUrl}\" alt=\"User-provided image\" />";
+            }
+
+            // Case 3: Invalid tag usage
+            return "[Invalid Image Tag]";
         }
+
+        #region Unchanged Methods 2 (for brevity)
         private Task<string> RenderUserOrIconTag(TagNode node, string content, int characterId)
         {
             string charName = WebUtility.HtmlEncode(content);

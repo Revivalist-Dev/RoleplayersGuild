@@ -1,0 +1,124 @@
+﻿<#
+.SYNOPSIS
+    Generates a list of file paths from a directory structure.
+
+.DESCRIPTION
+    This script recursively scans a directory specified within a .scriptignore file.
+    It creates a list of full file paths, excluding any items that match 
+    ignore patterns listed in the same .scriptignore file.
+    The final list is copied to the clipboard.
+
+.EXAMPLE
+    PS C:\> .\DirectoryCollection.ps1
+    Finds the .scriptignore file in a parent directory, reads the configured
+    scan path and ignore patterns, then generates the file list.
+
+.NOTES
+    Author: Gemini
+    Version: 2.0
+    Last Updated: 2025-07-20
+#>
+[CmdletBinding()]
+param ()
+
+# --- Configuration Discovery ---
+Clear-Host
+Write-Host "Searching for .scriptignore file..." -ForegroundColor Cyan
+
+$currentDir = $PSScriptRoot
+$projectRoot = $null
+$maxDepth = 10 # Prevents searching past the root of the drive
+$depth = 0
+
+# Traverse up from the script's directory to find the project root
+while ($depth -lt $maxDepth -and $currentDir -and (Get-Item $currentDir).Parent) {
+    $potentialIgnoreFile = Join-Path $currentDir ".scriptignore"
+    if (Test-Path $potentialIgnoreFile) {
+        $projectRoot = $currentDir
+        Write-Host "Found project root at: $projectRoot" -ForegroundColor Green
+        break
+    }
+    $currentDir = (Get-Item $currentDir).Parent.FullName
+    $depth++
+}
+
+if (-not $projectRoot) {
+    Write-Error "FATAL: Could not find a .scriptignore file in this directory or any parent directory up to $maxDepth levels. Aborting."
+    Read-Host -Prompt "Press ENTER to exit"
+    exit
+}
+
+# --- Ignore File Parsing ---
+$ignoreFile = Join-Path $projectRoot ".scriptignore"
+$fileContent = Get-Content $ignoreFile
+
+# Default scan path is the project root where the .scriptignore file was found
+$scanPath = $projectRoot 
+
+# Look for a 'scan_path' setting in the ignore file
+$pathLine = $fileContent | Where-Object { $_.Trim() -match '^\s*scan_path\s*=' }
+if ($pathLine) {
+    # Extract the path, which is everything after the '='
+    $configuredPath = ($pathLine -split '=', 2)[1].Trim()
+    
+    # Remove quotes (' or ") from the start and end of the path string.
+    $scanPath = $configuredPath.TrimStart('"').TrimEnd('"').TrimStart("'").TrimEnd("'")
+
+    Write-Host "Scan path specified in .scriptignore: $scanPath" -ForegroundColor Cyan
+} else {
+    Write-Host "No 'scan_path' specified. Defaulting to project root: $scanPath" -ForegroundColor Yellow
+}
+
+# Get ignore patterns, filtering out comments, empty lines, and the path setting
+$ignorePatterns = $fileContent | Where-Object { $_.Trim() -and $_.Trim() -notmatch '^#' -and $_.Trim() -notmatch '^\s*scan_path\s*=' }
+
+# Resolve the final path to ensure it's a valid, absolute path
+$rootPath = Resolve-Path -Path $scanPath
+
+# --- Recursive Path Generation Function ---
+function Get-DirectoryPaths {
+    param (
+        [string]$Directory,
+        [array]$IgnoreList
+    )
+    # Get all items recursively
+    $items = Get-ChildItem -Path $Directory -Recurse -Force
+    
+    foreach ($item in $items) {
+        $isIgnored = $false
+        # Generate a relative path from the root for comparison
+        $relativePath = $item.FullName.Substring($rootPath.Path.Length).TrimStart('\/')
+        
+        foreach ($pattern in $IgnoreList) {
+            # Check if any part of the relative path or just the name matches an ignore pattern
+            if (($relativePath -like $pattern) -or ($item.Name -like $pattern)) {
+                $isIgnored = $true
+                break
+            }
+        }
+        
+        if (-not $isIgnored) {
+            # Output the full path of the item
+            $item.FullName
+        }
+    }
+}
+
+
+# --- Main Execution ---
+Write-Host "--------------------------------------------------------"
+Write-Host "Generating file paths for: $rootPath" -ForegroundColor Green
+Write-Host "--------------------------------------------------------"
+
+$pathList = Get-DirectoryPaths -Directory $rootPath -IgnoreList $ignorePatterns
+$pathListString = $pathList -join [Environment]::NewLine
+Set-Clipboard -Value $pathListString
+
+Write-Host "`n--------------------------------------------------------"
+Write-Host "SUCCESS: The file path list has been copied to your clipboard." -ForegroundColor Green
+Write-Host "You can now paste it into Gemini or another application."
+Write-Host "Total paths generated: $($pathList.Count)"
+Write-Host "--------------------------------------------------------"
+
+# Optional: Keep the window open
+# Read-Host -Prompt "Press ENTER to exit"

@@ -117,7 +117,27 @@ namespace RoleplayersGuild.Site.Services
 
         public Task UpdateCharacterAsync(CharacterInputModel model)
         {
-            const string sql = """UPDATE "Characters" SET "CharacterDisplayName" = @CharacterDisplayName, "CharacterFirstName" = @CharacterFirstName, "CharacterMiddleName" = @CharacterMiddleName, "CharacterLastName" = @CharacterLastName, "CharacterBio" = @CharacterBio, "CharacterGender" = @CharacterGender, "SexualOrientation" = @SexualOrientation, "CharacterSourceId" = @CharacterSourceId, "PostLengthMin" = @PostLengthMin, "PostLengthMax" = @PostLengthMax, "LiteracyLevel" = @LiteracyLevel, "LfrpStatus" = @LfrpStatus, "EroticaPreferences" = @EroticaPreferences, "MatureContent" = @MatureContent, "IsPrivate" = @IsPrivate, "DisableLinkify" = @DisableLinkify WHERE "CharacterId" = @CharacterId""";
+            const string sql = """
+                               UPDATE "Characters" SET 
+                                   "CharacterDisplayName" = @CharacterDisplayName, 
+                                   "CharacterFirstName" = @CharacterFirstName, 
+                                   "CharacterMiddleName" = @CharacterMiddleName, 
+                                   "CharacterLastName" = @CharacterLastName, 
+                                   "CharacterBio" = @CharacterBio, 
+                                   "CharacterGender" = @CharacterGender, 
+                                   "SexualOrientation" = @SexualOrientation, 
+                                   "CharacterSourceId" = @CharacterSourceId, 
+                                   "PostLengthMin" = @PostLengthMin, 
+                                   "PostLengthMax" = @PostLengthMax, 
+                                   "LiteracyLevel" = @LiteracyLevel, 
+                                   "LfrpStatus" = @LfrpStatus, 
+                                   "EroticaPreferences" = @EroticaPreferences, 
+                                   "MatureContent" = @MatureContent, 
+                                   "IsPrivate" = @IsPrivate, 
+                                   "DisableLinkify" = @DisableLinkify,
+                                   "CardImageUrl" = @CardImageUrl
+                               WHERE "CharacterId" = @CharacterId
+                               """;
             return ExecuteAsync(sql, model);
         }
 
@@ -227,7 +247,14 @@ namespace RoleplayersGuild.Site.Services
         public Task DeleteProposalAsync(int proposalId, int userId) => ExecuteAsync("""DELETE FROM "Proposals" WHERE "ProposalId" = @proposalId AND "UserId" = @userId""", new { proposalId, userId });
         public Task<CharacterImage?> GetImageAsync(int imageId) => GetRecordAsync<CharacterImage>("""SELECT CI.*, C."UserId" FROM "CharacterImages" CI JOIN "Characters" C ON CI."CharacterId" = C."CharacterId" WHERE CI."CharacterImageId" = @imageId""", new { imageId });
         public Task<CharacterImage?> GetDisplayImageAsync(int characterId) => GetRecordAsync<CharacterImage>("""SELECT * FROM "CharacterImages" WHERE "CharacterId" = @characterId AND "IsPrimary" = TRUE""", new { characterId });
-        public Task AddImageAsync(string imageUrl, int characterId, bool isPrimary, bool isMature, string imageCaption) => ExecuteAsync("""INSERT INTO "CharacterImages" ("CharacterImageUrl", "CharacterId", "IsPrimary", "IsMature", "ImageCaption") VALUES (@ImageUrl, @CharacterId, @IsPrimary, @IsMature, @ImageCaption)""", new { ImageUrl = imageUrl, CharacterId = characterId, IsPrimary = isPrimary, IsMature = isMature, ImageCaption = imageCaption });
+        public Task AddImageAsync(string imageUrl, int characterId, int userId, bool isPrimary, bool isMature, string imageCaption) =>
+            ExecuteAsync("""
+            INSERT INTO "CharacterImages" 
+                ("CharacterImageUrl", "CharacterId", "UserId", "IsPrimary", "IsMature", "ImageCaption") 
+            VALUES 
+                (@ImageUrl, @CharacterId, @UserId, @IsPrimary, @IsMature, @ImageCaption)
+            """,
+                new { ImageUrl = imageUrl, CharacterId = characterId, UserId = userId, IsPrimary = isPrimary, IsMature = isMature, ImageCaption = imageCaption });
         public Task RemoveDefaultFlagFromImagesAsync(int characterId) => ExecuteAsync("""UPDATE "CharacterImages" SET "IsPrimary" = FALSE WHERE "CharacterId" = @characterId""", new { characterId });
         public Task UpdateImageAsync(int imageId, bool isPrimary, bool isMature, string imageCaption) => ExecuteAsync("""UPDATE "CharacterImages" SET "IsPrimary" = @IsPrimary, "IsMature" = @IsMature, "ImageCaption" = @ImageCaption WHERE "CharacterImageId" = @imageId""", new { imageId, isPrimary, isMature, imageCaption });
         public Task<CharacterImage?> GetImageWithOwnerAsync(int imageId) => GetRecordAsync<CharacterImage>("""SELECT CI.*, C."UserId" FROM "CharacterImages" CI JOIN "Characters" C ON CI."CharacterId" = C."CharacterId" WHERE CI."CharacterImageId" = @imageId""", new { imageId });
@@ -332,53 +359,61 @@ namespace RoleplayersGuild.Site.Services
         public Task<IEnumerable<DashboardArticle>> GetNewestArticlesForDashboardAsync(int userId) => GetRecordsAsync<DashboardArticle>("""SELECT * FROM "ArticlesForListing" WHERE ("CategoryId" <> 7 AND "CategoryId" <> 8 AND "CategoryId" <> 9 AND "CategoryId" <> 10) AND "OwnerUserId" NOT IN (SELECT "UserBlocked" FROM "UserBlocking" WHERE "UserBlockedBy" = @userId) AND "OwnerUserId" NOT IN (SELECT "UserBlockedBy" FROM "UserBlocking" WHERE "UserBlocked" = @userId) ORDER BY "CreatedDateTime" DESC LIMIT 5""", new { userId });
         public Task<IEnumerable<DashboardProposal>> GetNewestProposalsForDashboardAsync(int userId) => GetRecordsAsync<DashboardProposal>("""SELECT * FROM "ProposalsWithDetails" WHERE "StatusId" = 1 AND "UserId" NOT IN (SELECT "UserBlocked" FROM "UserBlocking" WHERE "UserBlockedBy" = @userId) AND "UserId" NOT IN (SELECT "UserBlockedBy" FROM "UserBlocking" WHERE "UserBlocked" = @userId) ORDER BY "LastUpdated" DESC LIMIT 5""", new { userId });
 
+
         public async Task<IEnumerable<CharactersForListing>> GetCharactersForListingAsync(string screenStatus, int recordCount, int currentUserId)
         {
             var whereClauses = new List<string>
-            {
-                // Corrected to use the 'u' alias for the Users table
-                """u."UserId" NOT IN (SELECT "UserBlocked" FROM "UserBlocking" WHERE "UserBlockedBy" = @currentUserId)""",
-                """u."UserId" NOT IN (SELECT "UserBlockedBy" FROM "UserBlocking" WHERE "UserBlocked" = @currentUserId)"""
-            };
+    {
+        """u."UserId" NOT IN (SELECT "UserBlocked" FROM "UserBlocking" WHERE "UserBlockedBy" = @currentUserId)""",
+        """u."UserId" NOT IN (SELECT "UserBlockedBy" FROM "UserBlocking" WHERE "UserBlocked" = @currentUserId)"""
+    };
 
-            string orderByClause;
+            string orderByClause = screenStatus == "OnlineCharacters"
+                ? """ORDER BY u."LastAction" DESC"""
+                : """ORDER BY c."DateSubmitted" DESC""";
 
             if (screenStatus == "OnlineCharacters")
             {
-                // Corrected to use the 'u' alias for the Users table
                 whereClauses.Add("""u."LastAction" > (NOW() AT TIME ZONE 'UTC' - interval '15 minute')""");
-                orderByClause = """ORDER BY u."LastAction" DESC""";
-            }
-            else // "NewCharacters"
-            {
-                // Correctly uses 'c' alias for the Characters table
-                orderByClause = """ORDER BY c."DateSubmitted" DESC""";
             }
 
             string sql = $"""
-                SELECT
-                    c."CharacterId",
-                    c."CharacterDisplayName",
-                    'NormalCharacter' AS "CharacterNameClass",
-                    c."CardImageUrl" AS "DisplayImageUrl",
-                    ca."AvatarImageUrl"
-                FROM "Characters" c
-                JOIN "Users" u ON c."UserId" = u."UserId" -- Added the missing JOIN
-                LEFT JOIN "CharacterAvatars" ca ON c."CharacterId" = ca."CharacterId"
-                WHERE {string.Join(" AND ", whereClauses)}
-                {orderByClause}
-                LIMIT @recordCount
-                """;
+        SELECT c."CharacterId", c."UserId", c."CharacterDisplayName", c."CardImageUrl", u."LastAction", u."ShowWhenOnline",
+               ca."AvatarImageUrl", (SELECT B."CharacterNameClass" FROM "Badges" B JOIN "UserBadges" UB ON B."BadgeId" = UB."BadgeId" 
+                                    WHERE UB."UserId" = c."UserId" AND B."CharacterNameClass" IS NOT NULL 
+                                    ORDER BY B."SortOrder" LIMIT 1) AS "CharacterNameClass"
+        FROM "Characters" c
+        JOIN "Users" u ON c."UserId" = u."UserId"
+        LEFT JOIN "CharacterAvatars" ca ON c."CharacterId" = ca."CharacterId"
+        WHERE {string.Join(" AND ", whereClauses)}
+        {orderByClause}
+        LIMIT @recordCount
+        """;
 
-            var characters = await GetRecordsAsync<CharactersForListing>(sql, new { recordCount, currentUserId });
-            ProcessCharacterListings(characters);
-            return characters;
+            var rawData = await GetRecordsAsync<dynamic>(sql, new { recordCount, currentUserId });
+
+            return rawData.Select(d => new CharactersForListing
+            {
+                CharacterId = d.CharacterId,
+                UserId = d.UserId,
+                CharacterDisplayName = d.CharacterDisplayName,
+                DisplayImageUrl = _imageService.GetImageUrl(d.CardImageUrl),
+                AvatarImageUrl = _imageService.GetImageUrl(d.AvatarImageUrl),
+                CharacterNameClass = d.CharacterNameClass,
+                LastAction = d.LastAction,
+                ShowWhenOnline = d.ShowWhenOnline
+            }).ToList();
         }
-
         public async Task<CharacterWithDetails?> GetCharacterWithDetailsAsync(int characterId)
         {
-            var character = await GetRecordAsync<CharacterWithDetails>("""SELECT * FROM "CharactersWithDetails" WHERE "CharacterId" = @characterId""", new { characterId });
-            ProcessCharacterDetails(character);
+            const string sql = """SELECT * FROM "
+                " WHERE "CharacterId" = @characterId""";
+            var character = await GetRecordAsync<CharacterWithDetails>(sql, new { characterId });
+
+            if (character != null)
+            {
+                ImageProcessingHelpers.ProcessCharacterDetails(character, _imageService);
+            }
             return character;
         }
 
@@ -387,12 +422,9 @@ namespace RoleplayersGuild.Site.Services
 
         public async Task<PagedResult<CharactersForListing>> SearchCharactersAsync(SearchInputModel search, int currentUserId, int pageIndex, int pageSize)
         {
-            // Now that data is correct, we can simplify this WHERE clause back.
             var whereClauses = new List<string> { """c."IsApproved" = TRUE AND c."IsPrivate" = FALSE""" };
-
             var parameters = new DynamicParameters();
             parameters.Add("CurrentUserId", currentUserId);
-
             whereClauses.Add("""(u."UserId" NOT IN (SELECT "UserBlocked" FROM "UserBlocking" WHERE "UserBlockedBy" = @CurrentUserId) AND u."UserId" NOT IN (SELECT "UserBlockedBy" FROM "UserBlocking" WHERE "UserBlocked" = @CurrentUserId))""");
 
             if (!string.IsNullOrWhiteSpace(search.Name))
@@ -419,32 +451,43 @@ namespace RoleplayersGuild.Site.Services
                 parameters.Add("GenreIds", search.SelectedGenreIds);
             }
 
-            string orderByClause = search.SortOrder switch { 1 => """ORDER BY c."CharacterId" ASC""", _ => """ORDER BY c."DateSubmitted" DESC NULLS LAST, c."CharacterId" DESC""", };
             var whereSql = string.Join(" AND ", whereClauses);
-
             var fromSql = $"""
-            FROM "Characters" c
-            JOIN "Users" u ON c."UserId" = u."UserId"
-            WHERE {whereSql}
-            """;
+    FROM "Characters" c
+    JOIN "Users" u ON c."UserId" = u."UserId"
+    LEFT JOIN "CharacterAvatars" ca ON c."CharacterId" = ca."CharacterId"
+    WHERE {whereSql}
+    """;
 
             var countSql = $"SELECT COUNT(c.\"CharacterId\") {fromSql}";
             var totalCount = await GetScalarAsync<int>(countSql, parameters);
             if (totalCount == 0) return new PagedResult<CharactersForListing> { Items = Enumerable.Empty<CharactersForListing>(), PageIndex = pageIndex, PageSize = pageSize };
 
+            string orderByClause = search.SortOrder switch { 1 => """ORDER BY c."CharacterId" ASC""", _ => """ORDER BY c."DateSubmitted" DESC NULLS LAST, c."CharacterId" DESC""", };
             var pagingSql = $"""
-            SELECT *
-            FROM "CharactersForListing" c
-            JOIN "Users" u ON c."UserId" = u."UserId"
-            WHERE {whereSql}
-            {orderByClause}
-            LIMIT @Take OFFSET @Skip
-            """;
+    SELECT c."CharacterId", c."UserId", c."CharacterDisplayName", c."CardImageUrl", u."LastAction", u."ShowWhenOnline",
+           ca."AvatarImageUrl", (SELECT B."CharacterNameClass" FROM "Badges" B JOIN "UserBadges" UB ON B."BadgeId" = UB."BadgeId" WHERE UB."UserId" = c."UserId" AND B."CharacterNameClass" IS NOT NULL ORDER BY B."SortOrder" LIMIT 1) AS "CharacterNameClass"
+    {fromSql}
+    {orderByClause}
+    LIMIT @Take OFFSET @Skip
+    """;
             parameters.Add("Skip", (pageIndex - 1) * pageSize);
             parameters.Add("Take", pageSize);
 
-            var items = await GetRecordsAsync<CharactersForListing>(pagingSql, parameters);
-            ProcessCharacterListings(items);
+            var rawData = await GetRecordsAsync<dynamic>(pagingSql, parameters);
+
+            var items = rawData.Select(d => new CharactersForListing
+            {
+                CharacterId = d.CharacterId,
+                UserId = d.UserId,
+                CharacterDisplayName = d.CharacterDisplayName,
+                DisplayImageUrl = _imageService.GetImageUrl(d.CardImageUrl),
+                AvatarImageUrl = _imageService.GetImageUrl(d.AvatarImageUrl),
+                CharacterNameClass = d.CharacterNameClass,
+                LastAction = d.LastAction,
+                ShowWhenOnline = d.ShowWhenOnline
+            }).ToList();
+
             return new PagedResult<CharactersForListing>
             {
                 Items = items,
@@ -453,7 +496,6 @@ namespace RoleplayersGuild.Site.Services
                 PageSize = pageSize
             };
         }
-
         public Task<IEnumerable<ToDoItemViewModel>> GetDevelopmentItemsAsync() => GetRecordsAsync<ToDoItemViewModel>("""SELECT "ItemId", "ItemName", "ItemDescription" FROM "TodoItemsWithDetails" WHERE "TypeId" = 2 AND "StatusId" = 4 AND "AssignedToUserId" = 2 ORDER BY "ItemId" """);
         public Task<IEnumerable<ToDoItemViewModel>> GetConsiderationItemsAsync() => GetRecordsAsync<ToDoItemViewModel>("""SELECT "ItemId", "ItemName", "ItemDescription", "VoteCount" FROM "TodoItemsWithDetails" WHERE "TypeId" = 1 AND ("StatusId" = 1 OR "StatusId" = 4) ORDER BY "VoteCount" DESC, "ItemId" """);
         public Task<int> AddToDoItemAsync(string name, string description, int userId) => GetScalarAsync<int>("""INSERT INTO "TodoItems" ("ItemName", "ItemDescription", "StatusId", "TypeId", "CreatedByUserId") VALUES (@ItemName, @ItemDescription, 1, 1, @CreatedByUserId) RETURNING "ItemId" """, new { ItemName = name, ItemDescription = description, CreatedByUserId = userId });
@@ -476,14 +518,15 @@ namespace RoleplayersGuild.Site.Services
             const string baseQuery = """FROM "CharacterImages" WHERE ("CharacterId" = @CharacterId)""";
             var countSql = "SELECT COUNT(\"CharacterImageId\") " + baseQuery;
             var pagingSql = $"SELECT * {baseQuery} ORDER BY \"CharacterImageId\" LIMIT @Take OFFSET @Skip";
+
             var totalCount = await GetScalarAsync<int>(countSql, new { CharacterId = characterId });
             if (totalCount == 0) return new PagedResult<CharacterImage> { PageIndex = pageIndex, PageSize = pageSize };
 
             var items = await GetRecordsAsync<CharacterImage>(pagingSql, new { CharacterId = characterId, Skip = (pageIndex - 1) * pageSize, Take = pageSize });
-            ProcessCharacterImages(items);
+
             return new PagedResult<CharacterImage>
             {
-                Items = items,
+                Items = items.Select(img => ImageProcessingHelpers.ProcessCharacterImage(img, _imageService)).ToList(),
                 TotalCount = totalCount,
                 PageIndex = pageIndex,
                 PageSize = pageSize
@@ -499,12 +542,18 @@ namespace RoleplayersGuild.Site.Services
 
         public Task<Character?> GetCharacterForEditAsync(int characterId, int userId) => GetRecordAsync<Character>("""SELECT * FROM "Characters" WHERE "CharacterId" = @characterId AND "UserId" = @userId""", new { characterId, userId });
         public Task UpdateCharacterCustomProfileAsync(int characterId, string? css, string? html, bool isEnabled) => ExecuteAsync("""UPDATE "Characters" SET "ProfileCss" = @CSS, "ProfileHtml" = @HTML, "CustomProfileEnabled" = @Enabled WHERE "CharacterId" = @CharID""", new { CSS = css, HTML = html, Enabled = isEnabled, CharID = characterId });
-
         public async Task<IEnumerable<CharacterImage>> GetCharacterImagesForGalleryAsync(int characterId)
         {
-            var images = await GetRecordsAsync<CharacterImage>("""SELECT CI."CharacterImageId", CI."CharacterImageUrl", CI."IsMature", (SELECT COUNT(CIC."ImageCommentId") FROM "CharacterImageComments" CIC WHERE CIC."ImageId" = CI."CharacterImageId" AND CIC."IsRead" = FALSE) AS "UnreadCommentCount" FROM "CharacterImages" CI WHERE CI."CharacterId" = @CharacterId ORDER BY CI."CharacterImageId" """, new { CharacterId = characterId });
-            ProcessCharacterImages(images);
-            return images;
+            const string sql = """
+                               SELECT CI."CharacterImageId", CI."CharacterImageUrl", CI."IsMature", CI."ImageCaption", CI."UserId",
+                                      (SELECT COUNT(CIC."ImageCommentId") FROM "CharacterImageComments" CIC 
+                                       WHERE CIC."ImageId" = CI."CharacterImageId" AND CIC."IsRead" = FALSE) AS "UnreadCommentCount" 
+                               FROM "CharacterImages" CI 
+                               WHERE CI."CharacterId" = @characterId 
+                               ORDER BY CI."CharacterImageId"
+                               """;
+            // Now it correctly returns the raw data from the database.
+            return await GetRecordsAsync<CharacterImage>(sql, new { characterId });
         }
 
         public Task<IEnumerable<ProposalWithDetails>> GetUserProposalsAsync(int userId) => GetRecordsAsync<ProposalWithDetails>("""SELECT * FROM "ProposalsWithDetails" WHERE ("UserId" = @UserId) ORDER BY "Title" """, new { UserId = userId });
@@ -847,15 +896,29 @@ namespace RoleplayersGuild.Site.Services
         public async Task<IEnumerable<CharactersForListing>> GetUserPublicCharactersAsync(int userId)
         {
             const string sql = """
-            SELECT * FROM "CharactersForListing"
-            WHERE "UserId" = @UserId
-            AND "IsPrivate" = FALSE
-            AND "CharacterStatusId" = 1
-            ORDER BY "CharacterDisplayName"
-            """;
-            var characters = await GetRecordsAsync<CharactersForListing>(sql, new { UserId = userId });
-            ProcessCharacterListings(characters);
-            return characters;
+                               SELECT c."CharacterId", c."UserId", c."CharacterDisplayName", c."CardImageUrl", u."LastAction", u."ShowWhenOnline",
+                                      ca."AvatarImageUrl", (SELECT B."CharacterNameClass" FROM "Badges" B JOIN "UserBadges" UB ON B."BadgeId" = UB."BadgeId" WHERE UB."UserId" = c."UserId" AND B."CharacterNameClass" IS NOT NULL ORDER BY B."SortOrder" LIMIT 1) AS "CharacterNameClass"
+                               FROM "Characters" c
+                               JOIN "Users" u ON c."UserId" = u."UserId"
+                               LEFT JOIN "CharacterAvatars" ca ON c."CharacterId" = ca."CharacterId"
+                               WHERE c."UserId" = @UserId
+                               AND c."IsPrivate" = FALSE
+                               AND c."CharacterStatusId" = 1
+                               ORDER BY c."CharacterDisplayName"
+                               """;
+            var rawData = await GetRecordsAsync<dynamic>(sql, new { UserId = userId });
+
+            return rawData.Select(d => new CharactersForListing
+            {
+                CharacterId = d.CharacterId,
+                UserId = d.UserId,
+                CharacterDisplayName = d.CharacterDisplayName,
+                DisplayImageUrl = _imageService.GetImageUrl(d.CardImageUrl),
+                AvatarImageUrl = _imageService.GetImageUrl(d.AvatarImageUrl),
+                CharacterNameClass = d.CharacterNameClass,
+                LastAction = d.LastAction,
+                ShowWhenOnline = d.ShowWhenOnline
+            }).ToList();
         }
 
         public async Task<int> UpsertArticleAsync(ArticleInputModel input, int userId)
@@ -864,14 +927,14 @@ namespace RoleplayersGuild.Site.Services
             if (input.ArticleId == 0)
             {
                 const string sql = """
-                    INSERT INTO "Articles" (
-                        "OwnerUserId", "ArticleTitle", "ArticleContent", "CategoryId", "UniverseId", 
-                        "ContentRatingId", "IsPrivate", "DisableLinkify"
-                    ) VALUES (
-                        @OwnerUserId, @ArticleTitle, @ArticleContent, @CategoryId, @UniverseId, 
-                        @ContentRatingId, @IsPrivate, @DisableLinkify
-                    )
-                    RETURNING "ArticleId";
+                        INSERT INTO "Articles" (
+                            "OwnerUserId", "ArticleTitle", "ArticleContent", "CategoryId", "UniverseId", 
+                            "ContentRatingId", "IsPrivate", "DisableLinkify"
+                        ) VALUES (
+                            @OwnerUserId, @ArticleTitle, @ArticleContent, @CategoryId, @UniverseId, 
+                            @ContentRatingId, @IsPrivate, @DisableLinkify
+                        )
+                        RETURNING "ArticleId";
                 """;
 
                 return await GetScalarAsync<int>(sql, new
@@ -890,15 +953,15 @@ namespace RoleplayersGuild.Site.Services
             else
             {
                 const string sql = """
-                    UPDATE "Articles" SET
-                        "ArticleTitle" = @ArticleTitle,
-                        "ArticleContent" = @ArticleContent,
-                        "CategoryId" = @CategoryId,
-                        "UniverseId" = @UniverseId,
-                        "ContentRatingId" = @ContentRatingId,
-                        "IsPrivate" = @IsPrivate,
-                        "DisableLinkify" = @DisableLinkify
-                    WHERE "ArticleId" = @ArticleId AND "OwnerUserId" = @OwnerUserId;
+                        UPDATE "Articles" SET
+                            "ArticleTitle" = @ArticleTitle,
+                            "ArticleContent" = @ArticleContent,
+                            "CategoryId" = @CategoryId,
+                            "UniverseId" = @UniverseId,
+                            "ContentRatingId" = @ContentRatingId,
+                            "IsPrivate" = @IsPrivate,
+                            "DisableLinkify" = @DisableLinkify
+                        WHERE "ArticleId" = @ArticleId AND "OwnerUserId" = @OwnerUserId;
                 """;
 
                 await ExecuteAsync(sql, new
@@ -1008,9 +1071,9 @@ namespace RoleplayersGuild.Site.Services
             }
 
             var pagingSql = $@"SELECT *
-                                  {fromSql}
-                                  ORDER BY P.""LastUpdated"" DESC
-                                  LIMIT @Take OFFSET @Skip";
+                                 {fromSql}
+                                 ORDER BY P.""LastUpdated"" DESC
+                                 LIMIT @Take OFFSET @Skip";
             parameters.Add("Skip", (pageIndex - 1) * pageSize);
             parameters.Add("Take", pageSize);
 
@@ -1043,11 +1106,11 @@ namespace RoleplayersGuild.Site.Services
             var whereSql = string.Join(" AND ", whereClauses);
 
             var fromSql = $"""
-                                  FROM "ChatRoomsWithDetails" CR
-                                  LEFT JOIN (SELECT "ChatRoomId", MAX("PostDateTime") AS "LastPostTime" FROM "ChatRoomPosts" GROUP BY "ChatRoomId") AS LP
-                                  ON CR."ChatRoomId" = LP."ChatRoomId"
-                                  WHERE {whereSql}
-                                  """;
+                                 FROM "ChatRoomsWithDetails" CR
+                                 LEFT JOIN (SELECT "ChatRoomId", MAX("PostDateTime") AS "LastPostTime" FROM "ChatRoomPosts" GROUP BY "ChatRoomId") AS LP
+                                 ON CR."ChatRoomId" = LP."ChatRoomId"
+                                 WHERE {whereSql}
+                                 """;
 
             var countSql = $"SELECT COUNT(CR.\"ChatRoomId\") {fromSql}";
             var totalCount = await GetScalarAsync<int>(countSql, parameters);
@@ -1058,11 +1121,11 @@ namespace RoleplayersGuild.Site.Services
             }
 
             var pagingSql = $"""
-                                  SELECT CR.*, LP."LastPostTime"
-                                  {fromSql}
-                                  ORDER BY LP."LastPostTime" DESC
-                                  LIMIT @Take OFFSET @Skip
-                                  """;
+                                 SELECT CR.*, LP."LastPostTime"
+                                 {fromSql}
+                                 ORDER BY LP."LastPostTime" DESC
+                                 LIMIT @Take OFFSET @Skip
+                                 """;
             parameters.Add("Skip", (pageIndex - 1) * pageSize);
             parameters.Add("Take", pageSize);
 
@@ -1106,11 +1169,11 @@ namespace RoleplayersGuild.Site.Services
             }
 
             var pagingSql = $"""
-                                  SELECT A."ArticleId", A."ArticleTitle", A."CategoryName", A."ContentRating"
-                                  {fromSql}
-                                  ORDER BY A."ArticleTitle"
-                                  LIMIT @Take OFFSET @Skip
-                                  """;
+                                 SELECT A."ArticleId", A."ArticleTitle", A."CategoryName", A."ContentRating"
+                                 {fromSql}
+                                 ORDER BY A."ArticleTitle"
+                                 LIMIT @Take OFFSET @Skip
+                                 """;
             parameters.Add("Skip", (pageIndex - 1) * pageSize);
             parameters.Add("Take", pageSize);
 
@@ -1140,7 +1203,43 @@ namespace RoleplayersGuild.Site.Services
             """;
             return GetRecordsAsync<BadgeSelectionViewModel>(sql, new { userId });
         }
+        public Task UpsertCharacterAvatarAsync(int characterId, string avatarUrl)
+        {
+            const string sql = """
+                                INSERT INTO "CharacterAvatars" ("CharacterId", "AvatarImageUrl", "DateCreated")
+                                VALUES (@CharacterId, @AvatarUrl, NOW())
+                                ON CONFLICT ("CharacterId") DO UPDATE 
+                                SET "AvatarImageUrl" = EXCLUDED."AvatarImageUrl", "DateCreated" = NOW();
+                                """;
+            return ExecuteAsync(sql, new { CharacterId = characterId, AvatarUrl = avatarUrl });
+        }
+        public Task<int> AddInlineImageAsync(string imageUrl, int characterId, int userId, string inlineName)
+        {
+            const string sql = """
+                                INSERT INTO "CharacterInlines" ("CharacterId", "UserId", "InlineImageUrl", "InlineName", "DateCreated")
+                                VALUES (@CharacterId, @UserId, @ImageUrl, @InlineName, NOW())
+                                RETURNING "InlineId"; 
+                                """;
 
+            return GetScalarAsync<int>(sql, new
+            {
+                CharacterId = characterId,
+                UserId = userId,
+                ImageUrl = imageUrl,
+                InlineName = inlineName
+            });
+        }
+        public Task<CharacterInline?> GetInlineImageAsync(int inlineId)
+        {
+            const string sql = """SELECT * FROM "CharacterInlines" WHERE "InlineId" = @inlineId""";
+            return GetRecordAsync<CharacterInline>(sql, new { inlineId });
+        }
+
+        public Task DeleteInlineImageRecordAsync(int inlineId)
+        {
+            const string sql = """DELETE FROM "CharacterInlines" WHERE "InlineId" = @inlineId""";
+            return ExecuteAsync(sql, new { inlineId });
+        }
         public async Task UpdateUserBadgeDisplayAsync(int userId, List<int> displayedUserBadgeIds)
         {
             const string hideAllSql = """UPDATE "UserBadges" SET "IsDisplayed" = FALSE WHERE "UserId" = @userId""";
@@ -1191,30 +1290,12 @@ namespace RoleplayersGuild.Site.Services
 
         #region --- Private Image URL Processing Helpers ---
 
-        private void ProcessCharacterListings(IEnumerable<CharactersForListing> characters)
-        {
-            foreach (var character in characters)
-            {
-                ProcessCharacterListing(character);
-            }
-        }
-
-        private void ProcessCharacterListing(CharactersForListing? character)
-        {
-            if (character is null) return;
-
-            // FIX: CS8601 - Possible null reference assignment
-            character.AvatarImageUrl = _imageService.GetImageUrl(character.AvatarImageUrl, "avatar") ?? string.Empty;
-            character.DisplayImageUrl = _imageService.GetImageUrl(character.DisplayImageUrl, "card") ?? string.Empty;
-        }
-
         private void ProcessCharacterDetails(CharacterWithDetails? character)
         {
             if (character is null) return;
 
-            // FIX: CS8601 - Possible null reference assignment
-            character.AvatarImageUrl = _imageService.GetImageUrl(character.AvatarImageUrl, "avatar") ?? string.Empty;
-            character.DisplayImageUrl = _imageService.GetImageUrl(character.DisplayImageUrl, "card") ?? string.Empty;
+            character.AvatarImageUrl = _imageService.GetImageUrl(character.AvatarImageUrl) ?? string.Empty;
+            character.DisplayImageUrl = _imageService.GetImageUrl(character.DisplayImageUrl) ?? string.Empty;
         }
 
         private void ProcessCharacterImages(IEnumerable<CharacterImage> images)
@@ -1228,20 +1309,20 @@ namespace RoleplayersGuild.Site.Services
         private void ProcessCharacterImage(CharacterImage? image)
         {
             if (image is null) return;
-            image.CharacterImageUrl = _imageService.GetImageUrl(image.CharacterImageUrl, "gallery") ?? string.Empty;
+            image.CharacterImageUrl = _imageService.GetImageUrl(image.CharacterImageUrl) ?? string.Empty;
         }
 
         private void ProcessImageDetails(CharacterImageWithDetails? image)
         {
             if (image is null) return;
-            image.CharacterImageUrl = _imageService.GetImageUrl(image.CharacterImageUrl, "gallery") ?? string.Empty;
+            image.CharacterImageUrl = _imageService.GetImageUrl(image.CharacterImageUrl) ?? string.Empty;
         }
 
         private void ProcessImageComments(IEnumerable<ImageCommentViewModel> comments)
         {
             foreach (var comment in comments)
             {
-                comment.CharacterImageUrl = _imageService.GetImageUrl(comment.CharacterImageUrl, "avatar");
+                comment.CharacterImageUrl = _imageService.GetImageUrl(comment.CharacterImageUrl);
             }
         }
 
@@ -1249,7 +1330,7 @@ namespace RoleplayersGuild.Site.Services
         {
             foreach (var post in posts)
             {
-                post.DisplayImageUrl = _imageService.GetImageUrl(post.DisplayImageUrl, "avatar");
+                post.DisplayImageUrl = _imageService.GetImageUrl(post.DisplayImageUrl);
             }
         }
 
@@ -1257,7 +1338,7 @@ namespace RoleplayersGuild.Site.Services
         {
             foreach (var message in messages)
             {
-                message.DisplayImageUrl = _imageService.GetImageUrl(message.DisplayImageUrl, "avatar");
+                message.DisplayImageUrl = _imageService.GetImageUrl(message.DisplayImageUrl);
             }
         }
 
@@ -1265,21 +1346,27 @@ namespace RoleplayersGuild.Site.Services
         public async Task<IEnumerable<CharactersForListing>> GetUserCharactersForListingAsync(int userId)
         {
             const string sql = """
-                SELECT
-                    c."CharacterId",
-                    c."CharacterDisplayName",
-                    'NormalCharacter' AS "CharacterNameClass", -- This line fixes the error
-                    c."CardImageUrl" AS "DisplayImageUrl",
-                    ca."AvatarImageUrl"
-                FROM "Characters" c
-                LEFT JOIN "CharacterAvatars" ca ON c."CharacterId" = ca."CharacterId"
-                WHERE c."UserId" = @userId
-                ORDER BY c."CharacterDisplayName";
-                """;
-            var characters = await GetRecordsAsync<CharactersForListing>(sql, new { userId });
+                               SELECT
+                                   c."CharacterId",
+                                   c."CharacterDisplayName",
+                                   'NormalCharacter' AS "CharacterNameClass",
+                                   c."CardImageUrl",
+                                   ca."AvatarImageUrl"
+                               FROM "Characters" c
+                               LEFT JOIN "CharacterAvatars" ca ON c."CharacterId" = ca."CharacterId"
+                               WHERE c."UserId" = @userId
+                               ORDER BY c."CharacterDisplayName";
+                               """;
+            var rawData = await GetRecordsAsync<dynamic>(sql, new { userId });
 
-            ProcessCharacterListings(characters);
-            return characters;
+            return rawData.Select(d => new CharactersForListing
+            {
+                CharacterId = d.CharacterId,
+                CharacterDisplayName = d.CharacterDisplayName,
+                CharacterNameClass = d.CharacterNameClass,
+                DisplayImageUrl = _imageService.GetImageUrl(d.CardImageUrl),
+                AvatarImageUrl = _imageService.GetImageUrl(d.AvatarImageUrl)
+            }).ToList();
         }
         public async Task<IEnumerable<DashboardItemViewModel>> GetDashboardItemsAsync(string itemType, string filter, int userId)
         {
@@ -1297,7 +1384,7 @@ namespace RoleplayersGuild.Site.Services
                     const string articleOrder = "\"CreatedDateTime\" DESC";
                     sql = $"""
                     SELECT '/Community/Articles/View/' || "ArticleId" AS "Url", "ArticleTitle" AS "Title", 
-                           '[' || "ContentRating" || ']' as "DetailLeft", 'by ' || "Username" as "DetailRight"
+                            '[' || "ContentRating" || ']' as "DetailLeft", 'by ' || "Username" as "DetailRight"
                     FROM "ArticlesForListing" WHERE {articleWhere} ORDER BY {articleOrder} LIMIT 5
                     """;
                     break;
@@ -1306,7 +1393,7 @@ namespace RoleplayersGuild.Site.Services
                     var storyOrder = filter == "popular" ? "\"LastUpdated\" DESC" : "\"DateCreated\" DESC";
                     sql = $"""
                     SELECT '/Community/Stories/View/' || "StoryId" AS "Url", "StoryTitle" AS "Title",
-                           '[' || "ContentRating" || ']' as "DetailLeft", 'by ' || "AuthorUsername" as "DetailRight"
+                            '[' || "ContentRating" || ']' as "DetailLeft", 'by ' || "AuthorUsername" as "DetailRight"
                     FROM "StoriesWithDetails" WHERE {storyWhere} ORDER BY {storyOrder} LIMIT 5
                     """;
                     break;
@@ -1315,7 +1402,7 @@ namespace RoleplayersGuild.Site.Services
                     var proposalOrder = filter == "active" ? "\"LastUpdated\" DESC" : "\"CreatedDateTime\" DESC";
                     sql = $"""
                     SELECT '/Community/Proposals/View/' || "ProposalId" AS "Url", "Title",
-                           '[' || "ContentRating" || ']' as "DetailLeft", 'by ' || "Username" as "DetailRight"
+                            '[' || "ContentRating" || ']' as "DetailLeft", 'by ' || "Username" as "DetailRight"
                     FROM "ProposalsWithDetails" WHERE {proposalWhere} AND "StatusId" = 1 ORDER BY {proposalOrder} LIMIT 5
                     """;
                     break;
@@ -1345,20 +1432,32 @@ LIMIT 6
 
             return GetRecordsAsync<DashboardChatRoom>(sql, new { userId });
         }
-        public Task<IEnumerable<ChatParticipantViewModel>> GetChatRoomParticipantsAsync(int chatRoomId)
+        public async Task<IEnumerable<ChatParticipantViewModel>> GetChatRoomParticipantsAsync(int chatRoomId)
         {
             const string sql = """
-            SELECT DISTINCT ON (p."CharacterId")
-                p."CharacterId",
-                c."CharacterDisplayName",
-                ca."AvatarImageUrl"
-            FROM "ChatRoomPosts" p
-            JOIN "Characters" c ON p."CharacterId" = c."CharacterId"
-            LEFT JOIN "CharacterAvatars" ca ON p."CharacterId" = ca."CharacterId"
-            WHERE p."ChatRoomId" = @chatRoomId
-            ORDER BY p."CharacterId";
-            """;
-            return GetRecordsAsync<ChatParticipantViewModel>(sql, new { chatRoomId });
+                               SELECT DISTINCT ON (p."CharacterId") p."CharacterId", c."CharacterDisplayName", ca."AvatarImageUrl"
+                               FROM "ChatRoomPosts" p
+                               JOIN "Characters" c ON p."CharacterId" = c."CharacterId"
+                               LEFT JOIN "CharacterAvatars" ca ON p."CharacterId" = ca."CharacterId"
+                               WHERE p."ChatRoomId" = @chatRoomId
+                               ORDER BY p."CharacterId";
+                               """;
+            return await GetRecordsAsync<ChatParticipantViewModel>(sql, new { chatRoomId });
+        }
+        internal static class ImageProcessingHelpers
+        {
+            internal static void ProcessCharacterDetails(CharacterWithDetails? character, IImageService imageService)
+            {
+                if (character is null) return;
+                character.AvatarImageUrl = imageService.GetImageUrl(character.AvatarImageUrl);
+                character.DisplayImageUrl = imageService.GetImageUrl(character.CardImageUrl);
+            }
+
+            internal static CharacterImage ProcessCharacterImage(CharacterImage image, IImageService imageService)
+            {
+                image.CharacterImageUrl = imageService.GetImageUrl(image.CharacterImageUrl);
+                return image;
+            }
         }
         #endregion
     }

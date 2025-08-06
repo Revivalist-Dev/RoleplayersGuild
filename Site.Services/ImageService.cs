@@ -19,7 +19,6 @@ namespace RoleplayersGuild.Site.Services
     {
         private readonly string _imageHandlingMode;
         private readonly AwsSettings _awsSettings;
-        private readonly ImageSettings _imageSettings;
         private readonly IWebHostEnvironment _webHostEnvironment;
         private readonly IAmazonS3? _s3Client;
         private readonly ILogger<ImageService> _logger;
@@ -31,144 +30,117 @@ namespace RoleplayersGuild.Site.Services
             _webHostEnvironment = webHostEnvironment;
             _imageHandlingMode = config.GetValue<string>("ImageHandling", "S3")!;
             _awsSettings = awsSettings.Value;
-            _imageSettings = imageSettings.Value;
+            // imageSettings is no longer used for pathing but might be for other rules.
             _s3Client = s3Client;
             _logger = logger;
         }
 
-        public string? GetImageUrl(string? imageName, string imageType)
+        private string GetImageTypeSubfolder(string imageType) => imageType.ToLowerInvariant() switch
         {
-            if (string.IsNullOrEmpty(imageName))
-            {
-                return null;
-            }
+            "avatar" => "Avatars",
+            "card" => "Cards",
+            "inline" => "Inlines",
+            _ => "Images", // Default for gallery images
+        };
 
-            if (_imageHandlingMode.Equals("Local", StringComparison.OrdinalIgnoreCase))
-            {
-                string displayFolder = imageType.ToLowerInvariant() switch
-                {
-                    "avatar" => _imageSettings.DisplayCharacterAvatarsFolder,
-                    "card" => _imageSettings.DisplayCharacterCardsFolder,
-                    "inline" => _imageSettings.DisplayCharacterInlinesFolder,
-                    _ => _imageSettings.DisplayCharacterImagesFolder,
-                };
-                return $"{displayFolder.TrimEnd('/')}/{imageName}";
-            }
-            else // S3
-            {
-                if (string.IsNullOrEmpty(_awsSettings.CloudFrontDomain))
-                {
-                    return null;
-                }
-
-                string s3Folder = imageType.ToLowerInvariant() switch
-                {
-                    "avatar" => _awsSettings.CharacterAvatarsFolder,
-                    "card" => _awsSettings.CharacterCardsFolder,
-                    "inline" => _awsSettings.CharacterInlinesFolder,
-                    _ => _awsSettings.CharacterImagesFolder,
-                };
-
-                return $"{_awsSettings.CloudFrontDomain.TrimEnd('/')}/{s3Folder.TrimEnd('/')}/{imageName}";
-            }
-        }
-
-        public async Task<string?> UploadImageAsync(IFormFile uploadedFile, string? subfolder = "images")
+        public async Task<string?> UploadImageAsync(IFormFile uploadedFile, int userId, int characterId, string imageType)
         {
-            if (uploadedFile is null)
+            if (uploadedFile is null || uploadedFile.Length == 0 || !IsSupportedImageType(uploadedFile.ContentType))
             {
-                _logger.LogWarning("UploadImageAsync failed: IFormFile was null.");
-                return null;
-            }
-            if (uploadedFile.Length == 0)
-            {
-                _logger.LogWarning("UploadImageAsync failed: File length was 0.");
-                return null;
-            }
-            if (!IsSupportedImageType(uploadedFile.ContentType))
-            {
-                _logger.LogWarning("UploadImageAsync failed: Unsupported content type '{ContentType}'.", uploadedFile.ContentType);
+                _logger.LogWarning("UploadImageAsync failed due to invalid file.");
                 return null;
             }
 
             var fileExtension = Path.GetExtension(uploadedFile.FileName).ToLowerInvariant();
-            var uniqueFileName = $"{Guid.NewGuid()}{fileExtension}";
+            var uniqueFileName = $"{DateTime.UtcNow.Ticks}{fileExtension}";
+
+            var imageTypeSubfolder = GetImageTypeSubfolder(imageType);
+            var relativePath = Path.Combine(userId.ToString(), characterId.ToString(), imageTypeSubfolder, uniqueFileName);
 
             try
             {
                 if (_imageHandlingMode.Equals("Local", StringComparison.OrdinalIgnoreCase))
                 {
-                    var storagePath = GetLocalStoragePath(subfolder);
-                    var fullSavePath = Path.Combine(_webHostEnvironment.ContentRootPath, storagePath, uniqueFileName);
+                    var fullSavePath = Path.Combine(_webHostEnvironment.WebRootPath, "images", "UserFiles", relativePath);
                     await ResizeAndSaveLocallyAsync(uploadedFile, fullSavePath, 1200, 1200);
                 }
-                else // S3 is the default
+                else // S3
                 {
-                    _logger.LogInformation("Attempting to upload to S3 bucket: {BucketName}", _awsSettings.BucketName);
-                    var s3Folder = GetS3Folder(subfolder);
+                    var s3Key = Path.Combine("UserFiles", relativePath).Replace('\\', '/');
                     await using var stream = uploadedFile.OpenReadStream();
                     using var image = await Image.LoadAsync(stream);
-                    await ResizeAndUploadToS3Async(image, s3Folder, uniqueFileName, 1200, 1200);
+                    await ResizeAndUploadToS3Async(image, s3Key, 1200, 1200);
                 }
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "An exception occurred during image upload and processing.");
+                _logger.LogError(ex, "An exception occurred during image upload for path {RelativePath}.", relativePath);
                 return null;
             }
 
-            return uniqueFileName;
+            return relativePath;
         }
 
-        public async Task DeleteImageAsync(string imageName)
+        public string? GetImageUrl(string? storedPath)
         {
-            if (string.IsNullOrEmpty(imageName)) return;
+            // If the path is null or empty, return the generic default image URL.
+            if (string.IsNullOrEmpty(storedPath))
+            {
+                return "/images/Defaults/NewCharacter.png";
+            }
 
-            var possibleSubfolders = new[] { "images", "inlines", "avatars", "cards" };
+            // Handle specific default image filenames by pointing to their new location.
+            if (storedPath.Contains("NewCharacter.png"))
+            {
+                return "/images/Defaults/NewCharacter.png";
+            }
+            if (storedPath.Contains("NewAvatar.png"))
+            {
+                return "/images/Defaults/NewAvatar.png";
+            }
+
+            // For all other paths, build the URL based on the storage mode.
+            if (_imageHandlingMode.Equals("Local", StringComparison.OrdinalIgnoreCase))
+            {
+                return $"/images/UserFiles/{storedPath.Replace('\\', '/')}";
+            }
+            else // S3
+            {
+                if (string.IsNullOrEmpty(_awsSettings.CloudFrontDomain)) return "/images/Defaults/NewCharacter.png";
+                return $"{_awsSettings.CloudFrontDomain.TrimEnd('/')}/UserFiles/{storedPath.Replace('\\', '/')}";
+            }
+        }
+
+        public async Task DeleteImageAsync(string? storedPath)
+        {
+            if (string.IsNullOrEmpty(storedPath) || storedPath.Contains("NewCharacter.png") || storedPath.Contains("NewAvatar.png"))
+            {
+                return;
+            }
 
             if (_imageHandlingMode.Equals("Local", StringComparison.OrdinalIgnoreCase))
             {
-                foreach (var subfolder in possibleSubfolders)
+                var fullPath = Path.Combine(_webHostEnvironment.WebRootPath, "images", "UserFiles", storedPath);
+                if (File.Exists(fullPath))
                 {
-                    var storagePath = GetLocalStoragePath(subfolder);
-                    var fullPath = Path.Combine(_webHostEnvironment.ContentRootPath, storagePath, imageName);
-                    if (File.Exists(fullPath))
-                    {
-                        File.Delete(fullPath);
-                        _logger.LogInformation("Deleted local file: {FullPath}", fullPath);
-                        return;
-                    }
+                    File.Delete(fullPath);
+                    _logger.LogInformation("Deleted local file: {FullPath}", fullPath);
                 }
             }
-            else // S3 is the default
+            else // S3
             {
                 if (_s3Client is null) throw new InvalidOperationException("S3 client is not configured.");
-
-                foreach (var subfolder in possibleSubfolders)
-                {
-                    var s3Folder = GetS3Folder(subfolder);
-                    try
-                    {
-                        var s3Key = s3Folder.EndsWith('/') ? $"{s3Folder}{imageName}" : $"{s3Folder}/{imageName}";
-                        await _s3Client.DeleteObjectAsync(_awsSettings.BucketName, s3Key);
-                        _logger.LogInformation("Deleted S3 object: {BucketName}/{S3Key}", _awsSettings.BucketName, s3Key);
-                        return;
-                    }
-                    catch (AmazonS3Exception ex) when (ex.StatusCode == System.Net.HttpStatusCode.NotFound)
-                    {
-                        // Object not found in this folder, continue checking others
-                    }
-                }
+                var s3Key = Path.Combine("UserFiles", storedPath).Replace('\\', '/');
+                await _s3Client.DeleteObjectAsync(_awsSettings.BucketName, s3Key);
+                _logger.LogInformation("Deleted S3 object: {BucketName}/{S3Key}", _awsSettings.BucketName, s3Key);
             }
         }
 
         private async Task ResizeAndSaveLocallyAsync(IFormFile file, string fullPath, int maxWidth, int maxHeight)
         {
             var directory = Path.GetDirectoryName(fullPath);
-
             if (!string.IsNullOrEmpty(directory))
             {
-                // FIX: Specify the full namespace to resolve ambiguity.
                 System.IO.Directory.CreateDirectory(directory);
             }
 
@@ -179,44 +151,26 @@ namespace RoleplayersGuild.Site.Services
                 Size = new Size(maxWidth, maxHeight),
                 Mode = ResizeMode.Max
             }));
-
             await image.SaveAsync(fullPath);
         }
 
-        private async Task ResizeAndUploadToS3Async(Image originalImage, string s3Folder, string fileName, int maxWidth, int maxHeight)
+        private async Task ResizeAndUploadToS3Async(Image originalImage, string s3Key, int maxWidth, int maxHeight)
         {
-            if (_s3Client is null) throw new InvalidOperationException("S3 client is not configured.");
+            if (_s3Client is null) throw new InvalidOperationException("S3 client not configured for upload.");
 
-            await using var memoryStream = new MemoryStream();
-            using var resizedImage = originalImage.Clone(ctx => ctx.Resize(new ResizeOptions
+            originalImage.Mutate(ctx => ctx.Resize(new ResizeOptions
             {
                 Size = new Size(maxWidth, maxHeight),
                 Mode = ResizeMode.Max
             }));
-            await resizedImage.SaveAsync(memoryStream, resizedImage.Metadata.DecodedImageFormat!);
-            memoryStream.Position = 0;
+
+            await using var ms = new MemoryStream();
+            await originalImage.SaveAsync(ms, originalImage.Metadata.DecodedImageFormat!);
+            ms.Position = 0;
 
             var fileTransferUtility = new TransferUtility(_s3Client);
-            var s3Key = s3Folder.EndsWith('/') ? $"{s3Folder}{fileName}" : $"{s3Folder}/{fileName}";
-
-            await fileTransferUtility.UploadAsync(memoryStream, _awsSettings.BucketName, s3Key);
+            await fileTransferUtility.UploadAsync(ms, _awsSettings.BucketName, s3Key);
         }
-
-        private string GetLocalStoragePath(string? subfolder) => subfolder?.ToLowerInvariant() switch
-        {
-            "avatars" => _imageSettings.LocalAvatarsStoragePath,
-            "cards" => _imageSettings.LocalCardsStoragePath,
-            "inlines" => _imageSettings.LocalInlinesStoragePath,
-            _ => _imageSettings.LocalImagesStoragePath,
-        };
-
-        private string GetS3Folder(string? subfolder) => subfolder?.ToLowerInvariant() switch
-        {
-            "avatars" => _awsSettings.CharacterAvatarsFolder,
-            "cards" => _awsSettings.CharacterCardsFolder,
-            "inlines" => _awsSettings.CharacterInlinesFolder,
-            _ => _awsSettings.CharacterImagesFolder,
-        };
 
         private static bool IsSupportedImageType(string contentType) =>
             new[] { "image/jpeg", "image/png", "image/gif", "image/webp" }.Contains(contentType.ToLowerInvariant());

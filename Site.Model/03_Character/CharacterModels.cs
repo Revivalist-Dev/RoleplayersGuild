@@ -77,6 +77,7 @@ namespace RoleplayersGuild.Site.Model
     {
         public int InlineId { get; set; }
         public int CharacterId { get; set; }
+        public int UserId { get; set; } // <-- ADD THIS LINE
         public string InlineName { get; set; } = string.Empty;
         public string InlineImageUrl { get; set; } = string.Empty;
         public DateTime DateCreated { get; set; }

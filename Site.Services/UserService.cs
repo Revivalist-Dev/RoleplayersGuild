@@ -88,7 +88,7 @@ namespace RoleplayersGuild.Site.Services
                 case PasswordVerificationResult.SuccessRehashNeeded:
                     await SignInUserAsync(user);
                     return new LoginResult(true, passwordNeedsUpgrade: true);
-                case PasswordVerificationResult.Failed:
+                // FIX: Removed redundant 'Failed' case that falls through to default.
                 default:
                     await LogFailedLoginAttempt(email, ipAddress);
                     return new LoginResult(false, "The email or password you entered is incorrect.");
@@ -217,7 +217,6 @@ namespace RoleplayersGuild.Site.Services
             return IdentityResult.Success;
         }
 
-        // ADD THIS METHOD TO IMPLEMENT THE INTERFACE
         public async Task<User?> GetUserByEmailAsync(string email)
         {
             return await _dataService.GetUserByEmailAsync(email);

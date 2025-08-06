@@ -2,7 +2,7 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 using RoleplayersGuild.Site.Services;
 using System.Threading.Tasks;
 
-namespace RoleplayersGuild.Site.Directory.Rules
+namespace RoleplayersGuild.Site.Directory.Information.Rules
 {
     public class IndexModel : PageModel
     {
@@ -17,9 +17,7 @@ namespace RoleplayersGuild.Site.Directory.Rules
 
         public async Task OnGetAsync()
         {
-            // Assumes a method in IDataService to fetch this setting.
-            // You may need to add this method.
-            var content = await _dataService.GetScalarAsync<string>("SELECT RulesPageContent FROM General_Settings");
+            var content = await _dataService.GetScalarAsync<string>("""SELECT "RulesPageContent" FROM "GeneralSettings" LIMIT 1""");
             if (!string.IsNullOrEmpty(content))
             {
                 RulesContent = content;

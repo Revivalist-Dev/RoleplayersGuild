@@ -72,8 +72,7 @@ namespace RoleplayersGuild.Site.Services
         Task DeleteProposalAsync(int proposalId, int userId);
         Task<CharacterImage?> GetImageAsync(int imageId);
         Task<CharacterImage?> GetDisplayImageAsync(int characterId);
-        Task AddImageAsync(string imageUrl, int characterId, bool isPrimary, bool isMature, string imageCaption);
-        Task RemoveDefaultFlagFromImagesAsync(int characterId);
+        Task AddImageAsync(string imageUrl, int characterId, int userId, bool isPrimary, bool isMature, string imageCaption); Task RemoveDefaultFlagFromImagesAsync(int characterId);
         Task UpdateImageAsync(int imageId, bool isPrimary, bool isMature, string imageCaption);
         Task<CharacterImage?> GetImageWithOwnerAsync(int imageId);
         Task<int> GetAvailableImageSlotCountAsync(int userId, int characterId);
@@ -181,6 +180,10 @@ namespace RoleplayersGuild.Site.Services
         Task<IEnumerable<DashboardItemViewModel>> GetDashboardItemsAsync(string itemType, string filter, int userId);
         Task<IEnumerable<DashboardChatRoom>> GetDashboardChatRoomsAsync(int userId);
         Task<IEnumerable<ChatParticipantViewModel>> GetChatRoomParticipantsAsync(int chatRoomId);
+        Task UpsertCharacterAvatarAsync(int characterId, string avatarUrl);
+        Task<int> AddInlineImageAsync(string imageUrl, int characterId, int userId, string inlineName);
+        Task<CharacterInline?> GetInlineImageAsync(int inlineId);
+        Task DeleteInlineImageRecordAsync(int inlineId);
         #endregion
     }
 }

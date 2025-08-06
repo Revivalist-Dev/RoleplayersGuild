@@ -34,7 +34,7 @@ namespace RoleplayersGuild.Site.Directory.Community.Articles
                 return NotFound();
             }
 
-            IsAdmin = _cookieService.GetIsStaff();
+            IsAdmin = _cookieService.IsStaff();
 
             if (currentUserId != 0)
             {

@@ -39,7 +39,7 @@ namespace RoleplayersGuild.Site.Directory.Community.Chat_Rooms
             var participants = await _dataService.GetChatRoomParticipantsAsync(id);
             foreach (var p in participants)
             {
-                p.AvatarImageUrl = _imageService.GetImageUrl(p.AvatarImageUrl, "avatar");
+                p.AvatarImageUrl = _imageService.GetImageUrl(p.AvatarImageUrl);
             }
             Participants = participants.ToList();
 

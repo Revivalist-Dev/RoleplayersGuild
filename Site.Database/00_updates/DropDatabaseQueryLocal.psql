@@ -1,0 +1,22 @@
+-- =================================================================================================
+--
+--  Role-Players Guild Database Creation Script - PostgreSQL Version
+--  Last Updated: 2025-07-28
+--
+--  This script will completely drop and re-create the 'rpgdb-live' database.
+--  Executing this script will result in the loss of all existing data.
+--
+-- =================================================================================================
+
+
+-- ====================================================================
+--  SCHEMA SETUP: Drop and create the database
+-- ====================================================================
+-- Note: Run these first two commands while connected to a different database (e.g., 'postgres').
+-- You may need to terminate active connections if users are connected to 'rpgdb-live'.
+DROP DATABASE IF EXISTS "rpgdb-local";
+CREATE DATABASE "rpgdb-local";
+
+-- After creating the database, connect to it before running the rest of the script.
+-- In psql, you would use: \c "rpgdb-live"
+-- The rest of the script assumes you are connected to the "rpgdb-live" database.

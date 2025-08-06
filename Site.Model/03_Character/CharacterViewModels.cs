@@ -77,15 +77,6 @@ namespace RoleplayersGuild.Site.Model
         public string? CharacterImageUrl { get; set; }
     }
 
-    public class ImageUploadItemViewModel
-    {
-        public int ItemIndex { get; set; }
-        public IFormFile? UploadedImage { get; set; }
-        public string? Caption { get; set; }
-        public bool IsPrimary { get; set; }
-        public bool IsMature { get; set; }
-    }
-
     public class ProfileFrameViewModel
     {
         public string FrameName { get; set; } = string.Empty;

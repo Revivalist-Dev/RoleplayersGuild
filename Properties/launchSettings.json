@@ -6,7 +6,8 @@
       "launchBrowser": true,
       "applicationUrl": "https://localhost:7123;http://localhost:5123",
       "environmentVariables": {
-        "ASPNETCORE_ENVIRONMENT": "Development"
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "DOTNET_WATCH_SUPPRESS_BROWSER_REFRESH": "true"
       }
     },
     "RPG_PublicTest": {
@@ -15,7 +16,8 @@
       "launchBrowser": true,
       "applicationUrl": "https://localhost:7123;http://localhost:5123",
       "environmentVariables": {
-        "ASPNETCORE_ENVIRONMENT": "PublicTest"
+        "ASPNETCORE_ENVIRONMENT": "PublicTest",
+        "DOTNET_WATCH_SUPPRESS_BROWSER_REFRESH": "true"
       }
     },
     "RPG_Release": {
@@ -24,7 +26,8 @@
       "launchBrowser": true,
       "applicationUrl": "https://localhost:7123;http://localhost:5123",
       "environmentVariables": {
-        "ASPNETCORE_ENVIRONMENT": "Release"
+        "ASPNETCORE_ENVIRONMENT": "Release",
+        "DOTNET_WATCH_SUPPRESS_BROWSER_REFRESH": "true"
       }
     }
   }

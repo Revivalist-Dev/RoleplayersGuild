@@ -51,17 +51,24 @@ namespace RoleplayersGuild.Site.Directory.Community.Characters
                 return NotFound();
             }
 
-            // FINAL FIX: Explicitly fetch the raw character data to get the correct CardImageUrl.
-            // This bypasses any issues with the database view.
             var rawCharacter = await _dataService.GetCharacterAsync(id);
             if (rawCharacter != null)
             {
-                // Now, use the guaranteed correct filename to build the URL.
-                characterDetails.DisplayImageUrl = _imageService.GetImageUrl(rawCharacter.CardImageUrl, "card");
+                characterDetails.DisplayImageUrl = _imageService.GetImageUrl(rawCharacter.CardImageUrl);
             }
-
             Character = characterDetails;
-            Images = await _dataService.GetCharacterImagesForGalleryAsync(id);
+
+            // --- FIX IS HERE ---
+            // 1. Fetch the raw image data from the service.
+            var rawImages = await _dataService.GetCharacterImagesForGalleryAsync(id);
+
+            // 2. Process each image to create the full URL before assigning it to the public property.
+            Images = rawImages.Select(img =>
+            {
+                img.CharacterImageUrl = _imageService.GetImageUrl(img.CharacterImageUrl);
+                return img;
+            }).ToList();
+            // --- END FIX ---
 
             var currentUserId = _userService.GetUserId(User);
             IsLoggedIn = currentUserId != 0;

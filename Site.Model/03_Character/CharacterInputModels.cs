@@ -44,8 +44,6 @@ namespace RoleplayersGuild.Site.Model
         public bool MatureContent { get; set; }
         public bool IsPrivate { get; set; }
         public bool DisableLinkify { get; set; }
-        public IFormFile? CardImage { get; set; }
-        public IFormFile? AvatarImage { get; set; }
         public string? CardImageUrl { get; set; }
         public List<int> SelectedGenreIds { get; set; } = new();
         public int AssignedUserBadgeId { get; set; }
@@ -83,12 +81,6 @@ namespace RoleplayersGuild.Site.Model
         public bool IsEnabled { get; set; }
     }
 
-    public class ImageUploadInputModel
-    {
-        [Required]
-        public List<IFormFile> UploadedImages { get; set; } = new();
-    }
-
     public class ImageUpdateInputModel
     {
         public List<ImageUpdateItem> Images { get; set; } = new();
@@ -100,15 +92,6 @@ namespace RoleplayersGuild.Site.Model
         public int ImageId { get; set; }
         public string? ImageCaption { get; set; }
         public bool IsPrimary { get; set; }
-    }
-
-    public class InlineUploadInputModel
-    {
-        [Required]
-        public IFormFile Image { get; set; } = null!;
-        [Required]
-        [StringLength(50)]
-        public string Name { get; set; } = string.Empty;
     }
 
     public class SearchInputModel

@@ -55,7 +55,7 @@ namespace RoleplayersGuild.Site.Hubs
                 return;
             }
 
-            var finalAvatarUrl = _imageService.GetImageUrl(character.AvatarImageUrl, "avatar")
+            var finalAvatarUrl = _imageService.GetImageUrl(character.AvatarImageUrl)
                                  ?? "/images/UserFiles/CharacterAvatars/NewAvatar.png";
 
             await _dataService.AddChatRoomPostAsync(

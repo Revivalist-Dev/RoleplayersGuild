@@ -70,7 +70,7 @@ namespace RoleplayersGuild.Site.Hubs
 
             if (character == null) return;
 
-            character.AvatarImageUrl = _imageService.GetImageUrl(character.AvatarImageUrl, "avatar");
+            character.AvatarImageUrl = _imageService.GetImageUrl(character.AvatarImageUrl);
 
             character.UserName = userName;
             await _chatTracker.SetCharacter(userName, Context.ConnectionId, character);
@@ -100,8 +100,6 @@ namespace RoleplayersGuild.Site.Hubs
             catch (Exception ex) // <-- ADD THIS CATCH BLOCK
             {
                 Console.WriteLine($"[CodexHub JoinChannel ERROR]: {ex.ToString()}");
-                // Optionally notify the client of the specific failure
-                // await Clients.Caller.SendAsync("Error", $"Failed to join channel '{channelName}': {ex.Message}");
             }
         }
 

@@ -1,5 +1,4 @@
-﻿@* File: Site.Directory/Shared/_Layout1Col.cshtml *@
-@{
+﻿@{
     Layout = "_Layout";
 }
 
@@ -9,12 +8,11 @@
     </div>
 </div>
 
-@* FIXED: This block passes the 'Scripts' section from the content page up to the main layout. *@
-@section Scripts {
-    @await RenderSectionAsync("Scripts", required: false)
+@* --- FIX 3: ADD THIS BLOCK TO PASS STYLES TO THE HEAD --- *@
+@section Head {
+    @await RenderSectionAsync("Head", required: false)
 }
 
-@* FIXED: This block passes the 'head' section from the content page up to the main layout. *@
-@section head {
-    @await RenderSectionAsync("head", required: false)
+@section Scripts {
+    @await RenderSectionAsync("Scripts", required: false)
 }
