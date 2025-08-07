@@ -1,75 +1,90 @@
 ﻿using Microsoft.AspNetCore.Html;
-using System.IO;
 using System.Text;
 using System.Text.Json;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Configuration;
 
 namespace RoleplayersGuild.Site.Services
 {
-    public class ViteManifestService : IViteManifest
+    public class ViteManifestService : IViteManifestService
     {
         private readonly IWebHostEnvironment _env;
+        private readonly string _manifestPath;
+        private readonly IConfiguration _config;
         private JsonDocument? _manifest;
 
-        public ViteManifestService(IWebHostEnvironment env)
+        public ViteManifestService(IWebHostEnvironment env, IConfiguration config)
         {
             _env = env;
-            if (!_env.IsDevelopment())
-            {
-                _manifest = ReadManifest();
-            }
+            _manifestPath = Path.Combine(_env.WebRootPath, "react-dist", "manifest.json");
+            _config = config;
         }
 
-        public IHtmlContent GetScriptTag(string entryPoint = "src/main.tsx")
+        public async Task<IHtmlContent> RenderViteStyles(string entryPoint = "src/main.tsx")
         {
+            // In development, Vite injects styles via JavaScript, so we don't need to do anything.
             if (_env.IsDevelopment())
             {
-                var devScripts = new StringBuilder();
-                devScripts.AppendLine(@"<script type=""module"">
-                                import RefreshRuntime from ""/vite-dev/@react-refresh"";
-                                RefreshRuntime.injectIntoGlobalHook(window);
-                                window.$RefreshReg$ = () => {};
-                                window.$RefreshSig$ = () => (type) => type;
-                                window.__vite_plugin_react_preamble_installed__ = true;
-                            </script>");
-                devScripts.AppendLine(@"<script type=""module"" src=""/vite-dev/@vite/client""></script>");
-                devScripts.AppendLine($@"<script type=""module"" src=""/vite-dev/{entryPoint}""></script>");
-                return new HtmlString(devScripts.ToString());
+                return HtmlString.Empty;
             }
 
-            _manifest ??= ReadManifest();
-            var entry = _manifest.RootElement.GetProperty(entryPoint);
-            var file = entry.GetProperty("file").GetString();
-            return new HtmlString($"<script type=\"module\" src=\"/react-dist/{file}\"></script>");
+            // In production, we render the <link> tag for the compiled CSS.
+            var manifest = await GetManifestAsync();
+            if (!manifest.RootElement.TryGetProperty(entryPoint, out var entryChunk) || !entryChunk.TryGetProperty("css", out var cssFiles))
+            {
+                return HtmlString.Empty;
+            }
+
+            var assets = new StringBuilder();
+            var baseUrl = "/react-dist/";
+            foreach (var cssFile in cssFiles.EnumerateArray())
+            {
+                assets.AppendLine($@"<link rel=""stylesheet"" href=""{baseUrl}{cssFile.GetString()}"">");
+            }
+
+            return new HtmlString(assets.ToString());
         }
 
-        public IHtmlContent GetStyleTag(string entryPoint = "src/main.tsx")
+        public async Task<IHtmlContent> RenderViteScripts(string entryPoint = "src/main.tsx")
         {
+            var assets = new StringBuilder();
+
+            // --- DEVELOPMENT ---
             if (_env.IsDevelopment())
             {
-                return new HtmlString("");
+                // Use the proxy path from configuration. It must match the path in vite.config.ts and Program.cs
+                var baseUrl = _config.GetValue<string>("Vite:DevServerProxy")?.TrimEnd('/') ?? "/vite-dev";
+                assets.AppendLine($@"<script type=""module"" src=""{baseUrl}/@vite/client""></script>");
+                assets.AppendLine($@"<script type=""module"" src=""{baseUrl}/{entryPoint}""></script>");
+            }
+            // --- PRODUCTION ---
+            else
+            {
+                var manifest = await GetManifestAsync();
+                if (manifest.RootElement.TryGetProperty(entryPoint, out var entryChunk) &&
+                    entryChunk.TryGetProperty("file", out var jsFile))
+                {
+                    var baseUrl = "/react-dist/";
+                    assets.AppendLine($@"<script type=""module"" src=""{baseUrl}{jsFile.GetString()}""></script>");
+                }
             }
 
-            _manifest ??= ReadManifest();
-            var entry = _manifest.RootElement.GetProperty(entryPoint);
-            if (!entry.TryGetProperty("css", out var cssElement))
-            {
-                return new HtmlString("");
-            }
-            var file = cssElement.EnumerateArray().First().GetString();
-            return new HtmlString($"<link rel=\"stylesheet\" href=\"/react-dist/{file}\" />");
+            return new HtmlString(assets.ToString());
         }
 
-        private JsonDocument ReadManifest()
+        private async Task<JsonDocument> GetManifestAsync()
         {
-            // CORRECTED: The path now includes the ".vite" subfolder where the manifest is located.
-            var manifestPath = Path.Combine(_env.WebRootPath, "react-dist", "manifest.json");
-            if (!File.Exists(manifestPath))
+            if (_manifest != null)
             {
-                throw new FileNotFoundException("Vite manifest.json not found. Run `npm run build` in Site.Client.", manifestPath);
+                return _manifest;
             }
-            return JsonDocument.Parse(File.ReadAllText(manifestPath));
+
+            if (!File.Exists(_manifestPath))
+            {
+                throw new FileNotFoundException("Vite manifest not found. Run `npm run build`.", _manifestPath);
+            }
+
+            _manifest = await JsonDocument.ParseAsync(File.OpenRead(_manifestPath));
+            return _manifest;
         }
     }
 }

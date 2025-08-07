@@ -1,8 +1,6 @@
 // This file acts as an importer for all individual component stylesheets.
-
-@import 'components/card';
-@import 'components/character-card';
-@import 'components/character-profile';
-@import 'components/user-nav';
-@import 'components/chat';
-@import 'components/thread';
+@use 'components/character-card';
+@use 'components/character-profile';
+@use 'components/user-nav';
+@use 'components/chat';
+@use 'components/thread';

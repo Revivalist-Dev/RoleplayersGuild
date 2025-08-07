@@ -7,32 +7,32 @@
 		<UserSecretsId>58b8e9f1-1b57-4c46-b1d3-1420c9ef25b6</UserSecretsId>
 		<LangVersion>latest</LangVersion>
 		<Configurations>Release;Development;PublicTest</Configurations>
-
-		<TypeScriptCompileBlocked>true</TypeScriptCompileBlocked>
 	</PropertyGroup>
 
 	<ItemGroup>
-	  <Compile Remove="Site.Database\**" />
-	  <Compile Remove="User.Files\**" />
-	  <Content Remove="Site.Database\**" />
-	  <Content Remove="User.Files\**" />
-	  <EmbeddedResource Remove="Site.Database\**" />
-	  <EmbeddedResource Remove="User.Files\**" />
-	  <None Remove="Site.Database\**" />
-	  <None Remove="User.Files\**" />
-	</ItemGroup>
-
-	<ItemGroup>
-		<PackageReference Include="AWSSDK.Extensions.NETCore.Setup" Version="4.0.2.1" />
+		<PackageReference Include="AWSSDK.Extensions.NETCore.Setup" Version="4.0.2" />
 		<PackageReference Include="AWSSDK.S3" Version="4.0.6" />
 		<PackageReference Include="Dapper" Version="2.1.66" />
 		<PackageReference Include="HtmlSanitizer" Version="9.0.886" />
 		<PackageReference Include="MailKit" Version="4.13.0" />
-		<PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="9.0.7" />
-		<PackageReference Include="Microsoft.AspNetCore.Mvc.Razor.RuntimeCompilation" Version="9.0.7" />
+		<PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="9.0.8" />
+		<PackageReference Include="Microsoft.AspNetCore.Mvc.Razor.RuntimeCompilation" Version="9.0.8" />
 		<PackageReference Include="Npgsql" Version="9.0.3" />
 		<PackageReference Include="SixLabors.ImageSharp" Version="3.1.11" />
 		<PackageReference Include="Yarp.ReverseProxy" Version="2.3.0" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<Folder Include="Site.Styles\scss\components\character-card-themes\" />
+		<Folder Include="Site.Styles\scss\components\site-themes\" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <Content Update="appsettings.Development.json">
+		<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		<ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+		<CopyToPublishDirectory>Never</CopyToPublishDirectory>
+	  </Content>
 	</ItemGroup>
 
 	<Target Name="CopyCertificateForPublish" AfterTargets="Build">
@@ -42,7 +42,21 @@
 		<Copy SourceFiles="@(CertificateFile)" DestinationFolder="$(PublishDir)\Site.Certificates" SkipUnchangedFiles="true" />
 	</Target>
 
-	<Target Name="RunViteBuild" BeforeTargets="ComputeFilesToPublish">
+	<Target Name="CopyVendorAssets" BeforeTargets="CompileScss">
+		<!-- Ensures the wwwroot/vendor directory exists -->
+		<MakeDir Directories="wwwroot/vendor" />
+		<!-- Copies the vendor assets from node_modules -->
+		<Exec Command="npm run copy:assets" />
+	</Target>
+
+	<Target Name="CompileScss" BeforeTargets="RunViteBuild">
+		<!-- Ensures the wwwroot/css directory exists -->
+		<MakeDir Directories="wwwroot/css" />
+		<!-- Compiles the SCSS to CSS -->
+		<Exec Command="npm run build:css" />
+	</Target>
+
+	<Target Name="RunViteBuild" BeforeTargets="Build">
 		<RemoveDir Directories="wwwroot/react-dist" />
 
 		<Exec Command="npm install" WorkingDirectory="Site.Client" />

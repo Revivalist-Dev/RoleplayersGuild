@@ -37,6 +37,7 @@ namespace RoleplayersGuild.Site.Services
         Task UpdateCharacterAsync(CharacterInputModel model);
         Task UpdateCharacterGenresAsync(int characterId, List<int> genreIds);
         Task UpdateCharacterBadgeAssignmentAsync(int characterId, int userBadgeId);
+        Task UpdateCharacterBBFrameAsync(int characterId, string bbframeContent);
         Task<int> GetAssignedUserBadgeIdAsync(int characterId);
         Task<IEnumerable<Character>> GetActiveCharactersForUserAsync(int userId);
         Task<Universe?> GetUniverseAsync(int universeId);
@@ -66,6 +67,7 @@ namespace RoleplayersGuild.Site.Services
         Task<Proposal?> GetProposalAsync(int proposalId);
         Task<IEnumerable<ProposalStatus>> GetProposalStatusesAsync();
         Task<IEnumerable<int>> GetProposalGenresAsync(int proposalId);
+        Task<PagedResult<CharactersForListing>> SearchUserCharactersAsync(int userId, SearchInputModel search, int pageIndex, int pageSize);
         Task<int> CreateProposalAsync(ProposalInputModel model, int userId);
         Task UpdateProposalAsync(ProposalInputModel model, int userId);
         Task UpdateProposalGenresAsync(int proposalId, List<int> genreIds);

@@ -1,0 +1,9 @@
+// _light.scss
+// All light theme variables are set as the defaults in _default.scss.
+// This file is here for any future light-theme-specific structural overrides.
+
+html[data-theme="light"] {
+    // Re-apply the background styles to ensure they are not overridden.
+    background-color: var(--rpg-page-bg-color) !important;
+    background-image: var(--rpg-page-bg-image) !important;
+}

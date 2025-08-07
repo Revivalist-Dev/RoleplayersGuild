@@ -1,0 +1,46 @@
+// _dark.scss
+// Contains all CSS variable overrides for the dark theme.
+
+html[data-theme="dark"] {
+    background-color: var(--rpg-page-bg-color) !important;
+    background-image: var(--rpg-page-bg-image) !important;
+    
+    // --- Dark Theme Variable Overrides ---
+    // Page-level colors
+    --rpg-page-bg-color: #010d1a;
+    --rpg-page-bg-image: linear-gradient(to bottom, #1a243f 44%, #010d1a 100%);
+    --rpg-text-color: #dee2e6;
+    --rpg-link-color: #a3d4ff;
+    --rpg-link-hover-color: #fff;
+    // Component background colors
+    --rpg-box-bg: rgba(33, 37, 41, 0.75); // This is --bs-card-bg
+    --rpg-box-bg-darker: #2E2828; // For blockquotes
+    --rpg-box-header-bg: rgba(43, 48, 53, 0.75); // This is --bs-card-cap-bg
+    --rpg-box-border-color: #495057; // This is --bs-border-color
+    // UserNav specific colors
+    --rpg-usernav-panel-bg: #212529; // --bs-body-bg
+    --rpg-usernav-controls-bg: #343a40; // --bs-secondary-bg
+    --rpg-usernav-controls-color: #dee2e6; // --bs-body-color
+    --rpg-usernav-drag-handle-color: rgba(222, 226, 230, 0.75); // --bs-body-secondary-color
+    --rpg-usernav-footer-border: #495057; // --bs-border-color
+    // Character Card specific colors
+    --rpg-charcard-header-bg: rgba(43, 48, 53, 0.75); // --bs-card-cap-bg
+    // --rpg-charcard-controls-bg can inherit from the default theme for the primary blue color, or be changed here if needed.
+    // --- Overrides for remaining Bootstrap Variables ---
+    --bs-emphasis-color: #fff;
+    --bs-secondary-bg: #343a40;
+    --bs-tertiary-bg: #2b3035;
+    --bs-accordion-active-bg: #214a75;
+    --bs-accordion-btn-icon: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='%23dee2e6'%3e%3cpath fill-rule='evenodd' d='M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z'/%3e%3c/svg%3e");
+    
+    body {
+        // Fix for specific text elements
+        .text-muted {
+            color: var(--bs-body-secondary-color) !important;
+        }
+
+        .text-dark {
+            color: var(--bs-body-color) !important;
+        }
+    }
+}

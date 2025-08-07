@@ -1,21 +1,21 @@
-﻿<#
+﻿﻿<#
 .SYNOPSIS
     Generates a list of file paths from a directory structure.
 
 .DESCRIPTION
-    This script recursively scans a directory specified within a .scriptignore file.
+    This script recursively scans a directory structure starting from a root defined by the location of an .aiexclude file.
     It creates a list of full file paths, excluding any items that match 
-    ignore patterns listed in the same .scriptignore file.
+    ignore patterns listed in the .aiexclude file. The patterns are treated like .gitignore patterns.
     The final list is copied to the clipboard.
 
 .EXAMPLE
     PS C:\> .\DirectoryCollection.ps1
-    Finds the .scriptignore file in a parent directory, reads the configured
+    Finds the .aiexclude file in a parent directory, reads the
     scan path and ignore patterns, then generates the file list.
 
 .NOTES
-    Author: Gemini
-    Version: 2.0
+    Author: Gemini Code Assist
+    Version: 2.1
     Last Updated: 2025-07-20
 #>
 [CmdletBinding()]
@@ -23,7 +23,7 @@ param ()
 
 # --- Configuration Discovery ---
 Clear-Host
-Write-Host "Searching for .scriptignore file..." -ForegroundColor Cyan
+Write-Host "Searching for .aiexclude file..." -ForegroundColor Cyan
 
 $currentDir = $PSScriptRoot
 $projectRoot = $null
@@ -32,7 +32,7 @@ $depth = 0
 
 # Traverse up from the script's directory to find the project root
 while ($depth -lt $maxDepth -and $currentDir -and (Get-Item $currentDir).Parent) {
-    $potentialIgnoreFile = Join-Path $currentDir ".scriptignore"
+    $potentialIgnoreFile = Join-Path $currentDir ".aiexclude"
     if (Test-Path $potentialIgnoreFile) {
         $projectRoot = $currentDir
         Write-Host "Found project root at: $projectRoot" -ForegroundColor Green
@@ -43,34 +43,28 @@ while ($depth -lt $maxDepth -and $currentDir -and (Get-Item $currentDir).Parent)
 }
 
 if (-not $projectRoot) {
-    Write-Error "FATAL: Could not find a .scriptignore file in this directory or any parent directory up to $maxDepth levels. Aborting."
+    Write-Error "FATAL: Could not find an .aiexclude file in this directory or any parent directory up to $maxDepth levels. Aborting."
     Read-Host -Prompt "Press ENTER to exit"
     exit
 }
 
 # --- Ignore File Parsing ---
-$ignoreFile = Join-Path $projectRoot ".scriptignore"
+$ignoreFile = Join-Path $projectRoot ".aiexclude"
 $fileContent = Get-Content $ignoreFile
 
-# Default scan path is the project root where the .scriptignore file was found
-$scanPath = $projectRoot 
+# The scan path is always the project root where the .aiexclude file was found.
+$scanPath = $projectRoot
+Write-Host "Using project root as scan path: $scanPath" -ForegroundColor Yellow
 
-# Look for a 'scan_path' setting in the ignore file
-$pathLine = $fileContent | Where-Object { $_.Trim() -match '^\s*scan_path\s*=' }
-if ($pathLine) {
-    # Extract the path, which is everything after the '='
-    $configuredPath = ($pathLine -split '=', 2)[1].Trim()
-    
-    # Remove quotes (' or ") from the start and end of the path string.
-    $scanPath = $configuredPath.TrimStart('"').TrimEnd('"').TrimStart("'").TrimEnd("'")
-
-    Write-Host "Scan path specified in .scriptignore: $scanPath" -ForegroundColor Cyan
-} else {
-    Write-Host "No 'scan_path' specified. Defaulting to project root: $scanPath" -ForegroundColor Yellow
+# Get ignore patterns, filtering out comments and empty lines.
+# Convert gitignore-style patterns to PowerShell -like wildcards.
+$ignorePatterns = $fileContent | Where-Object { $_.Trim() -and $_.Trim() -notmatch '^#' } | ForEach-Object {
+    $pattern = $_.Trim().Replace('**/', '*').TrimStart('/').Replace('/', '\')
+    if ($pattern.EndsWith('\')) {
+        $pattern = $pattern.TrimEnd('\') + '\*'
+    }
+    $pattern
 }
-
-# Get ignore patterns, filtering out comments, empty lines, and the path setting
-$ignorePatterns = $fileContent | Where-Object { $_.Trim() -and $_.Trim() -notmatch '^#' -and $_.Trim() -notmatch '^\s*scan_path\s*=' }
 
 # Resolve the final path to ensure it's a valid, absolute path
 $rootPath = Resolve-Path -Path $scanPath

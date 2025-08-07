@@ -1,6 +1,14 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import './index.css';
+import $ from 'jquery';
+// Bootstrap JS is now loaded globally in _Layout.cshtml
+// import 'bootstrap/dist/js/bootstrap.bundle.min.js';
+import '../../Site.Styles/scss/site.scss';
+
+// Make jQuery available globally
+(window as any).$ = $;
+(window as any).jQuery = $;
+
 // Remove the .tsx extension from this import
 import CharacterEditor from './Site.Directory/User-Panel/My-Characters/CharacterEditor';
 

@@ -26,7 +26,7 @@ namespace RoleplayersGuild.Site.Model
         [StringLength(50)]
         public string? CharacterLastName { get; set; }
 
-        public string? CharacterBio { get; set; }
+        public string? CharacterBBFrame { get; set; }
 
         [Required(ErrorMessage = "Please select a gender.")]
         public int? CharacterGender { get; set; }
@@ -56,7 +56,7 @@ namespace RoleplayersGuild.Site.Model
             CharacterFirstName = c.CharacterFirstName;
             CharacterMiddleName = c.CharacterMiddleName;
             CharacterLastName = c.CharacterLastName;
-            CharacterBio = c.CharacterBio;
+            CharacterBBFrame = c.CharacterBBFrame;
             CharacterGender = c.CharacterGender;
             SexualOrientation = c.SexualOrientation;
             CharacterSourceId = c.CharacterSourceId;

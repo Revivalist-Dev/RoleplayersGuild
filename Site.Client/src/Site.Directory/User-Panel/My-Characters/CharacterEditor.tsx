@@ -5,7 +5,8 @@ import axios from 'axios';
 import DetailsTab from './components/DetailsTab';
 import GalleryTab from './components/GalleryTab';
 import BBFrameTab from './components/BBFrameTab';
-import CustomizeTab from './components/CustomizeTab'; // <-- Import the new component
+import CustomizeTab from './components/CustomizeTab';
+import LoadingSpinner from '../../Shared/Components/LoadingSpinner'; // ADDED: Import the new LoadingSpinner component
 
 // Import Shared Types
 import { Character, EditorData, EditorLookups, EditorTab } from './types';
@@ -15,7 +16,6 @@ interface CharacterEditorProps {
 }
 
 const CharacterEditor: React.FC<CharacterEditorProps> = ({ characterId }) => {
-    // ... (state and fetchInitialData function remain the same) ...
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [editorData, setEditorData] = useState<EditorData | null>(null);
@@ -43,7 +43,7 @@ const CharacterEditor: React.FC<CharacterEditorProps> = ({ characterId }) => {
                     characterFirstName: '',
                     characterMiddleName: '',
                     characterLastName: '',
-                    characterBio: '',
+                    characterBBFrame: '',
                     characterGender: null,
                     sexualOrientation: null,
                     characterSourceId: null,
@@ -92,6 +92,8 @@ const CharacterEditor: React.FC<CharacterEditorProps> = ({ characterId }) => {
                     lookups={lookupData}
                     selectedGenres={editorData.selectedGenreIds}
                     onSave={fetchInitialData}
+                    initialAvatarUrl={editorData.avatarUrl}
+                    initialCardUrl={editorData.cardUrl}
                 />;
             case 'Gallery':
                 return <GalleryTab
@@ -102,11 +104,11 @@ const CharacterEditor: React.FC<CharacterEditorProps> = ({ characterId }) => {
             case 'BBFrame':
                 return <BBFrameTab
                     characterId={characterId}
-                    initialBio={editorData.character.characterBio}
+                    initialBBFrame={editorData.character.characterBBFrame}
                     initialInlines={editorData.inlines}
                     onUpdate={fetchInitialData}
                 />;
-            case 'Customize': // <-- Add the case for the new tab
+            case 'Customize':
                 return <CustomizeTab
                     character={editorData.character}
                     onUpdate={fetchInitialData}
@@ -117,7 +119,12 @@ const CharacterEditor: React.FC<CharacterEditorProps> = ({ characterId }) => {
     };
 
     if (loading) {
-        return <div className="text-center my-5"><div className="spinner-border" role="status"><span className="visually-hidden">Loading...</span></div></div>;
+        // CHANGED: Replaced the default Bootstrap spinner with the new custom component
+        return (
+            <div className="d-flex justify-content-center align-items-center my-5 p-5">
+                <LoadingSpinner />
+            </div>
+        );
     }
 
     if (error) {
@@ -139,7 +146,6 @@ const CharacterEditor: React.FC<CharacterEditorProps> = ({ characterId }) => {
                     <li className="nav-item">
                         <button className={`nav-link ${activeTab === 'Gallery' ? 'active' : ''}`} disabled={isNewCharacter} onClick={() => setActiveTab('Gallery')}>Gallery</button>
                     </li>
-                    {/* FIX: Add the new Customize tab button */}
                     <li className="nav-item">
                         <button className={`nav-link ${activeTab === 'Customize' ? 'active' : ''}`} disabled={isNewCharacter} onClick={() => setActiveTab('Customize')}>Customize</button>
                     </li>

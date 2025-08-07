@@ -29,7 +29,7 @@ namespace RoleplayersGuild.Site.Directory.Community.Characters
         public List<string> Genres { get; set; } = new();
         public IEnumerable<CharacterImage> Images { get; private set; } = Enumerable.Empty<CharacterImage>();
         public string MetaDescription { get; set; } = "A character profile on the Role-Players Guild.";
-        public string CharacterBioHtml { get; set; } = "";
+        public string CharacterBBFrameHtml { get; set; } = "";
         public bool IsLoggedIn { get; private set; }
         public bool IsOwner { get; private set; }
         public bool IsBlocked { get; private set; }
@@ -119,14 +119,14 @@ namespace RoleplayersGuild.Site.Directory.Community.Characters
 
         private async Task PrepareContent()
         {
-            if (!string.IsNullOrEmpty(Character.CharacterBio))
+            if (!string.IsNullOrEmpty(Character.CharacterBBFrame))
             {
-                CharacterBioHtml = await _bbcodeService.ParseAsync(Character.CharacterBio, Character.CharacterId);
+                CharacterBBFrameHtml = await _bbcodeService.ParseAsync(Character.CharacterBBFrame, Character.CharacterId);
 
-                var plainTextBio = Regex.Replace(Character.CharacterBio, @"\[.*?\]", string.Empty);
-                MetaDescription = plainTextBio.Length > 160
-                    ? plainTextBio.Substring(0, 160).Trim() + "..."
-                    : plainTextBio.Trim();
+                var plainTextBBFrame = Regex.Replace(Character.CharacterBBFrame, @"\[.*?\]", string.Empty);
+                MetaDescription = plainTextBBFrame.Length > 160
+                    ? plainTextBBFrame.Substring(0, 160).Trim() + "..."
+                    : plainTextBBFrame.Trim();
             }
         }
     }

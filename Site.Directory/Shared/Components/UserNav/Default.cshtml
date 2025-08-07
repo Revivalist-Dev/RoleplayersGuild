@@ -23,7 +23,9 @@
 @* --- Desktop Floating Nav (Visible on large screens) --- *@
 <div class="d-none d-lg-block">
     <div id="userNavFlyout" class="user-nav-flyout" style="visibility: hidden;">
-        <partial name="_UserNavPanel" model="Model" />
+        <div class="user-nav-panel">
+            <partial name="_UserNavPanel" model="Model" />
+        </div>
         <div class="user-nav-controls">
             @if (User.Identity?.IsAuthenticated == true)
             {

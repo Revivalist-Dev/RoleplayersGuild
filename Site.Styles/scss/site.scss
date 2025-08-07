@@ -1,17 +1,18 @@
 /*
     site.scss
     This is the main entry point for your site's styles.
-    It should only contain imports to maintain a clean structure.
+    It should not contain framework-level imports like Bootstrap,
+    as those are now handled globally in _Layout.cshtml.
 */
 
-// 1. Import SASS variables first
-@import 'variables';
+// NEW: Import the theme files
+@use 'components/site-themes/default'; // Defines structure and default colors
+@use 'components/site-themes/light'; // Applies light theme overrides (currently none)
+@use 'components/site-themes/dark'; // Applies dark theme overrides
 
-// 2. Import structural, non-themed styles
-@import 'base';
-@import 'components';
-@import 'bbframe';
+@use 'base';
+@use 'components';
+@use 'bbframe';
 
-// 3. Import theme-specific color styles
-@import 'light-theme'; // This is the default theme (your blue gradient)
-@import 'dark-theme'; // This contains overrides for the dark theme
+// Import bootstrap-icons
+@use 'components/bootstrap-icons-overrides';

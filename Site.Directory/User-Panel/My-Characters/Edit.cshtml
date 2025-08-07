@@ -1,6 +1,6 @@
 ﻿@page "{id:int?}"
 @model RoleplayersGuild.Site.Directory.User_Panel.My_Characters.EditMyCharactersModel
-@inject RoleplayersGuild.Site.Services.IViteManifest ViteManifest
+@inject RoleplayersGuild.Site.Services.IViteManifestService ViteAssets
 @{
     ViewData["Title"] = Model.IsNewCharacter ? "New Character" : "Edit Character";
     Layout = "_Layout1Col";
@@ -17,7 +17,10 @@
     </div>
 </div>
 
+@section head {
+    @await ViteAssets.RenderViteStyles()
+}
+
 @section Scripts {
-    @Html.Raw(ViteManifest.GetScriptTag())
-    @Html.Raw(ViteManifest.GetStyleTag())
+    @await ViteAssets.RenderViteScripts()
 }

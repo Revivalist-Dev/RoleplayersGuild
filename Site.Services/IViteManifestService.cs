@@ -2,9 +2,9 @@
 
 namespace RoleplayersGuild.Site.Services
 {
-    public interface IViteManifest
+    public interface IViteManifestService
     {
-        IHtmlContent GetScriptTag(string entryPoint = "src/main.tsx");
-        IHtmlContent GetStyleTag(string entryPoint = "src/main.tsx");
+        Task<IHtmlContent> RenderViteStyles(string entryPoint = "src/main.tsx");
+        Task<IHtmlContent> RenderViteScripts(string entryPoint = "src/main.tsx");
     }
 }

@@ -1,137 +1,113 @@
 // Styles for the specific character card component used in listings
+// This file contains all styles for the card, its controls, and layouts.
 
 // Main container for the card and the side controls
 .character-card-container {
     display: flex;
     align-items: stretch;
+    position: relative; // Needed for the absolute positioning of the preview panel
+    overflow: hidden; // Hides the preview panel when it's not active
 }
 
+// The new avatar preview panel that sits underneath the main card
+.character-avatar-preview {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1; // Sits below the main card
+    background-color: var(--rpg-box-bg-darker, #cdd7e0); // A slightly darker bg
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 15px;
+    padding: 15px;
+    
+    img {
+        border: 2px solid var(--rpg-box-border-color, #b7c6d3);
+        background-color: var(--bs-secondary-bg, #e9ecef);
+        object-fit: cover;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    }
+}
+
+// The main card element - this is the layer that will move
 .character-card {
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
     flex-grow: 1;
     position: relative;
-    border-top-right-radius: 0; // Ensures the card's top-right corner is square
     display: flex;
     flex-direction: column;
     height: 100%;
-    border-bottom-right-radius: 0; /* Ensures bottom-right also aligns with controls */
+    width: 100%; // Ensure it has a defined width for transform
+    z-index: 2; // Sits on top of the preview panel
+    transition: transform 0.5s ease-in-out; // Animation transition
+    background-color: var(--bs-card-bg); // Ensure card has a solid background
+    --corner-clip-size: 20px;
+    clip-path: polygon(var(--corner-clip-size) 0, 100% 0, 100% 100%, 0 100%, 0 var(--corner-clip-size));
+    border-radius: 0; 
+
+    .card-header,
+    .card-footer {
+        flex-shrink: 0;
+        border-radius: 0;
+    }
 
     .card-header {
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
-        border-top-right-radius: 0; // Ensures the header's top-right corner is square
-        flex-shrink: 0;
-    }
-
-    .card-footer {
-        flex-shrink: 0;
-        border-bottom-right-radius: 0; /* Ensures footer's bottom-right aligns with controls */
     }
 }
 
-// Avatar scaling fix
-.rpg-avatar {
-    width: 50px;
-    height: 50px;
-    object-fit: cover;
+// The animation rule: when the container has this class, slide the card
+.character-card-container.is-avatar-preview-open .character-card {
+    transform: translateX(-75%);
 }
-
-.rpg-img {
-    object-fit: cover;
-    object-position: top center;
-    background-color: var(--bs-secondary-bg);
-}
-
-.card-img-wrapper {
-    position: relative;
-    overflow: hidden;
-    aspect-ratio: 2 / 3;
-    width: 100%;
-    flex-grow: 1;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-}
-
-.card-img-wrapper img {
-    position: absolute;
-    width: 100%;
-    height: 100%;
-    top: 0;
-    left: 0;
-    object-fit: cover;
-    object-position: top center;
-}
-
-// Ensure the main card's content wrapper takes up available space
-.card-content-wrapper {
-    flex-grow: 1;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    overflow: hidden;
-
-    .card-img-wrapper,
-    .avatar-view-container {
-        width: 100%;
-        height: 100%;
-    }
-}
-
-// --- Redesigned Controls ---
 
 // The blue side column for the buttons
 .character-card-controls {
     flex-shrink: 0;
-    // NEW: Define the blue line width as the constant
-    --blue-line-width: 14px;
-    // NEW: White controls box is twice the blue line width
-    --controls-box-width: calc(2 * var(--blue-line-width));
-    /* Set the width of the overall blue container */
-    /* This needs to be the width of the wider white box to fully contain it */
-    width: var(--controls-box-width);
+    width: calc(2 * var(--blue-line-width, 14px));
+    --corner-clip-size: 20px;
     display: flex;
     flex-direction: column;
-    background-color: #337ab7; // Theme will override this
-    border-radius: 0 0.375rem 0.375rem 0; /* Full radius for the blue edge */
-
-    padding-top: 0;
-    padding-bottom: 0;
+    background-color: #337ab7;
     position: relative;
+    clip-path: polygon(0 0, 100% 0, 100% calc(100% - var(--corner-clip-size)), calc(100% - var(--corner-clip-size)) 100%, 0 100%);
+    border-radius: 0;
+    
+    .controls-box {
+        padding: 8px 4px; // Adjusted padding
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: flex-start; // Align to top
+        gap: 8px;
+        border-bottom: 1px solid var(--bs-card-border-color);
+        clip-path: polygon(0 0, 100% 0, 100% 85%, 0% 100%);
+        width: 100%;
+        background-color: var(--rpg-usernav-panel-bg, #fff);
+        z-index: 2;
+        position: relative;
+        border-radius: 0;
+        min-height: 110px; // Give it some minimum height
+    }
+    
+    &::after {
+        content: '';
+        display: block;
+        flex-grow: 1;
+        background-color: inherit;
+        width: var(--blue-line-width, 14px);
+        align-self: flex-end;
+        border-radius: 0;
+    }
 }
 
-// The white box at the top of the controls column
-.controls-box {
-    padding: 8px 4px 16px 4px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    border-bottom: 1px solid var(--bs-card-border-color);
-    border-radius: 0 0.375rem 0 0;
-    clip-path: polygon(0 0, 100% 0, 100% 85%, 0% 100%); /* Diagonal cut on the lower-left */
-    width: var(--controls-box-width); // Use the calculated width
-    align-self: flex-start;
-    background-color: #fff;
-    z-index: 2;
-    position: relative;
-}
-// The remaining blue area (below the controls-box)
-.character-card-controls::after {
-    content: '';
-    display: block;
-    flex-grow: 1;
-    background-color: inherit; /* Inherit the blue background from parent */
-    /* Use the fixed blue line width here */
-    width: var(--blue-line-width);
-    align-self: flex-end; /* Align to the bottom-right of the controls */
-    border-bottom-right-radius: inherit;
-}
-
-
-
-// Updated button styling for the new narrow container
+// Button styling for the narrow controls container
 .view-toggle-btn {
     width: 20px;
     height: 20px;
@@ -139,10 +115,12 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 0.75rem; // Smaller icon
+    font-size: 0.75rem;
     cursor: pointer;
     border: 1px solid var(--bs-border-color);
     transition: background-color 0.2s ease-in-out;
+    background-color: transparent;
+    color: var(--bs-body-color);
 
     &.active {
         background-color: var(--bs-primary);
@@ -155,7 +133,35 @@
     }
 }
 
-// Container for the avatar preview layout
+// --- Image & Layout Helpers ---
+
+.card-content-wrapper {
+    flex-grow: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+}
+
+.card-img-wrapper {
+    position: relative;
+    overflow: hidden;
+    aspect-ratio: 2 / 3;
+    width: 100%;
+    height: 100%;
+    display: flex;
+
+    img {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        top: 0;
+        left: 0;
+        object-fit: cover;
+        object-position: top center;
+    }
+}
+
 .avatar-view-container {
     display: flex;
     flex-direction: column;
@@ -173,4 +179,10 @@
         background-color: var(--bs-secondary-bg);
         border: 1px solid var(--bs-border-color);
     }
+}
+
+.rpg-avatar {
+    width: 50px;
+    height: 50px;
+    object-fit: cover;
 }

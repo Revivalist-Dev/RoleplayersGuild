@@ -4,37 +4,37 @@ import { CharacterInline } from '../types';
 
 interface BBFrameTabProps {
     characterId: number;
-    initialBio: string | null;
+    initialBBFrame: string | null;
     initialInlines: CharacterInline[];
     onUpdate: () => void;
 }
 
-const BBFrameTab: React.FC<BBFrameTabProps> = ({ characterId, initialBio, initialInlines, onUpdate }) => {
-    const [bioContent, setBioContent] = useState(initialBio || '');
+const BBFrameTab: React.FC<BBFrameTabProps> = ({ characterId, initialBBFrame, initialInlines, onUpdate }) => {
+    const [bbframeContent, setBBFrameContent] = useState(initialBBFrame || '');
     const [inlines, setInlines] = useState(initialInlines);
     const [newInlineName, setNewInlineName] = useState('');
     const [newInlineFile, setNewInlineFile] = useState<File | null>(null);
-    const [isSavingBio, setIsSavingBio] = useState(false);
+    const [isSaving, setIsSaving] = useState(false);
     const [isUploading, setIsUploading] = useState(false);
     const [status, setStatus] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
 
     useEffect(() => {
-        setBioContent(initialBio || '');
+        setBBFrameContent(initialBBFrame || '');
         setInlines(initialInlines);
-    }, [initialBio, initialInlines]);
+    }, [initialBBFrame, initialInlines]);
 
-    const handleSaveBio = async (e: React.FormEvent) => {
+    const handleSaveBBFrame = async (e: React.FormEvent) => {
         e.preventDefault();
-        setIsSavingBio(true);
+        setIsSaving(true);
         setStatus(null);
         try {
-            // Note: This API endpoint (`/api/characters/{id}/bbframe`) needs to be created on your backend.
-            await axios.put(`/api/characters/${characterId}/bbframe`, { bioContent });
-            setStatus({ message: 'Bio saved successfully!', type: 'success' });
+            // FIXED: Ensure the JSON key 'BBFrameContent' matches the C# model property exactly.
+            const response = await axios.put(`/api/characters/${characterId}/bbframe`, { BBFrameContent: bbframeContent });
+            setStatus({ message: response.data.message || 'BBFrame saved successfully!', type: 'success' });
         } catch (error) {
-            setStatus({ message: 'Failed to save bio.', type: 'error' });
+            setStatus({ message: 'Failed to save BBFrame.', type: 'error' });
         } finally {
-            setIsSavingBio(false);
+            setIsSaving(false);
         }
     };
 
@@ -69,7 +69,6 @@ const BBFrameTab: React.FC<BBFrameTabProps> = ({ characterId, initialBio, initia
         if (!window.confirm('Are you sure you want to delete this inline image? This cannot be undone.')) return;
         setStatus(null);
         try {
-            // Note: This API endpoint (`/api/characters/{id}/inlines/{inlineId}`) needs to be created on your backend.
             await axios.delete(`/api/characters/${characterId}/inlines/${inlineId}`);
             setStatus({ message: 'Inline deleted successfully.', type: 'success' });
             onUpdate();
@@ -85,13 +84,13 @@ const BBFrameTab: React.FC<BBFrameTabProps> = ({ characterId, initialBio, initia
     return (
         <div className="row g-3">
             <div className="col-lg-8">
-                <form onSubmit={handleSaveBio}>
+                <form onSubmit={handleSaveBBFrame}>
                     <div className="mb-3">
-                        <label htmlFor="bbframe-editor" className="form-label">Profile Content (BBCode)</label>
-                        <textarea id="bbframe-editor" className="form-control" rows={15} value={bioContent} onChange={(e) => setBioContent(e.target.value)} />
+                        <label htmlFor="bbframe-editor" className="form-label">BBFrame Content (BBCode)</label>
+                        <textarea id="bbframe-editor" className="form-control" rows={15} value={bbframeContent} onChange={(e) => setBBFrameContent(e.target.value)} />
                     </div>
                     <div className="d-flex justify-content-end">
-                        <button type="submit" className="btn btn-primary" disabled={isSavingBio}>{isSavingBio ? 'Saving...' : 'Save Bio'}</button>
+                        <button type="submit" className="btn btn-primary" disabled={isSaving}>{isSaving ? 'Saving...' : 'Save BBFrame'}</button>
                     </div>
                 </form>
             </div>
@@ -141,7 +140,7 @@ const BBFrameTab: React.FC<BBFrameTabProps> = ({ characterId, initialBio, initia
             </div>
 
             {status && (
-                <div className={`col-12 mt-3 alert alert-${status.type === 'success' ? 'success' : 'danger'}`}>
+                <div className={`col-12 mt-3 alert alert-${status.type}`}>
                     {status.message}
                 </div>
             )}

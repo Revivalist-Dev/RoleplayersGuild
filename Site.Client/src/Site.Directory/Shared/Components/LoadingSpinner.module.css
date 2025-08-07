@@ -1,0 +1,68 @@
+﻿/* From Uiverse.io by alexruix, adapted for theming */
+.loader {
+    --cell-size: 52px;
+    --cell-spacing: 1px;
+    --cells: 3;
+    --total-size: calc(var(--cells) * (var(--cell-size) + 2 * var(--cell-spacing)));
+    display: flex;
+    flex-wrap: wrap;
+    width: var(--total-size);
+    height: var(--total-size);
+}
+
+.cell {
+    flex: 0 0 var(--cell-size);
+    margin: var(--cell-spacing);
+    background-color: transparent;
+    box-sizing: border-box;
+    border-radius: 4px;
+    animation: 1.5s ripple ease infinite;
+    /* Default (Light Mode) color is the site's primary blue */
+    --cell-color: var(--bs-primary);
+}
+
+/* Dark Mode override sets the color to a vibrant purple */
+[data-theme="dark"] .cell {
+    --cell-color: #60EFFF;
+}
+
+
+/* Stagger the animation start time for each cell */
+.d-1 {
+    animation-delay: 100ms;
+}
+
+.d-2 {
+    animation-delay: 200ms;
+}
+
+.d-3 {
+    animation-delay: 300ms;
+}
+
+.d-4 {
+    animation-delay: 400ms;
+}
+
+/* NOTE: The faulty :nth-child(even) rule that was here has been removed.
+  This allows the .d-* classes from the React component to control the timing correctly.
+*/
+
+/* Animation */
+@keyframes ripple {
+    0% {
+        background-color: transparent;
+    }
+
+    30% {
+        background-color: var(--cell-color);
+    }
+
+    60% {
+        background-color: transparent;
+    }
+
+    100% {
+        background-color: transparent;
+    }
+}

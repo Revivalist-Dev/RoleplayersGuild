@@ -4,7 +4,7 @@ export interface Character {
     characterFirstName: string;
     characterMiddleName: string | null;
     characterLastName: string | null;
-    characterBio: string | null;
+    characterBBFrame: string | null;
     characterGender: number | null;
     sexualOrientation: number | null;
     characterSourceId: number | null;

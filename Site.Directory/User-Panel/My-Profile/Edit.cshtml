@@ -2,53 +2,57 @@
 @model RoleplayersGuild.Site.Directory.User_Panel.My_Profile.EditProfileModel
 @{
     ViewData["Title"] = "Edit Profile";
-    Layout = "_Layout2Col";
+    Layout = "_Layout1Col"; // Use the 1-column layout
 }
 
+@if (!string.IsNullOrEmpty(Model.Message))
+{
+    <div class="alert alert-success">@Model.Message</div>
+}
+<div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+
 <form method="post">
-    @section cphLeftCol {
-        <div class="card sticky-top">
-            <div class="card-header">
-                <h5 class="mb-0">Display Badges</h5>
-            </div>
-            <div class="list-group list-group-flush">
-                @if (Model.Badges.Any())
-                {
-                    foreach (var badge in Model.Badges)
+    <div class="row">
+        @* --- Left Column --- *@
+        <div class="col-md-4 col-lg-3">
+            <div class="card sticky-top">
+                <div class="card-header">
+                    <h5 class="mb-0">Display Badges</h5>
+                </div>
+                <div class="list-group list-group-flush">
+                    @if (Model.Badges.Any())
                     {
-                        <label class="list-group-item d-flex align-items-center">
-                            <input type="checkbox" class="form-check-input me-3" name="DisplayedBadgeIds" value="@badge.UserBadgeId" checked="@badge.IsDisplayed" />
-                            <img src="@badge.BadgeImageUrl" alt="@badge.BadgeName" style="height: 30px; width: 30px;" class="me-2" />
-                            <span class="small">@badge.BadgeName</span>
-                        </label>
+                        foreach (var badge in Model.Badges)
+                        {
+                            <label class="list-group-item d-flex align-items-center">
+                                <input type="checkbox" class="form-check-input me-3" name="DisplayedBadgeIds" value="@badge.UserBadgeId" checked="@badge.IsDisplayed" />
+                                <img src="@badge.BadgeImageUrl" alt="@badge.BadgeName" style="height: 30px; width: 30px;" class="me-2" />
+                                <span class="small">@badge.BadgeName</span>
+                            </label>
+                        }
                     }
-                }
-                else
-                {
-                    <div class="list-group-item text-muted small">You have not earned any badges yet.</div>
-                }
+                    else
+                    {
+                        <div class="list-group-item text-muted small">You have not earned any badges yet.</div>
+                    }
+                </div>
             </div>
         </div>
-    }
 
-    @section cphRightCol {
-        @if (!string.IsNullOrEmpty(Model.Message))
-        {
-            <div class="alert alert-success">@Model.Message</div>
-        }
-        <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+        @* --- Right Column --- *@
+        <div class="col">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h1>Edit Writer Profile</h1>
+                <a asp-page="./Index" class="btn btn-secondary">View My Profile</a>
+            </div>
 
-        <div class="d-flex justify-content-between align-items-center mb-3">
-            <h1>Edit Writer Profile</h1>
-            <a asp-page="./Index" class="btn btn-secondary">View My Profile</a>
+            <div class="mb-3">
+                <label asp-for="AboutMe" class="form-label"></label>
+                <textarea asp-for="AboutMe" class="form-control" rows="15" placeholder="Information about yourself. HTML is allowed."></textarea>
+            </div>
+            <div class="text-end">
+                <button type="submit" class="btn btn-primary">Save Profile</button>
+            </div>
         </div>
-
-        <div class="mb-3">
-            <label asp-for="AboutMe" class="form-label"></label>
-            <textarea asp-for="AboutMe" class="form-control" rows="15" placeholder="Information about yourself. HTML is allowed."></textarea>
-        </div>
-        <div class="text-end">
-            <button type="submit" class="btn btn-primary">Save Profile</button>
-        </div>
-    }
+    </div>
 </form>

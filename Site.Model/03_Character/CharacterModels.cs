@@ -24,7 +24,7 @@ namespace RoleplayersGuild.Site.Model
         public string? ProfileHtml { get; set; }
         public int LfrpStatus { get; set; }
         public bool DisableLinkify { get; set; }
-        public string? CharacterBio { get; set; }
+        public string? CharacterBBFrame { get; set; }
         public int? CharacterGender { get; set; }
         public int? LiteracyLevel { get; set; }
         public int? PostLengthMax { get; set; }
@@ -77,9 +77,9 @@ namespace RoleplayersGuild.Site.Model
     {
         public int InlineId { get; set; }
         public int CharacterId { get; set; }
-        public int UserId { get; set; } // <-- ADD THIS LINE
+        public int UserId { get; set; }
         public string InlineName { get; set; } = string.Empty;
-        public string InlineImageUrl { get; set; } = string.Empty;
+        public string? InlineImageUrl { get; set; } // UPDATED to be nullable
         public DateTime DateCreated { get; set; }
     }
 
@@ -87,7 +87,7 @@ namespace RoleplayersGuild.Site.Model
     {
         public int CharacterImageId { get; set; }
         public int CharacterId { get; set; }
-        public string CharacterImageUrl { get; set; } = null!;
+        public string? CharacterImageUrl { get; set; } // UPDATED to be nullable
         public bool IsPrimary { get; set; }
         public bool IsMature { get; set; }
         public string? ImageCaption { get; set; }
