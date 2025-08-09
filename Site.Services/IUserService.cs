@@ -1,7 +1,5 @@
 ﻿using Microsoft.AspNetCore.Identity;
-using RoleplayersGuild.Site.Model;
 using System.Security.Claims;
-using System.Threading.Tasks;
 
 namespace RoleplayersGuild.Site.Services
 {
@@ -10,19 +8,21 @@ namespace RoleplayersGuild.Site.Services
         public bool IsSuccess { get; }
         public string? ErrorMessage { get; }
         public bool PasswordNeedsUpgrade { get; }
+        public User? User { get; }
 
-        public LoginResult(bool isSuccess, string? errorMessage = null, bool passwordNeedsUpgrade = false)
+        public LoginResult(bool isSuccess, string? errorMessage = null, bool passwordNeedsUpgrade = false, User? user = null)
         {
             IsSuccess = isSuccess;
             ErrorMessage = errorMessage;
             PasswordNeedsUpgrade = passwordNeedsUpgrade;
+            User = user;
         }
     }
 
     public interface IUserService
     {
         int GetUserId(ClaimsPrincipal principal);
-        bool GetUserPrefersMature(ClaimsPrincipal principal);
+        Task<bool> GetUserPrefersMatureAsync(ClaimsPrincipal principal);
         Task<LoginResult> LoginAsync(string email, string password);
         Task MarkCharacterForReviewAsync(int characterId, int adminUserId);
         Task SignInUserAsync(User user);
@@ -36,6 +36,7 @@ namespace RoleplayersGuild.Site.Services
         Task<User?> GetCurrentUserAsync();
         Task<IdentityResult> ChangePasswordAsync(User user, string currentPassword, string newPassword);
         Task<ImageLimitResults> GetImageLimitsAsync();
-        Task<User?> GetUserByEmailAsync(string email); // <<<--- ADD THIS LINE
+        Task<User?> GetUserByEmailAsync(string email);
+        Task UpdateUserLastActionAsync(int userId);
     }
 }

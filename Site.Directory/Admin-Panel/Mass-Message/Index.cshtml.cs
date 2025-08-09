@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using RoleplayersGuild.Site.Model;
 using RoleplayersGuild.Site.Services;
+using RoleplayersGuild.Site.Services.DataServices;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Threading.Tasks;
@@ -13,12 +14,14 @@ namespace RoleplayersGuild.Site.Directory.Admin_Panel.Mass_Message
     [Authorize(Policy = "IsAdmin")]
     public class IndexModel : PageModel
     {
-        private readonly IDataService _dataService;
+        private readonly IUserDataService _userDataService;
+        private readonly ICommunityDataService _communityDataService;
         private readonly IUserService _userService; // Using IUserService is better for getting current user info
 
-        public IndexModel(IDataService dataService, IUserService userService)
+        public IndexModel(IUserDataService userDataService, ICommunityDataService communityDataService, IUserService userService)
         {
-            _dataService = dataService;
+            _userDataService = userDataService;
+            _communityDataService = communityDataService;
             _userService = userService;
         }
 
@@ -52,22 +55,28 @@ namespace RoleplayersGuild.Site.Directory.Admin_Panel.Mass_Message
             }
 
             // Corrected: SQL query uses PascalCase
-            var recipients = await _dataService.GetRecordsAsync<UserRecipient>("""SELECT "UserId", "CurrentSendAsCharacter" FROM "Users" """);
+            var recipients = await _userDataService.GetAllUserRecipientsAsync();
 
             string messageContent = $"{Input.MessageContent}<br><br><div class=\"alert alert-info\">If you have any questions or concerns about this message, please <a href='/Information/Contact'>contact the staff</a> right away.</div>";
+            
+            if (string.IsNullOrEmpty(Input.Title))
+            {
+                ModelState.AddModelError("Input.Title", "Title cannot be empty.");
+                return Page();
+            }
             string threadTitle = $"[RPG] - Mass Message - {Input.Title}";
 
             foreach (var user in recipients)
             {
                 // Each user gets their own thread
                 var userId = _userService.GetUserId(User); // Make sure you have the user's ID
-                var threadId = await _dataService.CreateNewThreadAsync(Input.Title, userId);
+                var threadId = await _communityDataService.CreateNewThreadAsync(Input.Title, userId);
 
                 // Post the message from the admin's character
-                await _dataService.InsertMessageAsync(threadId, adminUser.CurrentSendAsCharacter, messageContent);
+                await _communityDataService.InsertMessageAsync(threadId, adminUser.CurrentSendAsCharacter, messageContent);
 
                 // Add the recipient user to the thread
-                await _dataService.InsertThreadUserAsync(user.UserId, threadId, 2, user.CurrentSendAsCharacter, 1);
+                await _communityDataService.InsertThreadUserAsync(user.UserId, threadId, 2, user.CurrentSendAsCharacter, 1);
             }
 
             TempData["IsSuccess"] = true;
@@ -83,11 +92,5 @@ namespace RoleplayersGuild.Site.Directory.Admin_Panel.Mass_Message
         public string? Title { get; set; }
         [Required]
         public string? MessageContent { get; set; }
-    }
-
-    public class UserRecipient
-    {
-        public int UserId { get; set; }
-        public int CurrentSendAsCharacter { get; set; }
     }
 }

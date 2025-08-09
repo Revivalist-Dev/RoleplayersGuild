@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc.Rendering;
 using RoleplayersGuild.Site.Model;
 using RoleplayersGuild.Site.Services;
+using RoleplayersGuild.Site.Services.DataServices;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -9,7 +10,8 @@ namespace RoleplayersGuild.Site.Directory.User_Panel.My_Chat_Rooms
 {
     public class EditMyChatRoomsModel : UserPanelBaseModel
     {
-        // NOTE: The IDataService and IUserService are now inherited from the base class.
+        private readonly IUniverseDataService _universeDataService;
+        private readonly IUserDataService _userDataService;
         private readonly INotificationService _notificationService;
 
         [BindProperty]
@@ -20,24 +22,22 @@ namespace RoleplayersGuild.Site.Directory.User_Panel.My_Chat_Rooms
 
         public bool IsNew => Input.ChatRoomId == 0;
 
-        // UPDATED: Constructor to match the new base class signature.
-        public EditMyChatRoomsModel(IDataService dataService, IUserService userService, INotificationService notificationService)
-            : base(dataService, userService)
+        public EditMyChatRoomsModel(ICharacterDataService characterDataService, ICommunityDataService communityDataService, IMiscDataService miscDataService, IUserService userService, IUniverseDataService universeDataService, IUserDataService userDataService, INotificationService notificationService)
+            : base(characterDataService, communityDataService, miscDataService, userService)
         {
-            // Only assign services not provided by the base class.
+            _universeDataService = universeDataService;
+            _userDataService = userDataService;
             _notificationService = notificationService;
         }
 
         public async Task<IActionResult> OnGetAsync(int? id)
         {
-            // Use the UserService property from the base class
-            var userId = UserService.GetUserId(User);
+            var userId = _userService.GetUserId(User);
             if (userId == 0) return RedirectToPage("/");
 
             if (id.HasValue) // Editing
             {
-                // Use the DataService property from the base class
-                var chatRoom = await DataService.GetChatRoomWithDetailsAsync(id.Value);
+                var chatRoom = await _communityDataService.GetChatRoomWithDetailsAsync(id.Value);
                 if (chatRoom is null || chatRoom.SubmittedByUserId != userId)
                 {
                     return Forbid();
@@ -55,7 +55,7 @@ namespace RoleplayersGuild.Site.Directory.User_Panel.My_Chat_Rooms
 
         public async Task<IActionResult> OnPostAsync()
         {
-            var userId = UserService.GetUserId(User);
+            var userId = _userService.GetUserId(User);
             if (userId == 0) return RedirectToPage("/");
 
             if (!ModelState.IsValid)
@@ -68,13 +68,13 @@ namespace RoleplayersGuild.Site.Directory.User_Panel.My_Chat_Rooms
 
             if (IsNew)
             {
-                chatRoomId = await DataService.CreateNewChatRoomAsync(userId);
+                chatRoomId = await _communityDataService.CreateNewChatRoomAsync(userId);
                 Input.ChatRoomId = chatRoomId;
                 await _notificationService.SendMessageToStaffAsync("[Staff] - New Chat Room Submitted", "A new chat room has been submitted, please review.");
-                await DataService.AwardBadgeIfNotExistingAsync(8, userId); // Chat Room Creator Badge
+                await _userDataService.AwardBadgeIfNotExistingAsync(8, userId); // Chat Room Creator Badge
             }
 
-            await DataService.UpdateChatRoomAsync(Input);
+            await _communityDataService.UpdateChatRoomAsync(Input);
 
             TempData["Message"] = "Chat Room saved successfully!";
             return RedirectToPage("./Index");
@@ -82,22 +82,22 @@ namespace RoleplayersGuild.Site.Directory.User_Panel.My_Chat_Rooms
 
         public async Task<IActionResult> OnPostDeleteAsync(int id)
         {
-            var userId = UserService.GetUserId(User);
-            var chatRoom = await DataService.GetChatRoomAsync(id);
+            var userId = _userService.GetUserId(User);
+            var chatRoom = await _communityDataService.GetChatRoomAsync(id);
             if (userId == 0 || chatRoom is null || chatRoom.SubmittedByUserId != userId)
             {
                 return Forbid();
             }
 
-            await DataService.DeleteChatRoomAsync(id);
+            await _communityDataService.DeleteChatRoomAsync(id);
             TempData["Message"] = "Chat Room deleted successfully.";
             return RedirectToPage("./Index");
         }
 
         private async Task PopulateSelectListsAsync(int userId)
         {
-            var userUniverses = await DataService.GetUserUniversesAsync(userId);
-            var contentRatings = await DataService.GetContentRatingsAsync();
+            var userUniverses = await _universeDataService.GetUserUniversesAsync(userId);
+            var contentRatings = await _miscDataService.GetContentRatingsAsync();
 
             Universes = new SelectList(userUniverses, "UniverseId", "UniverseName", Input.UniverseId);
             Ratings = new SelectList(contentRatings, "ContentRatingId", "ContentRatingName", Input.ContentRatingId);

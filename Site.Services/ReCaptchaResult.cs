@@ -1,8 +1,4 @@
-﻿// In F:\...\Site.Services\ReCaptchaResult.cs
-
-using System.Collections.Generic;
-using System.Linq;
-
+﻿
 namespace RoleplayersGuild.Site.Services
 {
     public class ReCaptchaResult

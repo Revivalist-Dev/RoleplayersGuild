@@ -15,23 +15,26 @@
         <div class="alert alert-danger" role="alert">@Model.Message</div>
     }
 
-    <form method="post" class="rpg-LoginForm">
-        <div class="mb-2">
-            <input asp-for="Input.Email" class="form-control" placeholder="Email Address" required autofocus />
-            <span asp-validation-for="Input.Email" class="text-danger"></span>
-        </div>
-        <div class="mb-2">
-            <input asp-for="Input.Password" class="form-control" placeholder="Password" required />
-            <span asp-validation-for="Input.Password" class="text-danger"></span>
-        </div>
-        <div class="d-grid gap-2">
-            <button type="submit" class="btn btn-primary">Login</button>
-            <a asp-page="/Account-Panel/Register" class="btn btn-secondary">Register</a>
-        </div>
-        <div class="text-center mt-2">
-            <a class="btn btn-link" asp-page="/Account-Panel/Password/Recover-Password">Forgot your password?</a>
-        </div>
-    </form>
+    @if (User.Identity is null || !User.Identity.IsAuthenticated)
+    {
+        <form method="post" class="rpg-LoginForm">
+            <div class="mb-2">
+                <input asp-for="Input.Email" class="form-control" placeholder="Email Address" required autofocus />
+                <span asp-validation-for="Input.Email" class="text-danger"></span>
+            </div>
+            <div class="mb-2">
+                <input asp-for="Input.Password" class="form-control" placeholder="Password" required />
+                <span asp-validation-for="Input.Password" class="text-danger"></span>
+            </div>
+            <div class="d-grid gap-2">
+                <button type="submit" class="btn btn-primary">Login</button>
+                <a asp-page="/Account-Panel/Register" class="btn btn-secondary">Register</a>
+            </div>
+            <div class="text-center mt-2">
+                <a class="btn btn-link" asp-page="/Account-Panel/Password/Recover-Password">Forgot your password?</a>
+            </div>
+        </form>
+    }
 
     <div class="d-grid gap-2 mt-3">
         <a href="https://www.reddit.com/r/RolePlayersGuild/" class="btn btn-danger" target="_blank" rel="noopener noreferrer"><i class="bi bi-reddit"></i> Visit our SubReddit</a>

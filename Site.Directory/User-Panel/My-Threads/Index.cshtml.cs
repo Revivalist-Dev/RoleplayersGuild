@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using RoleplayersGuild.Site.Model;
 using RoleplayersGuild.Site.Services;
+using RoleplayersGuild.Site.Services.DataServices;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -15,23 +16,31 @@ namespace RoleplayersGuild.Site.Directory.User_Panel.My_Threads
         [BindProperty(SupportsGet = true)]
         public string? Filter { get; set; }
 
-        // UPDATED: Constructor to match the new base class signature.
-        public IndexMyThreadsModel(IDataService dataService, IUserService userService)
-            : base(dataService, userService) { }
+        public IndexMyThreadsModel(
+            ICharacterDataService characterDataService,
+            ICommunityDataService communityDataService,
+            IMiscDataService miscDataService,
+            IUserService userService)
+            : base(characterDataService, communityDataService, miscDataService, userService)
+        {
+        }
 
         public async Task<IActionResult> OnGetAsync()
         {
             var filter = Filter ?? "active";
             PageTitle = GetPageTitle(filter);
-            Threads = (await DataService.GetUserThreadsAsync(LoggedInUserId, filter)).ToList();
+            Threads = (await _communityDataService.GetUserThreadsAsync(LoggedInUserId, filter)).ToList();
             return Page();
         }
 
-        private string GetPageTitle(string filter) => filter.ToLower() switch
+        private string GetPageTitle(string filter)
         {
-            "unread" => "Unread Threads",
-            "unanswered" => "Unanswered Threads",
-            _ => "My Threads"
-        };
+            return filter.ToLower() switch
+            {
+                "unread" => "Unread Threads",
+                "unanswered" => "Unanswered Threads",
+                _ => "My Threads",
+            };
+        }
     }
 }

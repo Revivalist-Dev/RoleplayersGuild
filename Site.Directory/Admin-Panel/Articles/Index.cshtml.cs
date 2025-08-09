@@ -1,21 +1,19 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.Mvc.Rendering;
-using RoleplayersGuild.Site.Model;
-using RoleplayersGuild.Site.Services;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+using RoleplayersGuild.Site.Services.DataServices;
 
 namespace RoleplayersGuild.Site.Directory.Admin_Panel.Articles
 {
     public class IndexModel : PageModel
     {
-        private readonly IDataService _dataService;
+        private readonly IContentDataService _contentDataService;
+        private readonly IMiscDataService _miscDataService;
 
-        public IndexModel(IDataService dataService)
+        public IndexModel(IContentDataService contentDataService, IMiscDataService miscDataService)
         {
-            _dataService = dataService;
+            _contentDataService = contentDataService;
+            _miscDataService = miscDataService;
         }
 
         [TempData]
@@ -32,10 +30,10 @@ namespace RoleplayersGuild.Site.Directory.Admin_Panel.Articles
 
         public async Task<IActionResult> OnGetAsync(int? id)
         {
-            AllArticles = await _dataService.GetRecordsAsync<ArticleForListingViewModel>("""SELECT "ArticleId", "ArticleTitle" FROM "Articles" ORDER BY "ArticleTitle" """);
+            AllArticles = await _contentDataService.GetRecordsAsync<ArticleForListingViewModel>("""SELECT "ArticleId", "ArticleTitle" FROM "Articles" ORDER BY "ArticleTitle" """);
             if (id.HasValue)
             {
-                var articleToEdit = await _dataService.GetArticleWithDetailsAsync(id.Value);
+                var articleToEdit = await _contentDataService.GetArticleWithDetailsAsync(id.Value);
                 if (articleToEdit == null) return NotFound();
 
                 Article = new ArticleEditModel
@@ -50,8 +48,8 @@ namespace RoleplayersGuild.Site.Directory.Admin_Panel.Articles
                     OwnerUserName = articleToEdit.AuthorUsername // Corrected this line
                 };
 
-                var articleGenres = await _dataService.GetArticleGenresAsync(id.Value);
-                var allGenres = await _dataService.GetGenresAsync();
+                var articleGenres = await _contentDataService.GetArticleGenresAsync(id.Value);
+                var allGenres = await _miscDataService.GetGenresAsync();
                 Genres = allGenres.Select(g => new GenreSelectionViewModel
                 {
                     GenreId = g.GenreId,
@@ -59,7 +57,7 @@ namespace RoleplayersGuild.Site.Directory.Admin_Panel.Articles
                     IsSelected = articleGenres.Contains(g.GenreId)
                 }).ToList();
 
-                var categories = await _dataService.GetRecordsAsync<Category>("""SELECT * FROM "ArticleCategories" ORDER BY "CategoryName" """);
+                var categories = await _contentDataService.GetRecordsAsync<Category>("""SELECT * FROM "ArticleCategories" ORDER BY "CategoryName" """);
                 Categories = new SelectList(categories, "CategoryId", "CategoryName", Article.CategoryId);
             }
             return Page();
@@ -85,9 +83,9 @@ namespace RoleplayersGuild.Site.Directory.Admin_Panel.Articles
                 UniverseId = null
             };
 
-            await _dataService.UpdateArticleAsync(Article.ArticleId, updateModel);
+            await _contentDataService.UpdateArticleAsync(Article.ArticleId, updateModel);
             var selectedGenreIds = Genres.Where(g => g.IsSelected).Select(g => g.GenreId).ToList();
-            await _dataService.UpdateArticleGenresAsync(Article.ArticleId, selectedGenreIds);
+            await _contentDataService.UpdateArticleGenresAsync(Article.ArticleId, selectedGenreIds);
 
             IsSuccess = true;
             Message = "The article has been saved.";
@@ -96,7 +94,7 @@ namespace RoleplayersGuild.Site.Directory.Admin_Panel.Articles
 
         public async Task<IActionResult> OnPostDeleteAsync(int id)
         {
-            await _dataService.DeleteArticleAsync(id);
+            await _contentDataService.DeleteArticleAsync(id);
             TempData["IsSuccess"] = true;
             TempData["Message"] = "The article has been deleted.";
             return RedirectToPage("./Index");

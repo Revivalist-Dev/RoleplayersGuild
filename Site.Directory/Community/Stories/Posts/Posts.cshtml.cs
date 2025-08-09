@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using RoleplayersGuild.Site.Model;
 using RoleplayersGuild.Site.Services;
+using RoleplayersGuild.Site.Services.DataServices;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
@@ -11,13 +12,17 @@ namespace RoleplayersGuild.Site.Directory.Community.Stories
 {
     public class PostsModel : PageModel
     {
-        private readonly IDataService _dataService;
+        private readonly IContentDataService _contentDataService;
+        private readonly IUserDataService _userDataService;
+        private readonly ICharacterDataService _characterDataService;
         private readonly IUserService _userService;
         private readonly INotificationService _notificationService;
 
-        public PostsModel(IDataService dataService, IUserService userService, INotificationService notificationService)
+        public PostsModel(IContentDataService contentDataService, IUserDataService userDataService, ICharacterDataService characterDataService, IUserService userService, INotificationService notificationService)
         {
-            _dataService = dataService;
+            _contentDataService = contentDataService;
+            _userDataService = userDataService;
+            _characterDataService = characterDataService;
             _userService = userService;
             _notificationService = notificationService;
         }
@@ -41,24 +46,22 @@ namespace RoleplayersGuild.Site.Directory.Community.Stories
         public StoryWithDetails? Story { get; set; }
         public PagedResult<StoryPostViewModel>? Posts { get; set; }
         public List<Character> UserCharacters { get; set; } = new();
-        public bool IsStaff { get; set; }
         public bool IsBlocked { get; set; }
         public int CurrentUserId { get; set; }
 
         public async Task<IActionResult> OnGetAsync()
         {
-            Story = await _dataService.GetStoryWithDetailsAsync(StoryId);
+            Story = await _contentDataService.GetStoryWithDetailsAsync(StoryId);
             if (Story is null)
             {
                 return NotFound();
             }
 
             CurrentUserId = _userService.GetUserId(User);
-            IsStaff = await _userService.IsCurrentUserStaffAsync();
 
             if (CurrentUserId > 0 && Story.UserId > 0)
             {
-                IsBlocked = await _dataService.IsUserBlockedAsync(Story.UserId, CurrentUserId);
+                IsBlocked = await _userDataService.IsUserBlockedAsync(Story.UserId, CurrentUserId);
             }
 
             if (IsBlocked)
@@ -67,13 +70,13 @@ namespace RoleplayersGuild.Site.Directory.Community.Stories
             }
             else
             {
-                Posts = await _dataService.GetStoryPostsPagedAsync(StoryId, CurrentPage, 10);
+                Posts = await _contentDataService.GetStoryPostsPagedAsync(StoryId, CurrentPage, 10);
             }
 
             if (CurrentUserId > 0)
             {
-                UserCharacters = (await _dataService.GetActiveCharactersForUserAsync(CurrentUserId)).ToList();
-                var currentPostAs = await _dataService.GetCurrentSendAsCharacterIdAsync();
+                UserCharacters = (await _characterDataService.GetActiveCharactersForUserAsync(CurrentUserId)).ToList();
+                var currentPostAs = await _userDataService.GetCurrentSendAsCharacterIdAsync();
 
                 if (UserCharacters.Any(c => c.CharacterId == currentPostAs))
                 {
@@ -99,23 +102,23 @@ namespace RoleplayersGuild.Site.Directory.Community.Stories
                 return await OnGetAsync();
             }
 
-            var userChars = (await _dataService.GetActiveCharactersForUserAsync(CurrentUserId)).ToList();
+            var userChars = (await _characterDataService.GetActiveCharactersForUserAsync(CurrentUserId)).ToList();
             if (!userChars.Any(c => c.CharacterId == PostAsCharacterId))
             {
                 TempData["Message"] = "Invalid character selected.";
                 return await OnGetAsync();
             }
 
-            await _dataService.AddStoryPostAsync(StoryId, PostAsCharacterId, NewPostContent);
+            await _contentDataService.AddStoryPostAsync(StoryId, PostAsCharacterId, NewPostContent);
 
-            var story = await _dataService.GetStoryWithDetailsAsync(StoryId);
+            var story = await _contentDataService.GetStoryWithDetailsAsync(StoryId);
             if (story is not null && story.UserId != CurrentUserId)
             {
                 await _notificationService.NotifyStoryOwnerOfNewPostAsync(StoryId, story.UserId, PostAsCharacterId);
             }
 
             const int pageSize = 10;
-            var postResult = await _dataService.GetStoryPostsPagedAsync(StoryId, 1, pageSize);
+            var postResult = await _contentDataService.GetStoryPostsPagedAsync(StoryId, 1, pageSize);
             var totalCount = postResult?.TotalCount ?? 1;
             var lastPage = (totalCount + pageSize - 1) / pageSize;
 
@@ -125,11 +128,11 @@ namespace RoleplayersGuild.Site.Directory.Community.Stories
         public async Task<IActionResult> OnPostDeleteAsync(int postId)
         {
             var currentUserId = _userService.GetUserId(User);
-            var story = await _dataService.GetStoryWithDetailsAsync(StoryId);
+            var story = await _contentDataService.GetStoryWithDetailsAsync(StoryId);
 
             if (currentUserId == 0 || story is null) return Forbid();
 
-            await _dataService.DeleteStoryPostAsync(postId, currentUserId, story.UserId);
+            await _contentDataService.DeleteStoryPostAsync(postId, currentUserId, story.UserId);
 
             TempData["Message"] = "Post successfully deleted.";
             return RedirectToPage(new { id = StoryId, p = CurrentPage });

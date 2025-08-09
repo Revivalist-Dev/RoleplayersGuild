@@ -1,29 +1,30 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc.RazorPages;
-using System.Threading.Tasks;
 
 namespace RoleplayersGuild.Site.Directory.Admin;
 
-[Authorize(Policy = "IsStaff")] // Apply the base policy to the entire Admin-Panel
+[Authorize(Policy = "IsStaff")]
 public class IndexModel : PageModel
 {
-    private readonly IAuthorizationService _authorizationService;
-
     // Properties to expose authorization results to the view
     public bool IsUserStaff { get; set; }
     public bool IsUserAdmin { get; set; }
     public bool IsUserSuperAdmin { get; set; }
 
-    public IndexModel(IAuthorizationService authorizationService)
+    public IndexModel()
     {
-        _authorizationService = authorizationService;
     }
 
-    public async Task OnGetAsync()
+    public void OnGet()
     {
-        // Perform authorization checks using the injected service and the current User
-        IsUserStaff = (await _authorizationService.AuthorizeAsync(User, "IsStaff")).Succeeded;
-        IsUserAdmin = (await _authorizationService.AuthorizeAsync(User, "IsAdmin")).Succeeded;
-        IsUserSuperAdmin = (await _authorizationService.AuthorizeAsync(User, "IsSuperAdmin")).Succeeded;
+        // The [Authorize] attribute ensures the user is at least staff.
+        // We can set IsUserStaff to true and then check for higher privileges.
+        IsUserStaff = User.IsInRole("Staff") || User.IsInRole("Admin") || User.IsInRole("SuperAdmin");
+
+        // Check for Admin or SuperAdmin roles to show admin-specific sections.
+        IsUserAdmin = User.IsInRole("Admin") || User.IsInRole("SuperAdmin");
+
+        // Check for SuperAdmin role for super-admin-specific sections.
+        IsUserSuperAdmin = User.IsInRole("SuperAdmin");
     }
 }

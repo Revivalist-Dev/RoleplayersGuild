@@ -13,8 +13,8 @@ const CharacterCardPreview: React.FC<CharacterCardPreviewProps> = ({ displayName
     const defaultAvatarUrl = "/images/Defaults/NewAvatar.png";
 
     return (
-        <div className="character-card-container sticky-top">
-            <div className="card character-card text-center h-100">
+        <div className="character-card-container sticky-top mx-auto" style={{ width: '300px' }}>
+            <div className="card character-card text-center">
                 <div className="card-header p-2">
                     <h6 className="card-title m-0 text-truncate">{displayName || 'Character Name'}</h6>
                 </div>
@@ -22,7 +22,7 @@ const CharacterCardPreview: React.FC<CharacterCardPreviewProps> = ({ displayName
                 <div className="card-content-wrapper">
                     {/* Card View */}
                     <div className={`card-img-wrapper ${activeView !== 'card' ? 'd-none' : ''}`}>
-                        <img src={cardImageUrl || defaultCardUrl} className="rpg-img img-fluid" alt="Card Preview" />
+                        <img src={cardImageUrl || defaultCardUrl} className="rpg-img img-fluid" alt="Card Preview" style={{ height: '500px', width: '300px', objectFit: 'cover' }} />
                     </div>
 
                     {/* Avatar View */}

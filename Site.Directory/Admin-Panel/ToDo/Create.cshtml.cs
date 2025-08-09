@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using RoleplayersGuild.Site.Model;
 using RoleplayersGuild.Site.Services;
+using RoleplayersGuild.Site.Services.DataServices;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Threading.Tasks;
@@ -13,13 +14,13 @@ namespace RoleplayersGuild.Site.Directory.Admin_Panel.ToDo
     // [Authorize(Policy = "IsStaff")]
     public class CreateModel : PageModel
     {
-        private readonly IDataService _dataService;
-        private readonly ICookieService _cookieService;
+        private readonly IBaseDataService _baseDataService;
+        private readonly IUserService _userService;
 
-        public CreateModel(IDataService dataService, ICookieService cookieService)
+        public CreateModel(IBaseDataService baseDataService, IUserService userService)
         {
-            _dataService = dataService;
-            _cookieService = cookieService;
+            _baseDataService = baseDataService;
+            _userService = userService;
         }
 
         [BindProperty]
@@ -43,7 +44,7 @@ namespace RoleplayersGuild.Site.Directory.Admin_Panel.ToDo
                 return Page();
             }
 
-            var createdByUserId = _cookieService.GetUserId();
+            var createdByUserId = _userService.GetUserId(User);
 
             // Corrected: SQL query uses PascalCase
             const string sql = """
@@ -51,7 +52,7 @@ namespace RoleplayersGuild.Site.Directory.Admin_Panel.ToDo
                 VALUES (@ItemName, @StatusId, @TypeId, @AssignedToUserId, @CreatedByUserId, @ItemDescription)
                 """;
 
-            await _dataService.ExecuteAsync(sql, new
+            await _baseDataService.ExecuteAsync(sql, new
             {
                 ToDoItem.ItemName,
                 ToDoItem.StatusId,
@@ -66,13 +67,13 @@ namespace RoleplayersGuild.Site.Directory.Admin_Panel.ToDo
 
         private async Task PopulateSelectListsAsync()
         {
-            var users = await _dataService.GetRecordsAsync<User>("""SELECT "UserId", "Username" FROM "Users" WHERE "UserTypeId" IN (2, 3, 4) ORDER BY "Username" """);
+            var users = await _baseDataService.GetRecordsAsync<User>("""SELECT "UserId", "Username" FROM "Users" WHERE "UserTypeId" IN (2, 3, 4) ORDER BY "Username" """);
             AssignableUsers = new SelectList(users, "UserId", "Username");
 
-            var statuses = await _dataService.GetRecordsAsync<ToDoStatus>("""SELECT "StatusId", "StatusName" FROM "TodoItemStatuses" ORDER BY "StatusName" """);
+            var statuses = await _baseDataService.GetRecordsAsync<ToDoStatus>("""SELECT "StatusId", "StatusName" FROM "TodoItemStatuses" ORDER BY "StatusName" """);
             Statuses = new SelectList(statuses, "StatusId", "StatusName");
 
-            var types = await _dataService.GetRecordsAsync<ToDoType>("""SELECT "TypeId", "TypeName" FROM "TodoItemTypes" ORDER BY "TypeName" """);
+            var types = await _baseDataService.GetRecordsAsync<ToDoType>("""SELECT "TypeId", "TypeName" FROM "TodoItemTypes" ORDER BY "TypeName" """);
             Types = new SelectList(types, "TypeId", "TypeName");
         }
     }

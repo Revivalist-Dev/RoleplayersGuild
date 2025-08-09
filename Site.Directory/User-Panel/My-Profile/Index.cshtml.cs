@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using RoleplayersGuild.Site.Model;
 using RoleplayersGuild.Site.Services;
+using RoleplayersGuild.Site.Services.DataServices;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -9,19 +10,29 @@ namespace RoleplayersGuild.Site.Directory.User_Panel.My_Profile
 {
     public class IndexMyProfileModel : UserPanelBaseModel
     {
+        private readonly IUserDataService _userDataService;
+        private readonly IContentDataService _contentDataService;
         public User? ProfileUser { get; set; }
         public IEnumerable<UserBadgeViewModel> Badges { get; set; } = Enumerable.Empty<UserBadgeViewModel>();
         public List<ArticleForListingViewModel> Articles { get; set; } = new();
         public IEnumerable<CharactersForListing> Characters { get; set; } = Enumerable.Empty<CharactersForListing>();
 
-        // UPDATED: Constructor to match the new base class signature.
-        public IndexMyProfileModel(IDataService dataService, IUserService userService)
-            : base(dataService, userService) { }
+        public IndexMyProfileModel(
+            ICharacterDataService characterDataService,
+            ICommunityDataService communityDataService,
+            IMiscDataService miscDataService,
+            IUserService userService,
+            IUserDataService userDataService,
+            IContentDataService contentDataService)
+            : base(characterDataService, communityDataService, miscDataService, userService)
+        {
+            _userDataService = userDataService;
+            _contentDataService = contentDataService;
+        }
 
         public async Task<IActionResult> OnGetAsync()
         {
-            // LoggedInUserId is provided by the UserPanelBaseModel
-            ProfileUser = await DataService.GetUserAsync(LoggedInUserId);
+            ProfileUser = await _userDataService.GetUserAsync(LoggedInUserId);
             if (ProfileUser is null)
             {
                 return NotFound("User profile could not be found.");
@@ -29,13 +40,13 @@ namespace RoleplayersGuild.Site.Directory.User_Panel.My_Profile
 
             ViewData["Title"] = "My Profile Preview";
 
-            Badges = await DataService.GetUserBadgesAsync(LoggedInUserId);
+            Badges = await _userDataService.GetUserBadgesAsync(LoggedInUserId);
 
-            var articlesData = await DataService.GetUserPublicArticlesAsync(LoggedInUserId);
+            var articlesData = await _contentDataService.GetUserArticlesAsync(LoggedInUserId);
             var articleIds = articlesData.Select(a => a.ArticleId);
             if (articleIds.Any())
             {
-                var genresLookup = await DataService.GetGenresForArticleListAsync(articleIds);
+                var genresLookup = await _contentDataService.GetGenresForArticleListAsync(articleIds);
                 Articles = articlesData.Select(a => new ArticleForListingViewModel
                 {
                     ArticleId = a.ArticleId,
@@ -54,7 +65,7 @@ namespace RoleplayersGuild.Site.Directory.User_Panel.My_Profile
                 }).ToList();
             }
 
-            Characters = await DataService.GetUserPublicCharactersAsync(LoggedInUserId);
+            Characters = await _userDataService.GetUserCharactersForListingAsync(LoggedInUserId);
 
             return Page();
         }

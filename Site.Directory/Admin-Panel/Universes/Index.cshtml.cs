@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using RoleplayersGuild.Site.Model;
 using RoleplayersGuild.Site.Services;
+using RoleplayersGuild.Site.Services.DataServices;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
@@ -14,11 +15,13 @@ namespace RoleplayersGuild.Site.Directory.Admin_Panel.Universes
     // [Authorize(Policy = "IsStaff")]
     public class IndexModel : PageModel
     {
-        private readonly IDataService _dataService;
+        private readonly IUniverseDataService _universeDataService;
+        private readonly IMiscDataService _miscDataService;
 
-        public IndexModel(IDataService dataService)
+        public IndexModel(IUniverseDataService universeDataService, IMiscDataService miscDataService)
         {
-            _dataService = dataService;
+            _universeDataService = universeDataService;
+            _miscDataService = miscDataService;
         }
 
         [TempData] public string? Message { get; set; }
@@ -36,7 +39,7 @@ namespace RoleplayersGuild.Site.Directory.Admin_Panel.Universes
                 SELECT "UniverseId", CASE WHEN "StatusId" = 1 THEN '[PA] - ' || "UniverseName" ELSE "UniverseName" END AS "UniverseName" 
                 FROM "Universes" ORDER BY "StatusId", "UniverseName"
                 """;
-            AllUniverses = await _dataService.GetRecordsAsync<UniverseListingViewModel>(listSql);
+            AllUniverses = await _universeDataService.GetRecordsAsync<UniverseListingViewModel>(listSql);
 
             if (id.HasValue)
             {
@@ -48,7 +51,7 @@ namespace RoleplayersGuild.Site.Directory.Admin_Panel.Universes
                     LEFT JOIN "Users" s ON u."SubmittedById" = s."UserId"
                     WHERE u."UniverseId" = @id
                     """;
-                var universe = await _dataService.GetRecordAsync<UniverseWithUsernames>(detailSql, new { id });
+                var universe = await _universeDataService.GetRecordAsync<UniverseWithUsernames>(detailSql, new { id });
 
                 if (universe == null) return NotFound();
 
@@ -66,8 +69,8 @@ namespace RoleplayersGuild.Site.Directory.Admin_Panel.Universes
                     SubmittedByUsername = universe.SubmittedByUsername
                 };
 
-                var universeGenres = await _dataService.GetUniverseGenresAsync(id.Value);
-                var allGenres = await _dataService.GetGenresAsync();
+                var universeGenres = await _universeDataService.GetUniverseGenresAsync(id.Value);
+                var allGenres = await _miscDataService.GetGenresAsync();
                 Genres = allGenres.Select(g => new GenreSelectionViewModel
                 {
                     GenreId = g.GenreId,
@@ -89,7 +92,7 @@ namespace RoleplayersGuild.Site.Directory.Admin_Panel.Universes
                 WHERE "UniverseId" = @UniverseId
                 """;
 
-            await _dataService.ExecuteAsync(updateSql, new
+            await _universeDataService.ExecuteAsync(updateSql, new
             {
                 Universe.UniverseId,
                 Universe.Name,
@@ -100,7 +103,7 @@ namespace RoleplayersGuild.Site.Directory.Admin_Panel.Universes
             });
 
             var selectedGenreIds = Genres.Where(g => g.IsSelected).Select(g => g.GenreId).ToList();
-            await _dataService.UpdateUniverseGenresAsync(Universe.UniverseId, selectedGenreIds);
+            await _universeDataService.UpdateUniverseGenresAsync(Universe.UniverseId, selectedGenreIds);
 
             IsSuccess = true;
             Message = "The changes have been saved.";
@@ -109,7 +112,7 @@ namespace RoleplayersGuild.Site.Directory.Admin_Panel.Universes
 
         public async Task<IActionResult> OnPostDeleteAsync(int id)
         {
-            await _dataService.DeleteUniverseAsync(id);
+            await _universeDataService.DeleteUniverseAsync(id);
             TempData["IsSuccess"] = true;
             TempData["Message"] = "The universe has been deleted.";
             return RedirectToPage("./Index");

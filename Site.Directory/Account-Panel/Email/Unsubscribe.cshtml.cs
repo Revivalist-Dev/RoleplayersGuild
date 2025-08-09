@@ -1,17 +1,17 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
-using RoleplayersGuild.Site.Services;
+using RoleplayersGuild.Site.Services.DataServices;
 using System.Threading.Tasks;
 
 namespace RoleplayersGuild.Site.Directory.Account_Panel.Email
 {
     public class UnsubscribeModel : PageModel
     {
-        private readonly IDataService _dataService;
+        private readonly IUserDataService _userDataService;
 
-        public UnsubscribeModel(IDataService dataService)
+        public UnsubscribeModel(IUserDataService userDataService)
         {
-            _dataService = dataService;
+            _userDataService = userDataService;
         }
 
         public string Message { get; private set; } = "An error occurred. The link may be invalid or expired.";
@@ -26,12 +26,12 @@ namespace RoleplayersGuild.Site.Directory.Account_Panel.Email
             }
 
             // Find the user by their email address
-            var user = await _dataService.GetUserByEmailAsync(email);
+            var user = await _userDataService.GetUserByEmailAsync(email);
 
             if (user != null)
             {
                 // Unsubscribe them and set a success message
-                await _dataService.UnsubscribeUserFromNotificationsAsync(user.UserId);
+                await _userDataService.UnsubscribeUserFromNotificationsAsync(user.UserId);
                 Message = $"The address {user.EmailAddress} has been successfully unsubscribed.";
             }
             else

@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using RoleplayersGuild.Site.Model;
 using RoleplayersGuild.Site.Services;
+using RoleplayersGuild.Site.Services.DataServices;
 
 namespace RoleplayersGuild.Site.Directory.User_Panel.My_Threads
 {
@@ -16,34 +17,32 @@ namespace RoleplayersGuild.Site.Directory.User_Panel.My_Threads
         public NewThreadInput Input { get; set; } = new();
         public SelectList UserCharacters { get; set; } = new(Enumerable.Empty<SelectListItem>());
 
-        // CORRECTED: Constructor now uses the base class and IUserService
-        public CreateNewThreadModel(IDataService dataService, IUserService userService)
-            : base(dataService, userService) { }
+        public CreateNewThreadModel(
+            ICharacterDataService characterDataService,
+            ICommunityDataService communityDataService,
+            IMiscDataService miscDataService,
+            IUserService userService)
+            : base(characterDataService, communityDataService, miscDataService, userService)
+        {
+        }
 
         public async Task<IActionResult> OnGetAsync([FromQuery] int toCharacterId)
         {
-            var userId = UserService.GetUserId(User);
-            if (userId == 0) return Forbid();
-
             if (toCharacterId > 0)
             {
-                var character = await DataService.GetCharacterAsync(toCharacterId);
+                var character = await _characterDataService.GetCharacterAsync(toCharacterId);
                 if (character is not null)
                 {
                     Input.ToCharacterIds = character.CharacterDisplayName ?? "";
                 }
             }
 
-            await PopulateCharactersAsync(userId);
+            await PopulateCharactersAsync(LoggedInUserId);
             return Page();
         }
 
         public async Task<IActionResult> OnPostAsync()
         {
-            var userId = UserService.GetUserId(User);
-            if (userId == 0) return Forbid();
-
-            // Split and clean the recipient names from the input string
             var recipientNames = Input.ToCharacterIds.Split(',')
                 .Select(name => name.Trim())
                 .Where(name => !string.IsNullOrEmpty(name))
@@ -56,36 +55,30 @@ namespace RoleplayersGuild.Site.Directory.User_Panel.My_Threads
 
             if (!ModelState.IsValid)
             {
-                await PopulateCharactersAsync(userId);
+                await PopulateCharactersAsync(LoggedInUserId);
                 return Page();
             }
 
-            // Find the character and user IDs for the recipients
-            var recipients = (await DataService.GetCharacterAndUserIdsByDisplayNamesAsync(recipientNames)).ToList();
+            var recipients = (await _characterDataService.GetCharacterAndUserIdsByDisplayNamesAsync(recipientNames)).ToList();
 
-            // Check if all names were found
-            if (recipients.Count != recipientNames.Count)
+            var recipientDisplayNames = recipients.Select(r => r.CharacterDisplayName).ToList();
+            var notFoundNames = recipientNames.Except(recipientDisplayNames, System.StringComparer.OrdinalIgnoreCase).ToList();
+
+            if (notFoundNames.Any())
             {
-                var foundNames = recipients.Select(r => r.CharacterId.ToString()).ToHashSet();
-                var notFoundNames = recipientNames.Where(name => !recipients.Any(r =>
-                    DataService.GetCharacterAsync(r.CharacterId).Result?.CharacterDisplayName?.Equals(name, System.StringComparison.OrdinalIgnoreCase) ?? false));
                 ModelState.AddModelError("Input.ToCharacterIds", $"Could not find character(s): {string.Join(", ", notFoundNames)}");
-                await PopulateCharactersAsync(userId);
+                await PopulateCharactersAsync(LoggedInUserId);
                 return Page();
             }
 
-            // Create the thread and the first message
-            var threadId = await DataService.CreateNewThreadAsync(Input.Title, userId);
-            await DataService.InsertMessageAsync(threadId, Input.CharacterId, Input.Content);
+            var threadId = await _communityDataService.CreateNewThreadAsync(Input.Title, LoggedInUserId);
+            await _communityDataService.InsertMessageAsync(threadId, Input.CharacterId, Input.Content);
 
-            // Add the sender to the thread
-            await DataService.InsertThreadUserAsync(userId, threadId, 1, Input.CharacterId, 1); // 1 = Read, 1 = Owner
+            await _communityDataService.InsertThreadUserAsync(LoggedInUserId, threadId, 1, Input.CharacterId, 1);
 
-            // Add all recipients to the thread
             foreach (var recipient in recipients)
             {
-                // 2 = Unread, 2 = Participant
-                await DataService.InsertThreadUserAsync(recipient.UserId, threadId, 2, recipient.CharacterId, 2);
+                await _communityDataService.InsertThreadUserAsync(recipient.UserId, threadId, 2, recipient.CharacterId, 2);
             }
 
             return RedirectToPage("./View", new { id = threadId });
@@ -93,7 +86,7 @@ namespace RoleplayersGuild.Site.Directory.User_Panel.My_Threads
 
         private async Task PopulateCharactersAsync(int userId)
         {
-            var characters = await DataService.GetActiveCharactersForUserAsync(userId);
+            var characters = await _characterDataService.GetActiveCharactersForUserAsync(userId);
             UserCharacters = new SelectList(characters, "CharacterId", "CharacterDisplayName");
         }
     }

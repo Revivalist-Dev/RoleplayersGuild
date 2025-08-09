@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using RoleplayersGuild.Site.Model;
 using RoleplayersGuild.Site.Services;
+using RoleplayersGuild.Site.Services.DataServices;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -10,12 +11,16 @@ namespace RoleplayersGuild.Site.Directory.Community.Users
 {
     public class ViewUserModel : PageModel
     {
-        private readonly IDataService _dataService;
+        private readonly IUserDataService _userDataService;
+        private readonly IContentDataService _contentDataService;
+        private readonly ICharacterDataService _characterDataService;
         private readonly IUserService _userService;
 
-        public ViewUserModel(IDataService dataService, IUserService userService)
+        public ViewUserModel(IUserDataService userDataService, IContentDataService contentDataService, ICharacterDataService characterDataService, IUserService userService)
         {
-            _dataService = dataService;
+            _userDataService = userDataService;
+            _contentDataService = contentDataService;
+            _characterDataService = characterDataService;
             _userService = userService;
         }
 
@@ -34,7 +39,7 @@ namespace RoleplayersGuild.Site.Directory.Community.Users
             CurrentUserId = _userService.GetUserId(User);
             IsViewingOwnProfile = id == CurrentUserId;
 
-            ProfileUser = await _dataService.GetUserAsync(id);
+            ProfileUser = await _userDataService.GetUserAsync(id);
             if (ProfileUser is null)
             {
                 return NotFound();
@@ -42,17 +47,17 @@ namespace RoleplayersGuild.Site.Directory.Community.Users
 
             if (CurrentUserId > 0 && !IsViewingOwnProfile)
             {
-                IsBlockedByCurrentUser = await _dataService.IsUserBlockedAsync(id, CurrentUserId);
-                IsCurrentUserBlocked = await _dataService.IsUserBlockedAsync(CurrentUserId, id);
+                IsBlockedByCurrentUser = await _userDataService.IsUserBlockedAsync(id, CurrentUserId);
+                IsCurrentUserBlocked = await _userDataService.IsUserBlockedAsync(CurrentUserId, id);
             }
 
             if (!IsBlockedByCurrentUser && !IsCurrentUserBlocked)
             {
-                var articlesData = (await _dataService.GetUserPublicArticlesAsync(id)).ToList();
+                var articlesData = (await _userDataService.GetUserPublicArticlesAsync(id)).ToList();
                 var articleIds = articlesData.Select(a => a.ArticleId);
                 if (articleIds.Any())
                 {
-                    var genresLookup = await _dataService.GetGenresForArticleListAsync(articleIds);
+                    var genresLookup = await _contentDataService.GetGenresForArticleListAsync(articleIds);
                     Articles = articlesData.Select(a => new ArticleForListingViewModel
                     {
                         ArticleId = a.ArticleId,
@@ -62,8 +67,8 @@ namespace RoleplayersGuild.Site.Directory.Community.Users
                     }).ToList();
                 }
 
-                Badges = await _dataService.GetUserBadgesAsync(id);
-                Characters = await _dataService.GetUserPublicCharactersAsync(id);
+                Badges = await _userDataService.GetUserBadgesAsync(id);
+                Characters = await _userDataService.GetUserCharactersForListingAsync(id);
             }
 
             ViewData["Title"] = ProfileUser.Username;
@@ -75,7 +80,7 @@ namespace RoleplayersGuild.Site.Directory.Community.Users
             var currentUserId = _userService.GetUserId(User);
             if (currentUserId > 0 && currentUserId != id)
             {
-                await _dataService.BlockUserAsync(currentUserId, id);
+                await _userDataService.BlockUserAsync(currentUserId, id);
                 TempData["Message"] = "User has been blocked.";
             }
             return RedirectToPage(new { id });
@@ -86,7 +91,7 @@ namespace RoleplayersGuild.Site.Directory.Community.Users
             var currentUserId = _userService.GetUserId(User);
             if (currentUserId > 0)
             {
-                await _dataService.UnblockUserAsync(currentUserId, id);
+                await _userDataService.UnblockUserAsync(currentUserId, id);
                 TempData["Message"] = "User has been unblocked.";
             }
             return RedirectToPage(new { id });

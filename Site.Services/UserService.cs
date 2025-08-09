@@ -1,21 +1,16 @@
 ﻿using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Options;
-using RoleplayersGuild.Project.Configuration;
-using RoleplayersGuild.Site.Model;
-using System;
-using System.Collections.Generic;
-using System.Linq;
+using RoleplayersGuild.Site.Services.DataServices;
 using System.Security.Claims;
-using System.Threading.Tasks;
 
 namespace RoleplayersGuild.Site.Services
 {
     public class UserService : IUserService
     {
-        private readonly IDataService _dataService;
+        private readonly IUserDataService _userDataService;
+        private readonly ICharacterDataService _characterDataService;
+        private readonly ICommunityDataService _communityDataService;
         private readonly ICookieService _cookieService;
         private readonly IHttpContextAccessor _httpContextAccessor;
         private readonly IConfiguration _config;
@@ -24,7 +19,9 @@ namespace RoleplayersGuild.Site.Services
         private readonly ImageSettings _imageSettings;
 
         public UserService(
-            IDataService dataService,
+            IUserDataService userDataService,
+            ICharacterDataService characterDataService,
+            ICommunityDataService communityDataService,
             ICookieService cookieService,
             IHttpContextAccessor httpContextAccessor,
             IConfiguration config,
@@ -32,7 +29,9 @@ namespace RoleplayersGuild.Site.Services
             INotificationService notificationService,
             IOptions<ImageSettings> imageSettings)
         {
-            _dataService = dataService;
+            _userDataService = userDataService;
+            _characterDataService = characterDataService;
+            _communityDataService = communityDataService;
             _cookieService = cookieService;
             _httpContextAccessor = httpContextAccessor;
             _config = config;
@@ -49,7 +48,7 @@ namespace RoleplayersGuild.Site.Services
                 return new ImageLimitResults { MaxSlots = _imageSettings.MaxPerCharacter, MaxSizeMb = _imageSettings.MaxFileSizeMb };
             }
 
-            var membershipTypeId = await _dataService.GetMembershipTypeIdAsync(userId);
+            var membershipTypeId = await _userDataService.GetMembershipTypeIdAsync(userId);
             int maxSlots = membershipTypeId switch { 1 => _imageSettings.BronzeMemberMax, 2 => _imageSettings.SilverMemberMax, 3 => _imageSettings.GoldMemberMax, 4 => _imageSettings.PlatinumMemberMax, _ => _imageSettings.MaxPerCharacter };
             int maxSizeMb = membershipTypeId switch { 1 => _imageSettings.BronzeMaxFileSizeMb, 2 => _imageSettings.SilverMaxFileSizeMb, 3 => _imageSettings.GoldMaxFileSizeMb, 4 => _imageSettings.PlatinumMaxFileSizeMb, _ => _imageSettings.MaxFileSizeMb };
             return new ImageLimitResults { MaxSlots = maxSlots, MaxSizeMb = maxSizeMb };
@@ -62,18 +61,21 @@ namespace RoleplayersGuild.Site.Services
             return 0;
         }
 
-        public bool GetUserPrefersMature(ClaimsPrincipal principal)
+        public async Task<bool> GetUserPrefersMatureAsync(ClaimsPrincipal principal)
         {
             var claim = principal.FindFirst("PrefersMature");
-            if (claim != null && bool.TryParse(claim.Value, out var prefersMature)) { return prefersMature; }
-            var user = GetCurrentUserAsync().GetAwaiter().GetResult();
+            if (claim != null && bool.TryParse(claim.Value, out var prefersMature))
+            {
+                return prefersMature;
+            }
+            var user = await GetCurrentUserAsync();
             return user?.ShowMatureContent ?? true;
         }
 
         public async Task<LoginResult> LoginAsync(string email, string password)
         {
             var ipAddress = GetCurrentIpAddress();
-            var user = await _dataService.GetUserByEmailAsync(email);
+            var user = await _userDataService.GetUserByEmailAsync(email);
             if (user is null)
             {
                 await LogFailedLoginAttempt(email, ipAddress);
@@ -84,10 +86,10 @@ namespace RoleplayersGuild.Site.Services
             {
                 case PasswordVerificationResult.Success:
                     await SignInUserAsync(user);
-                    return new LoginResult(true);
+                    return new LoginResult(true, user: user);
                 case PasswordVerificationResult.SuccessRehashNeeded:
                     await SignInUserAsync(user);
-                    return new LoginResult(true, passwordNeedsUpgrade: true);
+                    return new LoginResult(true, passwordNeedsUpgrade: true, user: user);
                 // FIX: Removed redundant 'Failed' case that falls through to default.
                 default:
                     await LogFailedLoginAttempt(email, ipAddress);
@@ -99,69 +101,92 @@ namespace RoleplayersGuild.Site.Services
         {
             var context = _httpContextAccessor.HttpContext;
             if (context is null) return;
-            var claims = new List<Claim> { new Claim(ClaimTypes.NameIdentifier, user.UserId.ToString()), new Claim(ClaimTypes.Name, user.Username ?? string.Empty), new Claim(ClaimTypes.Email, user.EmailAddress ?? string.Empty), new Claim("UserTypeId", user.UserTypeId.ToString()), new Claim("PrefersMature", user.ShowMatureContent.ToString()) };
-            if (user.UserTypeId >= 2) { claims.Add(new Claim(ClaimTypes.Role, "Staff")); }
-            if (user.UserTypeId >= 3) { claims.Add(new Claim(ClaimTypes.Role, "Admin")); }
-            if (user.UserTypeId == 4) { claims.Add(new Claim(ClaimTypes.Role, "SuperAdmin")); }
-            var claimsIdentity = new ClaimsIdentity(claims, "rpg_auth_scheme");
-            var authProperties = new AuthenticationProperties { IsPersistent = true, ExpiresUtc = DateTimeOffset.UtcNow.AddDays(14) };
+
+            var claims = new List<Claim>
+            {
+                new Claim(ClaimTypes.NameIdentifier, user.UserId.ToString()),
+                new Claim(ClaimTypes.Name, user.Username ?? string.Empty),
+                new Claim("UserTypeId", user.UserTypeId.ToString())
+            };
+
+            switch (user.UserTypeId)
+            {
+                case 4: // SuperAdmin
+                    claims.Add(new Claim(ClaimTypes.Role, "SuperAdmin"));
+                    claims.Add(new Claim(ClaimTypes.Role, "Admin"));
+                    claims.Add(new Claim(ClaimTypes.Role, "Staff"));
+                    break;
+                case 3: // Admin
+                    claims.Add(new Claim(ClaimTypes.Role, "Admin"));
+                    claims.Add(new Claim(ClaimTypes.Role, "Staff"));
+                    break;
+                case 2: // Staff
+                    claims.Add(new Claim(ClaimTypes.Role, "Staff"));
+                    break;
+            }
+
+            var claimsIdentity = new ClaimsIdentity(claims, "rpg_auth_scheme", ClaimTypes.Name, ClaimTypes.Role);
+            var authProperties = new AuthenticationProperties
+            {
+                IsPersistent = true,
+                ExpiresUtc = DateTimeOffset.UtcNow.AddDays(14)
+            };
+
             await context.SignInAsync("rpg_auth_scheme", new ClaimsPrincipal(claimsIdentity), authProperties);
+
             var ipAddress = GetCurrentIpAddress();
-            const string logSql = """ INSERT INTO "LoginAttempts" ("AttemptedUsername", "AttemptedPassword", "IpAddress", "AttemptWasSuccessful") VALUES (@Email, '--', @Ip, TRUE); UPDATE "Users" SET "LastLogin" = NOW() WHERE "UserId" = @UserId; """;
-            await _dataService.ExecuteAsync(logSql, new { Email = user.EmailAddress, Ip = ipAddress, UserId = user.UserId });
+            await _userDataService.LogSuccessfulLoginAsync(user.UserId, user.EmailAddress ?? string.Empty, ipAddress);
             var cookieOptions = new CookieOptions { Expires = DateTime.Now.AddDays(14), HttpOnly = true, SameSite = SameSiteMode.Lax, Secure = true };
             context.Response.Cookies.Append("UseDarkTheme", user.UseDarkTheme.ToString(), cookieOptions);
         }
 
         public async Task SendPasswordResetEmailAsync(string email)
         {
-            var user = await _dataService.GetUserByEmailAsync(email);
+            var user = await _userDataService.GetUserByEmailAsync(email);
             if (user is not null) { await _notificationService.SendPasswordResetEmailAsync(user); }
         }
 
         public async Task<IdentityResult> ResetPasswordAsync(string email, string token, string newPassword)
         {
             if (!Guid.TryParse(token, out var recoveryKey)) { return IdentityResult.Failed(new IdentityError { Description = "Invalid token format." }); }
-            const string sql = """SELECT * FROM "RecoveryAttempts" WHERE "RecoveryKey" = @RecoveryKey""";
-            var recoveryAttempt = await _dataService.GetRecordAsync<RecoveryAttempt>(sql, new { RecoveryKey = recoveryKey });
+            var recoveryAttempt = await _userDataService.GetRecoveryAttemptAsync(recoveryKey);
             if (recoveryAttempt is null || recoveryAttempt.RecoveryKeyUsed) { return IdentityResult.Failed(new IdentityError { Description = "This recovery link is invalid or has already been used." }); }
             if (recoveryAttempt.AttemptTimestamp < DateTime.Now.AddMinutes(-30)) { return IdentityResult.Failed(new IdentityError { Description = "This recovery link has expired. Please request a new one." }); }
-            var user = await _dataService.GetUserAsync(recoveryAttempt.UserId);
+            var user = await _userDataService.GetUserAsync(recoveryAttempt.UserId);
             if (user is null || user.EmailAddress != email) { return IdentityResult.Failed(new IdentityError { Description = "Invalid user for this token." }); }
             var newPasswordHash = _passCryptService.HashPassword(newPassword);
-            const string updateSql = """ UPDATE "Users" SET "Password" = @Password WHERE "UserId" = @UserId; UPDATE "RecoveryAttempts" SET "RecoveryKeyUsed" = TRUE WHERE "RecoveryAttemptId" = @AttemptId; """;
-            await _dataService.ExecuteAsync(updateSql, new { Password = newPasswordHash, UserId = user.UserId, AttemptId = recoveryAttempt.RecoveryAttemptId });
+            await _userDataService.UpdatePasswordAndInvalidateTokenAsync(user.UserId, newPasswordHash, recoveryAttempt.RecoveryAttemptId);
             return IdentityResult.Success;
         }
 
         private Task LogFailedLoginAttempt(string email, string? ip)
         {
-            const string sql = """INSERT INTO "LoginAttempts" ("AttemptedUsername", "AttemptedPassword", "IpAddress", "AttemptWasSuccessful") VALUES (@User, @Pass, @IP, FALSE)""";
-            return _dataService.ExecuteAsync(sql, new { User = email, Pass = "REDACTED", IP = ip });
+            return _userDataService.LogFailedLoginAttemptAsync(email, ip);
         }
 
-        public Task<bool> CurrentUserHasActiveMembershipAsync()
+        public async Task<bool> CurrentUserHasActiveMembershipAsync()
         {
             var principal = _httpContextAccessor.HttpContext?.User;
-            if (principal is null) return Task.FromResult(false);
+            if (principal is null) return false;
             var userId = GetUserId(principal);
-            if (userId == 0) return Task.FromResult(false);
-            var membershipTypeId = _dataService.GetMembershipTypeIdAsync(userId).GetAwaiter().GetResult();
-            return Task.FromResult(membershipTypeId > 0);
+            if (userId == 0) return false;
+            var membershipTypeId = await _userDataService.GetMembershipTypeIdAsync(userId);
+            return membershipTypeId > 0;
         }
 
         public async Task MarkCharacterForReviewAsync(int characterId, int adminUserId)
         {
-            var ownerUserId = await _dataService.GetUserIdFromCharacterAsync(characterId);
-            if (ownerUserId == 0) return;
-            await _dataService.ExecuteAsync("""UPDATE "Characters" SET "CharacterStatusId" = 2 WHERE "CharacterId" = @CharacterId""", new { CharacterId = characterId });
-            var threadId = await _dataService.CreateNewThreadAsync("[RPG] - Character Locked", 1);
+            var character = await _characterDataService.GetCharacterAsync(characterId);
+            if (character is null) return;
+            var ownerUserId = character.UserId;
+            await _characterDataService.SetCharacterStatusAsync(characterId, 2); // 2 = Under Review
+            var threadId = await _communityDataService.CreateNewThreadAsync("[RPG] - Character Locked", 1);
             var systemCharacterId = _config.GetValue<int>("SystemSettings:SystemCharacterId");
             var messageContent = "<div class=\"ThreadAlert alert-danger\"><p>This character been locked and placed under review...</p></div>";
-            await _dataService.InsertMessageAsync(threadId, systemCharacterId, messageContent);
-            await _dataService.InsertThreadUserAsync(ownerUserId, threadId, 2, characterId, 1);
+            await _communityDataService.InsertMessageAsync(threadId, systemCharacterId, messageContent);
+            await _communityDataService.InsertThreadUserAsync(character.UserId, threadId, 2, characterId, 1);
             var noteContent = $"AUTOMATED NOTE: Character {characterId} was locked out and marked for review.";
-            await _dataService.ExecuteAsync("""INSERT INTO "UserNotes" ("UserId", "CreatedByUserId", "NoteContent") VALUES (@UserId, @CreatedBy, @Content)""", new { UserId = ownerUserId, CreatedBy = adminUserId, Content = noteContent });
+            await _userDataService.AddUserNoteAsync(character.UserId, adminUserId, noteContent);
         }
 
         public string? GetCurrentIpAddress()
@@ -182,18 +207,21 @@ namespace RoleplayersGuild.Site.Services
         public Task<bool> IsCurrentUserStaffAsync()
         {
             var principal = _httpContextAccessor.HttpContext?.User;
-            return Task.FromResult(principal?.IsInRole("Staff") ?? false);
+            if (principal is null) return Task.FromResult(false);
+            var userTypeClaim = principal.FindFirst("UserTypeId");
+            if (userTypeClaim is null || !int.TryParse(userTypeClaim.Value, out int userTypeId)) return Task.FromResult(false);
+            return Task.FromResult(userTypeId >= 2);
         }
 
         public async Task<User?> CreateUserAsync(string username, string email, string password)
         {
-            var existingByEmail = await _dataService.GetUserIdByEmailAsync(email);
+            var existingByEmail = await _userDataService.GetUserIdByEmailAsync(email);
             if (existingByEmail > 0) { return null; }
-            var existingByUsername = await _dataService.GetUserIdByUsernameAsync(username);
+            var existingByUsername = await _userDataService.GetUserIdByUsernameAsync(username);
             if (existingByUsername > 0) { return null; }
             var hashedPassword = _passCryptService.HashPassword(password);
-            int newUserId = await _dataService.CreateNewUserAsync(email, hashedPassword, username);
-            if (newUserId > 0) { return await _dataService.GetUserAsync(newUserId); }
+            int newUserId = await _userDataService.CreateNewUserAsync(email, hashedPassword, username);
+            if (newUserId > 0) { return await _userDataService.GetUserAsync(newUserId); }
             return null;
         }
 
@@ -203,7 +231,7 @@ namespace RoleplayersGuild.Site.Services
             if (context?.User?.Identity?.IsAuthenticated ?? false)
             {
                 var userId = GetUserId(context.User);
-                if (userId > 0) { return await _dataService.GetUserAsync(userId); }
+                if (userId > 0) { return await _userDataService.GetUserAsync(userId); }
             }
             return null;
         }
@@ -213,13 +241,18 @@ namespace RoleplayersGuild.Site.Services
             var verificationResult = _passCryptService.VerifyPassword(user.Password, currentPassword);
             if (verificationResult == PasswordVerificationResult.Failed) { return IdentityResult.Failed(new IdentityError { Description = "Incorrect current password." }); }
             var newPasswordHash = _passCryptService.HashPassword(newPassword);
-            await _dataService.ExecuteAsync("""UPDATE "Users" SET "Password" = @Password WHERE "UserId" = @UserId""", new { Password = newPasswordHash, UserId = user.UserId });
+            await _userDataService.UpdateUserPasswordAsync(user.UserId, newPasswordHash);
             return IdentityResult.Success;
         }
 
         public async Task<User?> GetUserByEmailAsync(string email)
         {
-            return await _dataService.GetUserByEmailAsync(email);
+            return await _userDataService.GetUserByEmailAsync(email);
+        }
+
+        public async Task UpdateUserLastActionAsync(int userId)
+        {
+            await _userDataService.UpdateUserLastActionAsync(userId);
         }
     }
 }

@@ -6,18 +6,19 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using RoleplayersGuild.Site.Model;
 using RoleplayersGuild.Site.Services;
+using RoleplayersGuild.Site.Services.DataServices;
 
 namespace RoleplayersGuild.Site.Directory.Functionality_Voting
 {
     public class IndexModel : PageModel
     {
-        private readonly IDataService _dataService;
-        private readonly ICookieService _cookieService;
+        private readonly IMiscDataService _miscDataService;
+        private readonly IUserService _userService;
 
-        public IndexModel(IDataService dataService, ICookieService cookieService)
+        public IndexModel(IMiscDataService miscDataService, IUserService userService)
         {
-            _dataService = dataService;
-            _cookieService = cookieService;
+            _miscDataService = miscDataService;
+            _userService = userService;
         }
 
         public List<ToDoItemViewModel> ConsiderationItems { get; set; } = new();
@@ -30,11 +31,11 @@ namespace RoleplayersGuild.Site.Directory.Functionality_Voting
 
         public async Task OnGetAsync()
         {
-            var userId = _cookieService.GetUserId();
-            var items = await _dataService.GetConsiderationItemsAsync();
+            var userId = _userService.GetUserId(User);
+            var items = await _miscDataService.GetConsiderationItemsAsync();
             foreach (var item in items)
             {
-                item.HasVoted = userId != 0 && await _dataService.HasUserVotedAsync(item.ItemId, userId);
+                item.HasVoted = userId != 0 && await _miscDataService.HasUserVotedAsync(item.ItemId, userId);
             }
             ConsiderationItems = items.ToList();
         }
@@ -45,29 +46,29 @@ namespace RoleplayersGuild.Site.Directory.Functionality_Voting
             {
                 return Page();
             }
-            var userId = _cookieService.GetUserId();
+            var userId = _userService.GetUserId(User);
             if (userId == 0) return Forbid();
 
-            await _dataService.AddToDoItemAsync(NewIdea.Name, NewIdea.Description, userId);
+            await _miscDataService.AddToDoItemAsync(NewIdea.Name, NewIdea.Description, userId);
             Message = "Your idea has been submitted successfully!";
             return RedirectToPage();
         }
 
         public async Task<IActionResult> OnPostAddVoteAsync(int itemId)
         {
-            var userId = _cookieService.GetUserId();
+            var userId = _userService.GetUserId(User);
             if (userId == 0) return Forbid();
 
-            await _dataService.AddVoteAsync(itemId, userId);
+            await _miscDataService.AddVoteAsync(itemId, userId);
             return RedirectToPage();
         }
 
         public async Task<IActionResult> OnPostRemoveVoteAsync(int itemId)
         {
-            var userId = _cookieService.GetUserId();
+            var userId = _userService.GetUserId(User);
             if (userId == 0) return Forbid();
 
-            await _dataService.RemoveVoteAsync(itemId, userId);
+            await _miscDataService.RemoveVoteAsync(itemId, userId);
             return RedirectToPage();
         }
     }

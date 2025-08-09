@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using RoleplayersGuild.Site.Model;
 using RoleplayersGuild.Site.Services;
+using RoleplayersGuild.Site.Services.DataServices;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -11,12 +12,14 @@ namespace RoleplayersGuild.Site.Directory.Community.Characters
 {
     public class SearchModel : PageModel
     {
-        private readonly IDataService _dataService;
+        private readonly ICharacterDataService _characterDataService;
+        private readonly IMiscDataService _miscDataService;
         private readonly IUserService _userService;
 
-        public SearchModel(IDataService dataService, IUserService userService)
+        public SearchModel(ICharacterDataService characterDataService, IMiscDataService miscDataService, IUserService userService)
         {
-            _dataService = dataService;
+            _characterDataService = characterDataService;
+            _miscDataService = miscDataService;
             _userService = userService;
         }
 
@@ -40,12 +43,12 @@ namespace RoleplayersGuild.Site.Directory.Community.Characters
 
             // CORRECTED: The DataService now handles all image URL processing.
             // The manual processing loop that was here has been removed.
-            PagedResults = await _dataService.SearchCharactersAsync(Search, userId, CurrentPage, pageSize);
+            PagedResults = await _characterDataService.SearchCharactersAsync(Search, userId, CurrentPage, pageSize);
         }
 
         private async Task PopulateSelectListsAsync()
         {
-            var genders = await _dataService.GetGendersAsync();
+            var genders = await _miscDataService.GetGendersAsync();
             Genders = new SelectList(genders, "GenderId", "GenderName", Search.GenderId);
 
             var sortOptions = new List<SelectListItem>

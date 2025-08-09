@@ -1,6 +1,4 @@
-﻿using System.Threading.Tasks;
-
-namespace RoleplayersGuild.Site.Services
+﻿namespace RoleplayersGuild.Site.Services
 {
     public interface IRazorViewToStringRenderer
     {

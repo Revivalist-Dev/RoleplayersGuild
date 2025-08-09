@@ -1,17 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { CharacterInline } from '../types';
+import { CharacterInline } from '../../../../types';
 
 interface BBFrameTabProps {
     characterId: number;
     initialBBFrame: string | null;
-    initialInlines: CharacterInline[];
+    inlines: CharacterInline[];
     onUpdate: () => void;
+    onInlinesChange: (inlines: CharacterInline[]) => void;
 }
 
-const BBFrameTab: React.FC<BBFrameTabProps> = ({ characterId, initialBBFrame, initialInlines, onUpdate }) => {
+const BBFrameTab: React.FC<BBFrameTabProps> = ({ characterId, initialBBFrame, inlines, onUpdate, onInlinesChange }) => {
     const [bbframeContent, setBBFrameContent] = useState(initialBBFrame || '');
-    const [inlines, setInlines] = useState(initialInlines);
     const [newInlineName, setNewInlineName] = useState('');
     const [newInlineFile, setNewInlineFile] = useState<File | null>(null);
     const [isSaving, setIsSaving] = useState(false);
@@ -20,8 +20,7 @@ const BBFrameTab: React.FC<BBFrameTabProps> = ({ characterId, initialBBFrame, in
 
     useEffect(() => {
         setBBFrameContent(initialBBFrame || '');
-        setInlines(initialInlines);
-    }, [initialBBFrame, initialInlines]);
+    }, [initialBBFrame, inlines]);
 
     const handleSaveBBFrame = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -57,7 +56,9 @@ const BBFrameTab: React.FC<BBFrameTabProps> = ({ characterId, initialBBFrame, in
             setNewInlineName('');
             setNewInlineFile(null);
             (document.getElementById('inline-file-input') as HTMLInputElement).value = '';
-            onUpdate();
+            // Hot reload the inlines
+            const response = await axios.get(`/api/characters/${characterId}`);
+            onInlinesChange(response.data.inlines);
         } catch (error) {
             setStatus({ message: 'Failed to upload inline image.', type: 'error' });
         } finally {
@@ -71,7 +72,9 @@ const BBFrameTab: React.FC<BBFrameTabProps> = ({ characterId, initialBBFrame, in
         try {
             await axios.delete(`/api/characters/${characterId}/inlines/${inlineId}`);
             setStatus({ message: 'Inline deleted successfully.', type: 'success' });
-            onUpdate();
+            // Hot reload the inlines
+            const response = await axios.get(`/api/characters/${characterId}`);
+            onInlinesChange(response.data.inlines);
         } catch (error) {
             setStatus({ message: 'Failed to delete inline.', type: 'error' });
         }

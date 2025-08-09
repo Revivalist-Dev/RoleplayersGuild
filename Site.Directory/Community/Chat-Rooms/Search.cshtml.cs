@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using RoleplayersGuild.Site.Model;
 using RoleplayersGuild.Site.Services;
+using RoleplayersGuild.Site.Services.DataServices;
 using RoleplayersGuild.Site.Utils;
 using System;
 using System.Collections.Generic;
@@ -11,11 +12,11 @@ namespace RoleplayersGuild.Site.Directory.Community.Chat_Rooms
 {
     public class SearchModel : PageModel
     {
-        private readonly IDataService _dataService;
+        private readonly ICommunityDataService _communityDataService;
 
-        public SearchModel(IDataService dataService)
+        public SearchModel(ICommunityDataService communityDataService)
         {
-            _dataService = dataService;
+            _communityDataService = communityDataService;
         }
 
         [BindProperty(SupportsGet = true)]
@@ -32,7 +33,7 @@ namespace RoleplayersGuild.Site.Directory.Community.Chat_Rooms
         public async Task OnGetAsync()
         {
             const int pageSize = 20;
-            ChatRoomsResult = await _dataService.SearchChatRoomsAsync(CurrentPage, pageSize, SearchTerm, SelectedGenreIds);
+            ChatRoomsResult = await _communityDataService.SearchChatRoomsAsync(CurrentPage, pageSize, SearchTerm, SelectedGenreIds);
         }
 
         public string GetTimeAgo(DateTime? date)

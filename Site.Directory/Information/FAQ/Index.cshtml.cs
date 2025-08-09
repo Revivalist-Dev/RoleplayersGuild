@@ -5,19 +5,19 @@ namespace RoleplayersGuild.Site.Directory.FAQ
 {
     public class IndexModel : PageModel
     {
-        private readonly ICookieService _cookieService;
+        private readonly IUserService _userService;
 
         public int CurrentUserId { get; private set; }
         public bool IsUserLoggedIn { get; private set; }
 
-        public IndexModel(ICookieService cookieService)
+        public IndexModel(IUserService userService)
         {
-            _cookieService = cookieService;
+            _userService = userService;
         }
 
         public void OnGet()
         {
-            CurrentUserId = _cookieService.GetUserId();
+            CurrentUserId = _userService.GetUserId(User);
             IsUserLoggedIn = CurrentUserId != 0;
         }
     }

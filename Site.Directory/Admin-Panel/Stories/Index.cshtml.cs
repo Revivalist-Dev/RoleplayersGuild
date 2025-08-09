@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using RoleplayersGuild.Site.Model;
 using RoleplayersGuild.Site.Services;
+using RoleplayersGuild.Site.Services.DataServices;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
@@ -14,11 +15,13 @@ namespace RoleplayersGuild.Site.Directory.Admin_Panel.Stories
     // [Authorize(Policy = "IsStaff")]
     public class IndexModel : PageModel
     {
-        private readonly IDataService _dataService;
+        private readonly IContentDataService _contentDataService;
+        private readonly IMiscDataService _miscDataService;
 
-        public IndexModel(IDataService dataService)
+        public IndexModel(IContentDataService contentDataService, IMiscDataService miscDataService)
         {
-            _dataService = dataService;
+            _contentDataService = contentDataService;
+            _miscDataService = miscDataService;
         }
 
         [TempData]
@@ -41,7 +44,7 @@ namespace RoleplayersGuild.Site.Directory.Admin_Panel.Stories
         {
             if (SearchStoryId.HasValue)
             {
-                var story = await _dataService.GetStoryWithDetailsAsync(SearchStoryId.Value);
+                var story = await _contentDataService.GetStoryWithDetailsAsync(SearchStoryId.Value);
                 if (story == null)
                 {
                     IsSuccess = false;
@@ -60,8 +63,8 @@ namespace RoleplayersGuild.Site.Directory.Admin_Panel.Stories
                     UserId = story.UserId
                 };
 
-                var storyGenres = await _dataService.GetStoryGenresAsync(story.StoryId);
-                var allGenres = await _dataService.GetGenresAsync();
+                var storyGenres = await _contentDataService.GetStoryGenresAsync(story.StoryId);
+                var allGenres = await _miscDataService.GetGenresAsync();
                 Genres = allGenres.Select(g => new GenreSelectionViewModel
                 {
                     GenreId = g.GenreId,
@@ -69,7 +72,7 @@ namespace RoleplayersGuild.Site.Directory.Admin_Panel.Stories
                     IsSelected = storyGenres.Contains(g.GenreId)
                 }).ToList();
 
-                var universes = await _dataService.GetRecordsAsync<Universe>("""SELECT "UniverseId", "UniverseName" FROM "Universes" ORDER BY "UniverseName" """);
+                var universes = await _contentDataService.GetRecordsAsync<Universe>("""SELECT "UniverseId", "UniverseName" FROM "Universes" ORDER BY "UniverseName" """);
                 Universes = new SelectList(universes, "UniverseId", "UniverseName", Story.UniverseId);
             }
         }
@@ -101,9 +104,9 @@ namespace RoleplayersGuild.Site.Directory.Admin_Panel.Stories
                 UniverseId = Story.UniverseId == 0 ? null : Story.UniverseId
             };
 
-            await _dataService.UpdateStoryAsync(model);
+            await _contentDataService.UpdateStoryAsync(model);
             var selectedGenreIds = Genres.Where(g => g.IsSelected).Select(g => g.GenreId).ToList();
-            await _dataService.UpdateStoryGenresAsync(Story.StoryId, selectedGenreIds);
+            await _contentDataService.UpdateStoryGenresAsync(Story.StoryId, selectedGenreIds);
 
             IsSuccess = true;
             Message = "The story has been saved.";
@@ -112,7 +115,7 @@ namespace RoleplayersGuild.Site.Directory.Admin_Panel.Stories
 
         public async Task<IActionResult> OnPostDeleteAsync(int id)
         {
-            await _dataService.DeleteStoryAsync(id);
+            await _contentDataService.DeleteStoryAsync(id);
             TempData["IsSuccess"] = true;
             TempData["Message"] = "The story has been deleted.";
             return RedirectToPage("/Admin-Panel/Stories/Index");

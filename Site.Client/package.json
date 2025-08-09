@@ -10,14 +10,21 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@dnd-kit/core": "^6.3.1",
+    "@dnd-kit/sortable": "^10.0.0",
+    "@types/draggabilly": "^2.1.6",
     "@types/jquery": "^3.5.32",
     "axios": "^1.7.2",
     "bootstrap-icons": "^1.13.1",
+    "imagesloaded": "^5.0.0",
     "jquery": "^3.7.1",
+    "packery": "^2.1.2",
     "react": "^19.1.1",
-    "react-dom": "^19.1.1"
+    "react-dom": "^19.1.1",
+    "roleplayersguild": "file:.."
   },
   "devDependencies": {
+    "@types/imagesloaded": "^4.1.6",
     "@types/node": "^24.2.0",
     "@types/react": "^19.1.9",
     "@types/react-dom": "^19.1.7",

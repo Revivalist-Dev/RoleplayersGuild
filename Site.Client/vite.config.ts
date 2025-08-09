@@ -5,6 +5,13 @@ import mkcert from 'vite-plugin-mkcert'
 
 export default defineConfig(({ command }) => {
     return {
+        resolve: {
+            alias: {
+                'react': path.resolve(__dirname, './node_modules/react'),
+                'react-dom': path.resolve(__dirname, './node_modules/react-dom'),
+                '/Site.Styles': path.resolve(__dirname, '../Site.Styles')
+            }
+        },
         plugins: [react(), mkcert()],
         // CORRECTED: The 'serve' base path must match your YARP proxy path.
         base: command === 'serve' ? '/vite-dev/' : '/react-dist/',
@@ -12,6 +19,7 @@ export default defineConfig(({ command }) => {
             outDir: '../wwwroot/react-dist',
             emptyOutDir: true,
             manifest: 'manifest.json',
+            sourcemap: true,
             rollupOptions: {
                 input: 'src/main.tsx'
             }

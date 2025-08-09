@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using RoleplayersGuild.Site.Services;
+using RoleplayersGuild.Site.Services.DataServices;
 using System.ComponentModel.DataAnnotations;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
@@ -11,11 +12,11 @@ namespace RoleplayersGuild.Site.Directory.Admin_Panel.Site_Funding_Goal
     [Authorize(Policy = "IsAdmin")]
     public class IndexModel : PageModel
     {
-        private readonly IDataService _dataService;
+        private readonly IMiscDataService _miscDataService;
 
-        public IndexModel(IDataService dataService)
+        public IndexModel(IMiscDataService miscDataService)
         {
-            _dataService = dataService;
+            _miscDataService = miscDataService;
         }
 
         [BindProperty]
@@ -30,7 +31,7 @@ namespace RoleplayersGuild.Site.Directory.Admin_Panel.Site_Funding_Goal
         public async Task<IActionResult> OnGetAsync()
         {
             // Corrected: SQL query uses PascalCase
-            CurrentFundingAmount = await _dataService.GetScalarAsync<decimal>("""SELECT "CurrentFundingAmount" FROM "GeneralSettings" """);
+            CurrentFundingAmount = await _miscDataService.GetScalarAsync<decimal>("""SELECT "CurrentFundingAmount" FROM "GeneralSettings" """);
             return Page();
         }
 
@@ -42,7 +43,7 @@ namespace RoleplayersGuild.Site.Directory.Admin_Panel.Site_Funding_Goal
             }
 
             // Corrected: SQL query uses PascalCase
-            await _dataService.ExecuteAsync("""UPDATE "GeneralSettings" SET "CurrentFundingAmount" = @Amount""", new { Amount = CurrentFundingAmount });
+            await _miscDataService.ExecuteAsync("""UPDATE "GeneralSettings" SET "CurrentFundingAmount" = @Amount""", new { Amount = CurrentFundingAmount });
 
             IsSuccess = true;
             Message = "The funding goal amount has been updated successfully.";

@@ -18,10 +18,10 @@ namespace RoleplayersGuild.Site.Services
             return Task.CompletedTask;
         }
 
-        public async Task<(string UserName, IEnumerable<string> Channels)> UserDisconnected(string connectionId)
+        public async Task<(string? UserName, IEnumerable<string> Channels)> UserDisconnected(string connectionId)
         {
             _connectionUsers.TryRemove(connectionId, out var userName);
-            if (string.IsNullOrEmpty(userName)) return (null, Enumerable.Empty<string>());
+            if (string.IsNullOrEmpty(userName)) return (userName, Enumerable.Empty<string>());
 
             var channelsLeft = new List<string>();
             foreach (var channelName in _channels.Keys)
@@ -43,7 +43,7 @@ namespace RoleplayersGuild.Site.Services
             return Task.CompletedTask;
         }
 
-        public Task<ChatCharacterViewModel> GetCharacterForUser(string userName)
+        public Task<ChatCharacterViewModel?> GetCharacterForUser(string userName)
         {
             _userCharacters.TryGetValue(userName, out var character);
             return Task.FromResult(character);

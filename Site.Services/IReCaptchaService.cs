@@ -1,8 +1,4 @@
-﻿// In F:\...\Site.Services\IReCaptchaService.cs
-
-using System.Threading.Tasks;
-
-namespace RoleplayersGuild.Site.Services
+﻿namespace RoleplayersGuild.Site.Services
 {
     public interface IReCaptchaService
     {

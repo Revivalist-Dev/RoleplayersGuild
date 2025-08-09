@@ -1,37 +1,57 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { CharacterImage } from '../types';
+import { DragEndEvent } from '@dnd-kit/core';
+import { arrayMove } from '@dnd-kit/sortable';
+import { CharacterImage } from '../../../../types';
+import ImageManager from './ImageManager';
+import GalleryTabView, { GalleryTabViewHandle } from '../../../Community/Characters/components/GalleryTabView';
+import { forwardRef, useImperativeHandle, useRef } from 'react';
 
 interface GalleryTabProps {
     characterId: number;
-    initialImages: CharacterImage[];
+    images: CharacterImage[];
     onGalleryUpdate: () => void;
+    onImageUpload: (newImage: CharacterImage) => void;
+    onImagesChange: (images: CharacterImage[]) => void;
 }
 
-const GalleryTab: React.FC<GalleryTabProps> = ({ characterId, initialImages, onGalleryUpdate }) => {
-    const [images, setImages] = useState(initialImages);
+export interface GalleryTabHandle {
+    relayout: () => void;
+}
+
+const GalleryTab = forwardRef<GalleryTabHandle, GalleryTabProps>(({ characterId, images, onGalleryUpdate, onImageUpload, onImagesChange }, ref) => {
+    const galleryTabViewRef = useRef<GalleryTabViewHandle>(null);
     const [imagesToDelete, setImagesToDelete] = useState<number[]>([]);
-    const [filesToUpload, setFilesToUpload] = useState<FileList | null>(null);
     const [isSaving, setIsSaving] = useState(false);
     const [status, setStatus] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
 
-    useEffect(() => {
-        setImages(initialImages);
-    }, [initialImages]);
 
     const handleCaptionChange = (id: number, caption: string) => {
-        setImages(current => current.map(img => img.characterImageId === id ? { ...img, imageCaption: caption } : img));
+        // This will be handled by the parent component
     };
 
-    const handleToggleDelete = (id: number, checked: boolean) => {
-        setImagesToDelete(current => checked ? [...current, id] : current.filter(i => i !== id));
+    const handleImageScaleChange = (id: number, scale: number) => {
+        // This will be handled by the parent component
+    };
+
+    const handleDelete = (id: number) => {
+        if (!window.confirm('Are you sure you want to delete this image? This cannot be undone.')) return;
+        // This will be handled by the parent component
+        if (id > 0) {
+            setImagesToDelete(current => [...current, id]);
+        }
     };
 
     const handleUpdateGallery = async (e: React.FormEvent) => {
         e.preventDefault();
         setIsSaving(true);
         setStatus(null);
-        const updates = images.map(img => ({ imageId: img.characterImageId, imageCaption: img.imageCaption, isPrimary: img.isPrimary }));
+        const updates = images.map((img, index) => ({ 
+            imageId: img.characterImageId, 
+            imageCaption: img.imageCaption, 
+            imageScale: img.imageScale, 
+            sortOrder: index 
+        }));
         try {
             await axios.put(`/api/characters/${characterId}/gallery/update`, { images: updates, imagesToDelete: imagesToDelete });
             setStatus({ message: 'Gallery updated successfully!', type: 'success' });
@@ -44,8 +64,7 @@ const GalleryTab: React.FC<GalleryTabProps> = ({ characterId, initialImages, onG
         }
     };
 
-    const handleUploadNewImages = async (e: React.FormEvent) => {
-        e.preventDefault();
+    const handleUploadNewImages = async (filesToUpload: FileList | null) => {
         if (!filesToUpload || filesToUpload.length === 0) {
             setStatus({ message: 'Please select files to upload.', type: 'error' });
             return;
@@ -55,11 +74,30 @@ const GalleryTab: React.FC<GalleryTabProps> = ({ characterId, initialImages, onG
         const formData = new FormData();
         Array.from(filesToUpload).forEach(file => { formData.append('uploadedImages', file); });
         try {
-            await axios.post(`/api/characters/${characterId}/gallery/upload`, formData);
+            const response = await axios.post<{ uploadedFileNames: string[] }>(`/api/characters/${characterId}/gallery/upload`, formData);
             setStatus({ message: 'Images uploaded successfully!', type: 'success' });
-            (document.getElementById('gallery-upload-input') as HTMLInputElement).value = '';
-            setFilesToUpload(null);
-            onGalleryUpdate();
+            
+            // Assuming the API returns the details of the new image
+            // This part needs to be adjusted based on the actual API response
+            if (response.data && response.data.uploadedFileNames) {
+                response.data.uploadedFileNames.forEach(fileName => {
+                    const newImage: CharacterImage = {
+                        characterImageId: Date.now(), // Temporary ID
+                        characterImageUrl: fileName,
+                        isMature: false,
+                        imageCaption: 'New Image',
+                        imageScale: 1,
+                        width: 0, // These would ideally come from the server
+                        height: 0,
+                        userId: 0 // This will be set by the server
+                    };
+                    onImageUpload(newImage);
+                });
+            }
+            
+            const uploadInput = document.getElementById('gallery-upload-input') as HTMLInputElement;
+            if(uploadInput) uploadInput.value = '';
+            // onGalleryUpdate(); // Optionally keep this to refetch all data
         } catch (error) {
             setStatus({ message: 'Failed to upload images.', type: 'error' });
         } finally {
@@ -67,56 +105,53 @@ const GalleryTab: React.FC<GalleryTabProps> = ({ characterId, initialImages, onG
         }
     };
 
-    return (
-        <div>
-            <form onSubmit={handleUpdateGallery} className="card mb-4">
-                <div className="card-header"><h5 className="mb-0">Manage Existing Images</h5></div>
-                <div className="card-body">
-                    {images.length === 0 ? <p className="text-muted">This gallery is empty.</p> : (
-                        <div className="row row-cols-2 row-cols-md-3 row-cols-lg-4 g-3">
-                            {images.map(image => (
-                                <div key={image.characterImageId} className="col">
-                                    <div className="card h-100">
-                                        <img src={image.characterImageUrl} className="card-img-top" style={{ aspectRatio: '1 / 1', objectFit: 'cover' }} alt={image.imageCaption || 'Character image'} />
-                                        <div className="card-body">
-                                            <textarea className="form-control form-control-sm" rows={2} placeholder="Caption..." value={image.imageCaption || ''} onChange={(e) => handleCaptionChange(image.characterImageId, e.target.value)} />
-                                        </div>
-                                        <div className="card-footer">
-                                            <div className="form-check">
-                                                <input type="checkbox" className="form-check-input" id={`delete-${image.characterImageId}`} onChange={(e) => handleToggleDelete(image.characterImageId, e.target.checked)} />
-                                                <label className="form-check-label small text-danger" htmlFor={`delete-${image.characterImageId}`}>Delete</label>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    )}
-                </div>
-                {images.length > 0 && (
-                    <div className="card-footer text-end">
-                        <button type="submit" className="btn btn-primary" disabled={isSaving}>Update Gallery</button>
-                    </div>
-                )}
-            </form>
+    const handleDragEnd = (event: DragEndEvent) => {
+        const { active, over } = event;
+        if (over && active.id !== over.id) {
+            const oldIndex = images.findIndex((item) => item.characterImageId === active.id);
+            const newIndex = images.findIndex((item) => item.characterImageId === over.id);
+            onImagesChange(arrayMove(images, oldIndex, newIndex));
+        }
+    };
 
-            <form onSubmit={handleUploadNewImages} className="card">
-                <div className="card-header"><h5 className="mb-0">Upload New Images</h5></div>
-                <div className="card-body">
-                    <input id="gallery-upload-input" type="file" multiple className="form-control" onChange={(e) => setFilesToUpload(e.target.files)} accept="image/*" />
+    useImperativeHandle(ref, () => ({
+        relayout: () => {
+            galleryTabViewRef.current?.relayout();
+        }
+    }));
+
+    return (
+        <div className="d-flex flex-column h-100">
+            <div className="row g-3 flex-grow-1" style={{ minHeight: 0 }}>
+                <div className="col-lg-8 d-flex flex-column">
+                    <div className="card h-100">
+                        <div className="card-header"><h5 className="mb-0">Gallery Preview</h5></div>
+                        <div className="card-body">
+                            <GalleryTabView ref={galleryTabViewRef} images={images} onSortEnd={onImagesChange} />
+                        </div>
+                    </div>
                 </div>
-                <div className="card-footer text-end">
-                    <button type="submit" className="btn btn-success" disabled={isSaving}>Upload</button>
+                <div className="col-lg-4 d-flex flex-column h-100">
+                    <ImageManager
+                        images={images}
+                        onSortEnd={handleDragEnd}
+                        onCaptionChange={handleCaptionChange}
+                        onDelete={handleDelete}
+                        onImageScaleChange={handleImageScaleChange}
+                        onUpload={handleUploadNewImages}
+                        onSaveChanges={handleUpdateGallery}
+                        isSaving={isSaving}
+                    />
                 </div>
-            </form>
+            </div>
 
             {status && (
-                <div className={`mt-3 alert alert-${status.type === 'success' ? 'success' : 'danger'}`}>
+                <div className={`mt-3 alert alert-${status.type}`}>
                     {status.message}
                 </div>
             )}
         </div>
     );
-};
+});
 
 export default GalleryTab;

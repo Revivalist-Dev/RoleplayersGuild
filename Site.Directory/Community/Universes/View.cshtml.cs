@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using RoleplayersGuild.Site.Model;
 using RoleplayersGuild.Site.Services;
+using RoleplayersGuild.Site.Services.DataServices;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -10,12 +11,18 @@ namespace RoleplayersGuild.Site.Directory.Community.Universes
 {
     public class ViewUniverseModel : PageModel
     {
-        private readonly IDataService _dataService;
+        private readonly IUniverseDataService _universeDataService;
+        private readonly IUserDataService _userDataService;
+        private readonly ICharacterDataService _characterDataService;
+        private readonly IMiscDataService _miscDataService;
         private readonly IUserService _userService;
 
-        public ViewUniverseModel(IDataService dataService, IUserService userService)
+        public ViewUniverseModel(IUniverseDataService universeDataService, IUserDataService userDataService, ICharacterDataService characterDataService, IMiscDataService miscDataService, IUserService userService)
         {
-            _dataService = dataService;
+            _universeDataService = universeDataService;
+            _userDataService = userDataService;
+            _characterDataService = characterDataService;
+            _miscDataService = miscDataService;
             _userService = userService;
         }
 
@@ -35,27 +42,27 @@ namespace RoleplayersGuild.Site.Directory.Community.Universes
 
         public async Task<IActionResult> OnGetAsync(int id)
         {
-            Universe = await _dataService.GetUniverseWithDetailsAsync(id);
+            Universe = await _universeDataService.GetUniverseWithDetailsAsync(id);
             if (Universe is null) return NotFound();
 
             var currentUserId = _userService.GetUserId(User);
             if (currentUserId > 0)
             {
-                IsBlocked = await _dataService.IsUserBlockedAsync(Universe.UniverseOwnerId, currentUserId);
+                IsBlocked = await _userDataService.IsUserBlockedAsync(Universe.UniverseOwnerId, currentUserId);
                 if (!IsBlocked)
                 {
-                    CharactersToJoin = await _dataService.GetUserCharactersNotInUniverseAsync(currentUserId, id);
-                    CharactersToLeave = await _dataService.GetUserCharactersInUniverseAsync(currentUserId, id);
+                    CharactersToJoin = await _universeDataService.GetUserCharactersNotInUniverseAsync(currentUserId, id);
+                    CharactersToLeave = await _universeDataService.GetUserCharactersInUniverseAsync(currentUserId, id);
                 }
             }
 
-            var allGenres = await _dataService.GetGenresAsync();
-            var universeGenreIds = (await _dataService.GetUniverseGenresAsync(id)).ToHashSet();
+            var allGenres = await _miscDataService.GetGenresAsync();
+            var universeGenreIds = (await _universeDataService.GetUniverseGenresAsync(id)).ToHashSet();
             Genres = allGenres.Where(g => universeGenreIds.Contains(g.GenreId)).Select(g => g.GenreName);
 
-            Objects = await _dataService.GetUniverseArticlesByCategoryAsync(id, 10); // CategoryId 10 for Objects
-            Creatures = await _dataService.GetUniverseArticlesByCategoryAsync(id, 8); // CategoryId 8 for Creatures
-            Areas = await _dataService.GetUniverseArticlesByCategoryAsync(id, 9); // CategoryId 9 for Areas
+            Objects = await _universeDataService.GetUniverseArticlesByCategoryAsync(id, 10); // CategoryId 10 for Objects
+            Creatures = await _universeDataService.GetUniverseArticlesByCategoryAsync(id, 8); // CategoryId 8 for Creatures
+            Areas = await _universeDataService.GetUniverseArticlesByCategoryAsync(id, 9); // CategoryId 9 for Areas
 
             ViewData["Title"] = Universe.UniverseName;
             return Page();
@@ -63,13 +70,13 @@ namespace RoleplayersGuild.Site.Directory.Community.Universes
 
         public async Task<IActionResult> OnPostJoinAsync(int id)
         {
-            await _dataService.AddCharactersToUniverseAsync(id, SelectedCharacterIds);
+            await _universeDataService.AddCharactersToUniverseAsync(id, SelectedCharacterIds);
             return RedirectToPage(new { id });
         }
 
         public async Task<IActionResult> OnPostLeaveAsync(int id)
         {
-            await _dataService.RemoveCharactersFromUniverseAsync(id, SelectedCharacterIds);
+            await _universeDataService.RemoveCharactersFromUniverseAsync(id, SelectedCharacterIds);
             return RedirectToPage(new { id });
         }
     }

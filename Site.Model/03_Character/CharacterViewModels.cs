@@ -20,7 +20,7 @@ namespace RoleplayersGuild.Site.Model
         public bool? IsApproved { get; set; }
         public DateTime? LastAction { get; set; }
         public bool ShowWhenOnline { get; set; }
-        public string? DisplayImageUrl { get; set; }
+        public string? CardImageUrl { get; set; }
         public string? AvatarImageUrl { get; set; }
         public string? CharacterNameClass { get; set; }
         public int TypeId { get; set; }
@@ -61,7 +61,6 @@ namespace RoleplayersGuild.Site.Model
         public string CharacterImageUrl { get; set; } = string.Empty;
         public string? ImageCaption { get; set; }
         public bool IsMature { get; set; }
-        public bool IsPrimary { get; set; }
     }
 
     public class ImageCommentViewModel

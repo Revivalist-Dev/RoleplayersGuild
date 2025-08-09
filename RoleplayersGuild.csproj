@@ -22,9 +22,12 @@
 		<PackageReference Include="Yarp.ReverseProxy" Version="2.3.0" />
 	</ItemGroup>
 
+
+
 	<ItemGroup>
 		<Folder Include="Site.Styles\scss\components\character-card-themes\" />
 		<Folder Include="Site.Styles\scss\components\site-themes\" />
+		<Folder Include="wwwroot\images\UserFiles\2\2\Inlines\" />
 	</ItemGroup>
 
 	<ItemGroup>

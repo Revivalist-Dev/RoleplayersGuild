@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using RoleplayersGuild.Site.Model;
 using RoleplayersGuild.Site.Services;
+using RoleplayersGuild.Site.Services.DataServices;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Collections.Generic;
@@ -9,16 +10,16 @@ namespace RoleplayersGuild.Site.Services.ViewComponents
 {
     public class FilterNavViewComponent : ViewComponent
     {
-        private readonly IDataService _dataService;
+        private readonly IMiscDataService _miscDataService;
 
-        public FilterNavViewComponent(IDataService dataService)
+        public FilterNavViewComponent(IMiscDataService miscDataService)
         {
-            _dataService = dataService;
+            _miscDataService = miscDataService;
         }
 
         public async Task<IViewComponentResult> InvokeAsync(List<int> selectedGenreIds)
         {
-            var allGenres = await _dataService.GetGenresAsync();
+            var allGenres = await _miscDataService.GetGenresAsync();
 
             var model = new FilterNavViewModel
             {

@@ -23,7 +23,7 @@
     {
         <div class="d-flex align-items-start mb-4">
             <a asp-page="/Community/Characters/View" asp-route-id="@message.CreatorId" class="me-3">
-                <img src="@(message.DisplayImageUrl ?? "/images/Defaults/NewAvatar.png")" class="thread-avatar" alt="@message.CharacterDisplayName avatar"/>
+                <img src="@(message.AvatarImageUrl ?? "/images/Defaults/NewAvatar.png")" class="thread-avatar" alt="@message.CharacterDisplayName avatar"/>
                 </a>
             <div class="flex-grow-1">
                 <div class="d-flex justify-content-between">

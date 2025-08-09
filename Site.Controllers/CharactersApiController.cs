@@ -2,9 +2,12 @@
 using Microsoft.AspNetCore.Mvc;
 using RoleplayersGuild.Site.Model;
 using RoleplayersGuild.Site.Services;
+using RoleplayersGuild.Site.Services.DataServices;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.Json;
 using System.Threading.Tasks;
+using RoleplayersGuild.Site.Services.Models;
 
 namespace RoleplayersGuild.Site.Controllers
 {
@@ -24,15 +27,19 @@ namespace RoleplayersGuild.Site.Controllers
     [ApiController]
     [Route("api/characters")]
     public class CharactersApiController(
-        IDataService dataService,
+        ICharacterDataService characterDataService,
         IUserService userService,
         IImageService imageService,
-        IHtmlSanitizationService htmlSanitizer) : ControllerBase
+        IHtmlSanitizationService htmlSanitizer,
+        IMiscDataService miscDataService,
+        IUrlProcessingService urlProcessingService) : ControllerBase
     {
-        private readonly IDataService _dataService = dataService;
+        private readonly ICharacterDataService _characterDataService = characterDataService;
         private readonly IUserService _userService = userService;
+        private readonly IMiscDataService _miscDataService = miscDataService;
         private readonly IImageService _imageService = imageService;
         private readonly IHtmlSanitizationService _htmlSanitizer = htmlSanitizer;
+        private readonly IUrlProcessingService _urlProcessingService = urlProcessingService;
 
         [HttpGet("{id:int}")]
         public async Task<IActionResult> GetCharacterForEdit(int id)
@@ -40,23 +47,21 @@ namespace RoleplayersGuild.Site.Controllers
             var userId = _userService.GetUserId(User);
             if (userId == 0) return Unauthorized();
 
-            var character = await _dataService.GetCharacterForEditAsync(id, userId);
+            var character = await _characterDataService.GetCharacterForEditAsync(id, userId);
             if (character == null) return Forbid();
 
-            var genres = await _dataService.GetCharacterGenresAsync(id);
-            var images = (await _dataService.GetCharacterImagesForGalleryAsync(id)).ToList();
-            var inlines = (await _dataService.GetRecordsAsync<CharacterInline>("""SELECT * FROM "CharacterInlines" WHERE "CharacterId" = @id ORDER BY "InlineName" """, new { id })).ToList();
-            var avatar = await _dataService.GetRecordAsync<CharacterAvatar>("""SELECT * FROM "CharacterAvatars" WHERE "CharacterId" = @id""", new { id });
-
-            foreach (var img in images)
-            {
-                img.CharacterImageUrl = _imageService.GetImageUrl(img.CharacterImageUrl);
-            }
-
-            foreach (var inline in inlines)
-            {
-                inline.InlineImageUrl = _imageService.GetImageUrl(inline.InlineImageUrl);
-            }
+            var genres = await _characterDataService.GetCharacterGenresAsync(id);
+            var images = (await _characterDataService.GetCharacterImagesForGalleryAsync(id))
+                .Select(img => {
+                    img.CharacterImageUrl = _urlProcessingService.GetCharacterImageUrl((ImageUploadPath)img.CharacterImageUrl);
+                    return img;
+                }).ToList();
+            var inlines = (await _characterDataService.GetInlineImagesAsync(id))
+                .Select(inl => {
+                    inl.InlineImageUrl = _urlProcessingService.GetCharacterImageUrl((ImageUploadPath)inl.InlineImageUrl);
+                    return inl;
+                }).ToList();
+            var avatar = await _characterDataService.GetCharacterAvatarAsync(id);
 
             var editorData = new
             {
@@ -64,11 +69,17 @@ namespace RoleplayersGuild.Site.Controllers
                 SelectedGenreIds = genres.Select(g => g.GenreId),
                 Images = images,
                 Inlines = inlines,
-                AvatarUrl = _imageService.GetImageUrl(avatar?.AvatarImageUrl) ?? "/images/Defaults/NewAvatar.png",
-                CardUrl = _imageService.GetImageUrl(character.CardImageUrl) ?? "/images/Defaults/NewCharacter.png"
+                AvatarUrl = _urlProcessingService.GetCharacterImageUrl((ImageUploadPath)avatar?.AvatarImageUrl) ?? "/images/Defaults/NewAvatar.png",
+                CardUrl = _urlProcessingService.GetCharacterImageUrl((ImageUploadPath)character.CardImageUrl) ?? "/images/Defaults/NewCharacter.png"
             };
 
-            return Ok(editorData);
+            var serializerOptions = new JsonSerializerOptions
+            {
+                PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+                WriteIndented = false
+            };
+
+            return new JsonResult(editorData, serializerOptions);
         }
 
         [HttpPost]
@@ -77,7 +88,7 @@ namespace RoleplayersGuild.Site.Controllers
             var userId = _userService.GetUserId(User);
             if (userId == 0) return Unauthorized();
 
-            var newCharacterId = await _dataService.CreateNewCharacterAsync(userId);
+            var newCharacterId = await _characterDataService.CreateNewCharacterAsync(userId);
             if (newCharacterId == 0)
             {
                 return StatusCode(StatusCodes.Status500InternalServerError, new { message = "Failed to create character record." });
@@ -87,21 +98,22 @@ namespace RoleplayersGuild.Site.Controllers
 
             if (cardImage is not null)
             {
-                input.CardImageUrl = await _imageService.UploadImageAsync(cardImage, userId, newCharacterId, "card");
+                var (path, _, _) = await _imageService.UploadImageAsync(cardImage, userId, newCharacterId, "card");
+                input.CardImageUrl = path.ToString();
             }
 
-            await _dataService.UpdateCharacterAsync(input);
+            await _characterDataService.UpdateCharacterAsync(input);
 
             if (avatarImage is not null)
             {
-                var storedPath = await _imageService.UploadImageAsync(avatarImage, userId, newCharacterId, "avatar");
-                if (!string.IsNullOrEmpty(storedPath))
+                var (path, _, _) = await _imageService.UploadImageAsync(avatarImage, userId, newCharacterId, "avatar");
+                if (path is not null)
                 {
-                    await _dataService.UpsertCharacterAvatarAsync(newCharacterId, storedPath);
+                    await _characterDataService.UpsertCharacterAvatarAsync(newCharacterId, path.ToString());
                 }
             }
 
-            await _dataService.UpdateCharacterGenresAsync(newCharacterId, input.SelectedGenreIds);
+            await _characterDataService.UpdateCharacterGenresAsync(newCharacterId, input.SelectedGenreIds);
 
             return Ok(new { characterId = newCharacterId });
         }
@@ -112,44 +124,47 @@ namespace RoleplayersGuild.Site.Controllers
             var userId = _userService.GetUserId(User);
             if (userId == 0) return Unauthorized();
 
-            var character = await _dataService.GetCharacterForEditAsync(id, userId);
+            var character = await _characterDataService.GetCharacterForEditAsync(id, userId);
             if (character == null) return Forbid();
 
             input.CharacterId = id;
 
             if (avatarImage is not null)
             {
-                var oldAvatar = await _dataService.GetRecordAsync<CharacterAvatar>("""SELECT * FROM "CharacterAvatars" WHERE "CharacterId" = @id""", new { id });
-                await _imageService.DeleteImageAsync(oldAvatar?.AvatarImageUrl);
+                var oldAvatar = await _characterDataService.GetCharacterAvatarAsync(id);
+                if (oldAvatar?.AvatarImageUrl is not null)
+                    await _imageService.DeleteImageAsync((ImageUploadPath)oldAvatar.AvatarImageUrl);
 
-                var storedPath = await _imageService.UploadImageAsync(avatarImage, userId, id, "avatar");
-                if (!string.IsNullOrEmpty(storedPath))
+                var (path, _, _) = await _imageService.UploadImageAsync(avatarImage, userId, id, "avatar");
+                if (path is not null)
                 {
-                    await _dataService.UpsertCharacterAvatarAsync(id, storedPath);
+                    await _characterDataService.UpsertCharacterAvatarAsync(id, path.ToString());
                 }
             }
 
             if (cardImage is not null)
             {
-                await _imageService.DeleteImageAsync(character.CardImageUrl);
-                input.CardImageUrl = await _imageService.UploadImageAsync(cardImage, userId, id, "card");
+                if (character.CardImageUrl is not null)
+                    await _imageService.DeleteImageAsync((ImageUploadPath)character.CardImageUrl);
+                var (path, _, _) = await _imageService.UploadImageAsync(cardImage, userId, id, "card");
+                input.CardImageUrl = path.ToString();
             }
             else
             {
                 input.CardImageUrl = character.CardImageUrl;
             }
 
-            await _dataService.UpdateCharacterAsync(input);
-            await _dataService.UpdateCharacterGenresAsync(id, input.SelectedGenreIds);
+            await _characterDataService.UpdateCharacterAsync(input);
+            await _characterDataService.UpdateCharacterGenresAsync(id, input.SelectedGenreIds);
 
-            var newAvatar = await _dataService.GetRecordAsync<CharacterAvatar>("""SELECT * FROM "CharacterAvatars" WHERE "CharacterId" = @id""", new { id });
-            var updatedCharacter = await _dataService.GetCharacterAsync(id);
+            var newAvatar = await _characterDataService.GetCharacterAvatarAsync(id);
+            var updatedCharacter = await _characterDataService.GetCharacterAsync(id);
 
             return Ok(new
             {
                 message = "Character details saved successfully!",
-                avatarUrl = _imageService.GetImageUrl(newAvatar?.AvatarImageUrl),
-                cardUrl = _imageService.GetImageUrl(updatedCharacter?.CardImageUrl)
+                avatarUrl = _urlProcessingService.GetCharacterImageUrl((ImageUploadPath)newAvatar?.AvatarImageUrl),
+                cardUrl = _urlProcessingService.GetCharacterImageUrl((ImageUploadPath)updatedCharacter?.CardImageUrl)
             });
         }
 
@@ -160,10 +175,10 @@ namespace RoleplayersGuild.Site.Controllers
             var userId = _userService.GetUserId(User);
             if (userId == 0) return Unauthorized();
 
-            var character = await _dataService.GetCharacterForEditAsync(id, userId);
+            var character = await _characterDataService.GetCharacterForEditAsync(id, userId);
             if (character is null) return Forbid();
 
-            await _dataService.UpdateCharacterBBFrameAsync(id, input.BBFrameContent ?? string.Empty);
+            await _characterDataService.UpdateCharacterBBFrameAsync(id, input.BBFrameContent ?? string.Empty);
 
             return Ok(new { message = "BBFrame saved successfully!" });
         }
@@ -173,14 +188,14 @@ namespace RoleplayersGuild.Site.Controllers
         {
             var lookups = new
             {
-                Genders = await _dataService.GetGendersAsync(),
-                SexualOrientations = await _dataService.GetSexualOrientationsAsync(),
-                Sources = await _dataService.GetCharacterSourcesAsync(),
-                PostLengths = await _dataService.GetPostLengthsAsync(),
-                LiteracyLevels = await _dataService.GetLiteracyLevelsAsync(),
-                LfrpStatuses = await _dataService.GetLfrpStatusesAsync(),
-                EroticaPreferences = await _dataService.GetEroticaPreferencesAsync(),
-                Genres = await _dataService.GetGenresAsync()
+                Genders = await _miscDataService.GetGendersAsync(),
+                SexualOrientations = await _miscDataService.GetSexualOrientationsAsync(),
+                Sources = await _miscDataService.GetCharacterSourcesAsync(),
+                PostLengths = await _miscDataService.GetPostLengthsAsync(),
+                LiteracyLevels = await _miscDataService.GetLiteracyLevelsAsync(),
+                LfrpStatuses = await _miscDataService.GetLfrpStatusesAsync(),
+                EroticaPreferences = await _miscDataService.GetEroticaPreferencesAsync(),
+                Genres = await _miscDataService.GetGenresAsync()
             };
             return Ok(lookups);
         }
@@ -192,17 +207,17 @@ namespace RoleplayersGuild.Site.Controllers
             var userId = _userService.GetUserId(User);
             if (userId == 0) return Unauthorized();
 
-            var character = await _dataService.GetCharacterForEditAsync(id, userId);
+            var character = await _characterDataService.GetCharacterForEditAsync(id, userId);
             if (character == null) return Forbid();
 
             var uploadedFileNames = new List<string>();
             foreach (var file in uploadedImages)
             {
-                var storedPath = await _imageService.UploadImageAsync(file, userId, id, "gallery");
-                if (storedPath != null)
+                var (path, width, height) = await _imageService.UploadImageAsync(file, userId, id, "gallery");
+                if (path is not null)
                 {
-                    await _dataService.AddImageAsync(storedPath, id, userId, false, false, "New gallery image");
-                    uploadedFileNames.Add(storedPath);
+                    await _characterDataService.AddImageAsync(path.ToString(), id, userId, false, "New gallery image", width, height);
+                    uploadedFileNames.Add(path.ToString());
                 }
             }
 
@@ -216,7 +231,7 @@ namespace RoleplayersGuild.Site.Controllers
             var userId = _userService.GetUserId(User);
             if (userId == 0) return Unauthorized();
 
-            var character = await _dataService.GetCharacterForEditAsync(id, userId);
+            var character = await _characterDataService.GetCharacterForEditAsync(id, userId);
             if (character == null) return Forbid();
 
             if (file is null || file.Length == 0 || string.IsNullOrWhiteSpace(name))
@@ -224,15 +239,15 @@ namespace RoleplayersGuild.Site.Controllers
                 return BadRequest(new { message = "An image file and a name are required." });
             }
 
-            var storedPath = await _imageService.UploadImageAsync(file, userId, id, "inline");
-            if (string.IsNullOrEmpty(storedPath))
+            var (path, _, _) = await _imageService.UploadImageAsync(file, userId, id, "inline");
+            if (path is null)
             {
                 return StatusCode(StatusCodes.Status500InternalServerError, new { message = "Failed to upload image." });
             }
 
-            await _dataService.AddInlineImageAsync(storedPath, id, userId, name);
+            await _characterDataService.AddInlineImageAsync(path.ToString(), id, userId, name);
 
-            return Ok(new { location = _imageService.GetImageUrl(storedPath) });
+            return Ok(new { location = _urlProcessingService.GetCharacterImageUrl(path) });
         }
 
         [HttpDelete("{id:int}/inlines/{inlineId:int}")]
@@ -241,16 +256,16 @@ namespace RoleplayersGuild.Site.Controllers
             var userId = _userService.GetUserId(User);
             if (userId == 0) return Unauthorized();
 
-            var character = await _dataService.GetCharacterForEditAsync(id, userId);
+            var character = await _characterDataService.GetCharacterForEditAsync(id, userId);
             if (character == null) return Forbid();
 
-            var inline = await _dataService.GetInlineImageAsync(inlineId);
+            var inline = await _characterDataService.GetInlineImageAsync(inlineId);
             if (inline == null) return NotFound();
 
             if (inline.UserId != userId) return Forbid();
 
-            await _imageService.DeleteImageAsync(inline.InlineImageUrl);
-            await _dataService.DeleteInlineImageRecordAsync(inlineId);
+            await _imageService.DeleteImageAsync((ImageUploadPath)inline.InlineImageUrl);
+            await _characterDataService.DeleteInlineImageRecordAsync(inlineId);
 
             return Ok(new { message = "Inline image deleted successfully." });
         }
@@ -261,18 +276,18 @@ namespace RoleplayersGuild.Site.Controllers
             var userId = _userService.GetUserId(User);
             if (userId == 0) return Unauthorized();
 
-            var character = await _dataService.GetCharacterForEditAsync(id, userId);
+            var character = await _characterDataService.GetCharacterForEditAsync(id, userId);
             if (character is null) return Forbid();
 
             if (galleryInput.ImagesToDelete is not null)
             {
                 foreach (var imageId in galleryInput.ImagesToDelete)
                 {
-                    var image = await _dataService.GetImageAsync(imageId);
+                    var image = await _characterDataService.GetImageAsync(imageId);
                     if (image is not null && image.UserId == userId)
                     {
-                        await _imageService.DeleteImageAsync(image.CharacterImageUrl);
-                        await _dataService.DeleteImageRecordAsync(imageId);
+                        await _imageService.DeleteImageAsync((ImageUploadPath)image.CharacterImageUrl);
+                        await _characterDataService.DeleteImageRecordAsync(imageId);
                     }
                 }
             }
@@ -281,10 +296,10 @@ namespace RoleplayersGuild.Site.Controllers
             {
                 foreach (var imageUpdate in galleryInput.Images)
                 {
-                    var image = await _dataService.GetImageAsync(imageUpdate.ImageId);
+                    var image = await _characterDataService.GetImageAsync(imageUpdate.ImageId);
                     if (image is not null && image.UserId == userId)
                     {
-                        await _dataService.UpdateImageDetailsAsync(imageUpdate.ImageId, imageUpdate.ImageCaption ?? "", imageUpdate.IsPrimary);
+                        await _characterDataService.UpdateImageDetailsAsync(imageUpdate.ImageId, imageUpdate.ImageCaption ?? "", imageUpdate.ImageScale);
                     }
                 }
             }
@@ -298,13 +313,13 @@ namespace RoleplayersGuild.Site.Controllers
             var userId = _userService.GetUserId(User);
             if (userId == 0) return Unauthorized();
 
-            var character = await _dataService.GetCharacterForEditAsync(id, userId);
+            var character = await _characterDataService.GetCharacterForEditAsync(id, userId);
             if (character is null) return Forbid();
 
             var sanitizedHtml = _htmlSanitizer.Sanitize(input.ProfileHTML);
             var sanitizedCss = _htmlSanitizer.Sanitize(input.ProfileCSS);
 
-            await _dataService.UpdateCharacterCustomProfileAsync(id, sanitizedCss, sanitizedHtml, input.IsEnabled);
+            await _characterDataService.UpdateCharacterCustomProfileAsync(id, sanitizedCss, sanitizedHtml, input.IsEnabled);
             return Ok(new { message = "Custom profile saved successfully!" });
         }
     }

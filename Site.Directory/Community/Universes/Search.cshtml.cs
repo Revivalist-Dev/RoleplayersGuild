@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using RoleplayersGuild.Site.Model;
 using RoleplayersGuild.Site.Services;
+using RoleplayersGuild.Site.Services.DataServices;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
@@ -9,12 +10,12 @@ namespace RoleplayersGuild.Site.Directory.Community.Universes
 {
     public class SearchModel : PageModel
     {
-        private readonly IDataService _dataService;
+        private readonly IUniverseDataService _universeDataService;
         private readonly IUserService _userService;
 
-        public SearchModel(IDataService dataService, IUserService userService)
+        public SearchModel(IUniverseDataService universeDataService, IUserService userService)
         {
-            _dataService = dataService;
+            _universeDataService = universeDataService;
             _userService = userService;
         }
 
@@ -32,7 +33,7 @@ namespace RoleplayersGuild.Site.Directory.Community.Universes
         public async Task OnGetAsync()
         {
             var currentUserId = _userService.GetUserId(User);
-            UniversesResult = await _dataService.SearchUniversesAsync(CurrentPage, 10, SearchTerm, SelectedGenreIds, currentUserId);
+            UniversesResult = await _universeDataService.SearchUniversesAsync(CurrentPage, 10, SearchTerm, SelectedGenreIds, currentUserId);
         }
     }
 }

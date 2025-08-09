@@ -49,7 +49,7 @@ namespace RoleplayersGuild.Site.Model
         public string MessageContent { get; set; } = string.Empty;
         public DateTime Timestamp { get; set; }
         public string? CharacterDisplayName { get; set; }
-        public string? DisplayImageUrl { get; set; }
+        public string? AvatarImageUrl { get; set; }
         public string? CharacterNameClass { get; set; }
     }
 

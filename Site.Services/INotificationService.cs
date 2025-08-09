@@ -1,7 +1,4 @@
-﻿using RoleplayersGuild.Site.Model;
-using System.Threading.Tasks;
-
-namespace RoleplayersGuild.Site.Services
+﻿namespace RoleplayersGuild.Site.Services
 {
     public interface INotificationService
     {

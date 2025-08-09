@@ -1,12 +1,8 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.Mvc.Rendering;
-using RoleplayersGuild.Site.Model;
-using RoleplayersGuild.Site.Services;
-using System.Collections.Generic;
+using RoleplayersGuild.Site.Services.DataServices;
 using System.ComponentModel.DataAnnotations;
-using System.Linq;
-using System.Threading.Tasks;
 
 // Corrected: Namespace now matches folder structure
 namespace RoleplayersGuild.Site.Directory.Admin_Panel.Chat_Rooms
@@ -14,11 +10,11 @@ namespace RoleplayersGuild.Site.Directory.Admin_Panel.Chat_Rooms
     // [Authorize(Policy = "IsStaff")]
     public class IndexModel : PageModel
     {
-        private readonly IDataService _dataService;
+        private readonly ICommunityDataService _communityDataService;
 
-        public IndexModel(IDataService dataService)
+        public IndexModel(ICommunityDataService communityDataService)
         {
-            _dataService = dataService;
+            _communityDataService = communityDataService;
         }
 
         [TempData]
@@ -42,11 +38,11 @@ namespace RoleplayersGuild.Site.Directory.Admin_Panel.Chat_Rooms
                 SELECT "ChatRoomId", CASE WHEN "ChatRoomStatusId" = 1 THEN '[PA] - ' || "ChatRoomName" ELSE "ChatRoomName" END AS "ChatRoomName", "ChatRoomStatusId" 
                 FROM "ChatRooms" ORDER BY "ChatRoomStatusId", "ChatRoomName"
                 """;
-            AllChatRooms = await _dataService.GetRecordsAsync<ChatRoomListingViewModel>(listSql);
+            AllChatRooms = await _communityDataService.GetRecordsAsync<ChatRoomListingViewModel>(listSql);
 
             if (id.HasValue)
             {
-                var room = await _dataService.GetChatRoomWithDetailsAsync(id.Value);
+                var room = await _communityDataService.GetChatRoomWithDetailsAsync(id.Value);
                 if (room == null) return NotFound();
 
                 ChatRoom = new ChatRoomEditModel
@@ -61,7 +57,7 @@ namespace RoleplayersGuild.Site.Directory.Admin_Panel.Chat_Rooms
                     SubmittedByUsername = room.Username
                 };
 
-                var universes = await _dataService.GetRecordsAsync<Universe>("""SELECT "UniverseId", "UniverseName" FROM "Universes" ORDER BY "UniverseName" """);
+                var universes = await _communityDataService.GetRecordsAsync<Universe>("""SELECT "UniverseId", "UniverseName" FROM "Universes" ORDER BY "UniverseName" """);
                 Universes = new SelectList(universes, "UniverseId", "UniverseName", ChatRoom.UniverseId);
 
                 const string lockedUsersSql = """
@@ -69,7 +65,7 @@ namespace RoleplayersGuild.Site.Directory.Admin_Panel.Chat_Rooms
                     JOIN "ChatRoomLocks" l ON u."UserId" = l."UserId" 
                     WHERE l."ChatRoomId" = @ChatRoomId
                     """;
-                LockedUsers = await _dataService.GetRecordsAsync<LockedUserViewModel>(lockedUsersSql, new { ChatRoomId = id.Value });
+                LockedUsers = await _communityDataService.GetRecordsAsync<LockedUserViewModel>(lockedUsersSql, new { ChatRoomId = id.Value });
             }
 
             return Page();
@@ -87,10 +83,10 @@ namespace RoleplayersGuild.Site.Directory.Admin_Panel.Chat_Rooms
                 ContentRatingId = ChatRoom.ContentRatingId,
                 UniverseId = ChatRoom.UniverseId == 0 ? null : ChatRoom.UniverseId,
             };
-            await _dataService.UpdateChatRoomAsync(model);
+            await _communityDataService.UpdateChatRoomAsync(model);
 
             int statusId = ChatRoom.IsApproved ? 2 : 1;
-            await _dataService.ExecuteAsync("""UPDATE "ChatRooms" SET "ChatRoomStatusId" = @StatusID WHERE "ChatRoomId" = @ChatRoomId""", new { StatusID = statusId, ChatRoom.ChatRoomId });
+            await _communityDataService.ExecuteAsync("""UPDATE "ChatRooms" SET "ChatRoomStatusId" = @StatusID WHERE "ChatRoomId" = @ChatRoomId""", new { StatusID = statusId, ChatRoom.ChatRoomId });
 
             IsSuccess = true;
             Message = "Chat room has been saved.";
@@ -99,7 +95,7 @@ namespace RoleplayersGuild.Site.Directory.Admin_Panel.Chat_Rooms
 
         public async Task<IActionResult> OnPostDeleteAsync(int id)
         {
-            await _dataService.DeleteChatRoomAsync(id);
+            await _communityDataService.DeleteChatRoomAsync(id);
             TempData["IsSuccess"] = true;
             TempData["Message"] = "The chat room has been deleted.";
             return RedirectToPage("/Admin-Panel/Chat-Rooms/Index");
@@ -107,7 +103,7 @@ namespace RoleplayersGuild.Site.Directory.Admin_Panel.Chat_Rooms
 
         public async Task<IActionResult> OnPostPurgeAsync(int id)
         {
-            await _dataService.ExecuteAsync("""DELETE FROM "ChatRoomPosts" WHERE "ChatRoomId" = @ChatRoomId""", new { ChatRoomId = id });
+            await _communityDataService.ExecuteAsync("""DELETE FROM "ChatRoomPosts" WHERE "ChatRoomId" = @ChatRoomId""", new { ChatRoomId = id });
             IsSuccess = true;
             Message = "The chat room has been purged.";
             return RedirectToPage(new { id });
@@ -117,14 +113,14 @@ namespace RoleplayersGuild.Site.Directory.Admin_Panel.Chat_Rooms
         {
             if (UserIdToLock.HasValue)
             {
-                await _dataService.ExecuteAsync("""INSERT INTO "ChatRoomLocks" ("ChatRoomId", "UserId") VALUES (@ChatRoomId, @UserId)""", new { ChatRoomId = id, UserId = UserIdToLock.Value });
+                await _communityDataService.ExecuteAsync("""INSERT INTO "ChatRoomLocks" ("ChatRoomId", "UserId") VALUES (@ChatRoomId, @UserId)""", new { ChatRoomId = id, UserId = UserIdToLock.Value });
             }
             return RedirectToPage(new { id });
         }
 
         public async Task<IActionResult> OnPostUnlockUserAsync(int id, int userId)
         {
-            await _dataService.ExecuteAsync("""DELETE FROM "ChatRoomLocks" WHERE "ChatRoomId" = @ChatRoomId AND "UserId" = @UserId""", new { ChatRoomId = id, UserId = userId });
+            await _communityDataService.ExecuteAsync("""DELETE FROM "ChatRoomLocks" WHERE "ChatRoomId" = @ChatRoomId AND "UserId" = @UserId""", new { ChatRoomId = id, UserId = userId });
             return RedirectToPage(new { id });
         }
     }

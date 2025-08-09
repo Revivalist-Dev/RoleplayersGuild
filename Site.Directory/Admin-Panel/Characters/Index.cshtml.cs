@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using RoleplayersGuild.Site.Model;
 using RoleplayersGuild.Site.Services;
+using RoleplayersGuild.Site.Services.DataServices;
 using System.ComponentModel.DataAnnotations;
 using System.Threading.Tasks;
 
@@ -12,15 +13,12 @@ namespace RoleplayersGuild.Site.Directory.Admin_Panel.Characters
     // [Authorize(Policy = "IsStaff")]
     public class IndexModel : PageModel
     {
-        private readonly IDataService _dataService;
+        private readonly ICharacterDataService _characterDataService;
         private readonly IUserService _userService;
-        private readonly ICookieService _cookieService;
-
-        public IndexModel(IDataService dataService, IUserService userService, ICookieService cookieService)
+        public IndexModel(ICharacterDataService characterDataService, IUserService userService)
         {
-            _dataService = dataService;
+            _characterDataService = characterDataService;
             _userService = userService;
-            _cookieService = cookieService;
         }
 
         [TempData]
@@ -41,7 +39,7 @@ namespace RoleplayersGuild.Site.Directory.Admin_Panel.Characters
         {
             if (SearchCharacterId.HasValue)
             {
-                var character = await _dataService.GetCharacterAsync(SearchCharacterId.Value);
+                var character = await _characterDataService.GetCharacterAsync(SearchCharacterId.Value);
                 if (character != null)
                 {
                     Character = new CharacterEditModel
@@ -70,7 +68,7 @@ namespace RoleplayersGuild.Site.Directory.Admin_Panel.Characters
             }
 
             // Corrected: SQL query uses PascalCase
-            await _dataService.ExecuteAsync("""UPDATE "Characters" SET "TypeId" = @TypeId WHERE "CharacterId" = @CharacterId""", new { Character.TypeId, Character.CharacterId });
+            await _characterDataService.ExecuteAsync("""UPDATE "Characters" SET "TypeId" = @TypeId WHERE "CharacterId" = @CharacterId""", new { Character.TypeId, Character.CharacterId });
 
             IsSuccess = true;
             Message = "Character type has been changed.";
@@ -79,7 +77,7 @@ namespace RoleplayersGuild.Site.Directory.Admin_Panel.Characters
 
         public async Task<IActionResult> OnPostMarkForReviewAsync(int id)
         {
-            var adminUserId = _cookieService.GetUserId();
+            var adminUserId = _userService.GetUserId(User);
             await _userService.MarkCharacterForReviewAsync(id, adminUserId);
 
             IsSuccess = true;
@@ -89,7 +87,7 @@ namespace RoleplayersGuild.Site.Directory.Admin_Panel.Characters
 
         public async Task<IActionResult> OnPostDeleteAsync(int id)
         {
-            await _dataService.DeleteCharacterAsync(id);
+            await _characterDataService.DeleteCharacterAsync(id);
             TempData["IsSuccess"] = true;
             TempData["Message"] = "The character has been deleted.";
             return RedirectToPage("/Admin-Panel/Characters/Index");
@@ -98,7 +96,7 @@ namespace RoleplayersGuild.Site.Directory.Admin_Panel.Characters
         private async Task PopulateSelectListsAsync(int selectedType)
         {
             // Corrected: SQL query uses PascalCase
-            var types = await _dataService.GetRecordsAsync<CharacterType>("""SELECT "TypeId", "TypeName" FROM "CharacterType" ORDER BY "TypeName" """);
+            var types = await _characterDataService.GetRecordsAsync<CharacterType>("""SELECT "TypeId", "TypeName" FROM "CharacterType" ORDER BY "TypeName" """);
             CharacterTypes = new SelectList(types, "TypeId", "TypeName", selectedType);
         }
     }

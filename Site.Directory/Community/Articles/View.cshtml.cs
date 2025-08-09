@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using RoleplayersGuild.Site.Model;
 using RoleplayersGuild.Site.Services;
+using RoleplayersGuild.Site.Services.DataServices;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -10,39 +11,41 @@ namespace RoleplayersGuild.Site.Directory.Community.Articles
 {
     public class ViewArticleModel : PageModel
     {
-        private readonly IDataService _dataService;
-        private readonly ICookieService _cookieService;
+        private readonly IContentDataService _contentDataService;
+        private readonly IUserDataService _userDataService;
+        private readonly IMiscDataService _miscDataService;
+        private readonly IUserService _userService;
 
         public ArticleWithDetails? Article { get; set; }
         public List<string> Genres { get; set; } = new();
         public string? Message { get; set; }
-        public bool IsAdmin { get; set; }
 
-        public ViewArticleModel(IDataService dataService, ICookieService cookieService)
+        public ViewArticleModel(IContentDataService contentDataService, IUserDataService userDataService, IMiscDataService miscDataService, IUserService userService)
         {
-            _dataService = dataService;
-            _cookieService = cookieService;
+            _contentDataService = contentDataService;
+            _userDataService = userDataService;
+            _miscDataService = miscDataService;
+            _userService = userService;
         }
 
         public async Task<IActionResult> OnGetAsync(int id)
         {
-            Article = await _dataService.GetArticleWithDetailsAsync(id);
-            var currentUserId = _cookieService.GetUserId();
+            Article = await _contentDataService.GetArticleWithDetailsAsync(id);
+            var currentUserId = _userService.GetUserId(User);
 
             if (Article is null)
             {
                 return NotFound();
             }
 
-            IsAdmin = _cookieService.IsStaff();
 
             if (currentUserId != 0)
             {
                 var ownerId = Article.OwnerUserId;
-                var viewerIsBlocked = await _dataService.GetBlockRecordIdAsync(currentUserId, ownerId) > 0;
-                var ownerIsBlocked = await _dataService.GetBlockRecordIdAsync(ownerId, currentUserId) > 0;
+                var viewerIsBlocked = await _userDataService.GetBlockRecordIdAsync(currentUserId, ownerId) > 0;
+                var ownerIsBlocked = await _userDataService.GetBlockRecordIdAsync(ownerId, currentUserId) > 0;
 
-                if ((viewerIsBlocked || ownerIsBlocked) && !IsAdmin)
+                if ((viewerIsBlocked || ownerIsBlocked) && !await _userService.IsCurrentUserStaffAsync())
                 {
                     Message = "You cannot view this article due to a block between you and the author.";
                     Article = null;
@@ -50,15 +53,15 @@ namespace RoleplayersGuild.Site.Directory.Community.Articles
                 }
             }
 
-            if (Article.IsPrivate && Article.OwnerUserId != currentUserId && !IsAdmin)
+            if (Article.IsPrivate && Article.OwnerUserId != currentUserId && !await _userService.IsCurrentUserStaffAsync())
             {
                 return NotFound();
             }
 
-            var genreIds = await _dataService.GetArticleGenresAsync(id);
+            var genreIds = await _contentDataService.GetArticleGenresAsync(id);
             if (genreIds.Any())
             {
-                var allGenres = await _dataService.GetGenresAsync();
+                var allGenres = await _miscDataService.GetGenresAsync();
                 // Corrected: Property access is now g.GenreId
                 Genres = allGenres.Where(g => genreIds.Contains(g.GenreId)).Select(g => g.GenreName).ToList();
             }

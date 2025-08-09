@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using RoleplayersGuild.Site.Model;
 using RoleplayersGuild.Site.Services;
+using RoleplayersGuild.Site.Services.DataServices;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -11,12 +12,14 @@ namespace RoleplayersGuild.Site.Directory.User_Panel.My_Characters
 {
     public class IndexModel : PageModel
     {
-        private readonly IDataService _dataService;
+        private readonly ICharacterDataService _characterDataService;
+        private readonly IMiscDataService _miscDataService;
         private readonly IUserService _userService;
 
-        public IndexModel(IDataService dataService, IUserService userService)
+        public IndexModel(ICharacterDataService characterDataService, IMiscDataService miscDataService, IUserService userService)
         {
-            _dataService = dataService;
+            _characterDataService = characterDataService;
+            _miscDataService = miscDataService;
             _userService = userService;
         }
 
@@ -44,14 +47,14 @@ namespace RoleplayersGuild.Site.Directory.User_Panel.My_Characters
             const int pageSize = 24;
 
             // CORRECTION 2: Call the newly created method and pass 'userId' directly.
-            PagedResults = await _dataService.SearchUserCharactersAsync(userId, Search, CurrentPage, pageSize);
+            PagedResults = await _characterDataService.SearchUserCharactersAsync(userId, Search, CurrentPage, pageSize);
 
             return Page();
         }
 
         private async Task PopulateSelectListsAsync()
         {
-            var genders = await _dataService.GetGendersAsync();
+            var genders = await _miscDataService.GetGendersAsync();
             Genders = new SelectList(genders, "GenderId", "GenderName", Search.GenderId);
 
             var sortOptions = new List<SelectListItem>

@@ -1,10 +1,9 @@
 ﻿@model RoleplayersGuild.Site.Model.CharacterListingViewModel
-@inject RoleplayersGuild.Site.Services.IImageService ImageService
 @{
     // This function checks if a character is considered "online"
     string OnlineStatus(DateTime? lastAction, bool showWhenOnline)
     {
-        if (showWhenOnline && lastAction.HasValue && lastAction.Value >= DateTime.Now.AddMinutes(-15))
+        if (showWhenOnline && lastAction.HasValue && lastAction.Value >= DateTime.UtcNow.AddMinutes(-15))
         {
             return @"<span class='badge bg-success'>Online</span>";
         }
@@ -41,7 +40,7 @@
                 <div class="@GetCharacterColumnClass(Model.DisplaySize)">
                     <a asp-page="/Community/Characters/View" asp-route-id="@character.CharacterId" class="card character-card border-0 h-100 text-decoration-none" title="@character.CharacterDisplayName">
                         <div class="card-img-wrapper">
-                            <img src="@ImageService.GetImageUrl(character.DisplayImageUrl)" class="rpg-img img-fluid" alt="@character.CharacterDisplayName" />
+                            <img src="@character.CardImageUrl" class="rpg-img img-fluid" alt="@character.CharacterDisplayName" />
                         </div>
                         <div class="card-body p-2">
                             <h6 class="card-title text-truncate @character.CharacterNameClass">@character.CharacterDisplayName</h6>

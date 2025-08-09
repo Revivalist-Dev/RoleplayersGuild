@@ -2,18 +2,19 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using RoleplayersGuild.Site.Model;
 using RoleplayersGuild.Site.Services;
+using RoleplayersGuild.Site.Services.DataServices;
 using System.Threading.Tasks;
 
 namespace RoleplayersGuild.Site.Directory.Community.Users
 {
     public class SearchModel : PageModel
     {
-        private readonly IDataService _dataService;
+        private readonly IUserDataService _userDataService;
         private readonly IUserService _userService;
 
-        public SearchModel(IDataService dataService, IUserService userService)
+        public SearchModel(IUserDataService userDataService, IUserService userService)
         {
-            _dataService = dataService;
+            _userDataService = userDataService;
             _userService = userService;
         }
 
@@ -29,7 +30,7 @@ namespace RoleplayersGuild.Site.Directory.Community.Users
         {
             const int pageSize = 24;
             var currentUserId = _userService.GetUserId(User);
-            SearchResults = await _dataService.SearchUsersAsync(Username, CurrentPage, pageSize, currentUserId);
+            SearchResults = await _userDataService.SearchUsersAsync(Username, CurrentPage, pageSize, currentUserId);
         }
     }
 }

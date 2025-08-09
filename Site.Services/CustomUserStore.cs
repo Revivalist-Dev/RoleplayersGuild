@@ -2,20 +2,49 @@
 
 using Microsoft.AspNetCore.Identity;
 using RoleplayersGuild.Site.Model;
+using RoleplayersGuild.Site.Services.DataServices;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
 
 namespace RoleplayersGuild.Site.Services
 {
-    public class CustomUserStore : IUserStore<User>
+    public class CustomUserStore : IUserStore<User>, IUserClaimStore<User>, IUserRoleStore<User>
     {
-        private readonly IDataService _dataService;
+        private readonly IUserDataService _userDataService;
 
-        public CustomUserStore(IDataService dataService)
+        public CustomUserStore(IUserDataService userDataService)
         {
-            _dataService = dataService;
+            _userDataService = userDataService;
         }
+
+        public Task<IList<System.Security.Claims.Claim>> GetClaimsAsync(User user, CancellationToken cancellationToken)
+        {
+            var claims = new List<System.Security.Claims.Claim>
+            {
+                new System.Security.Claims.Claim(System.Security.Claims.ClaimTypes.Name, user.Username ?? string.Empty),
+                new System.Security.Claims.Claim("UserTypeId", user.UserTypeId.ToString())
+            };
+            return Task.FromResult<IList<System.Security.Claims.Claim>>(claims);
+        }
+
+        public Task AddClaimsAsync(User user, IEnumerable<System.Security.Claims.Claim> claims, CancellationToken cancellationToken) => throw new NotImplementedException();
+        public Task ReplaceClaimAsync(User user, System.Security.Claims.Claim claim, System.Security.Claims.Claim newClaim, CancellationToken cancellationToken) => throw new NotImplementedException();
+        public Task RemoveClaimsAsync(User user, IEnumerable<System.Security.Claims.Claim> claims, CancellationToken cancellationToken) => throw new NotImplementedException();
+        public Task<IList<User>> GetUsersForClaimAsync(System.Security.Claims.Claim claim, CancellationToken cancellationToken) => throw new NotImplementedException();
+
+        public Task AddToRoleAsync(User user, string roleName, CancellationToken cancellationToken) => throw new NotImplementedException();
+        public Task RemoveFromRoleAsync(User user, string roleName, CancellationToken cancellationToken) => throw new NotImplementedException();
+        public Task<IList<string>> GetRolesAsync(User user, CancellationToken cancellationToken)
+        {
+            var roles = new List<string>();
+            if (user.UserTypeId >= 2) roles.Add("Staff");
+            if (user.UserTypeId >= 3) roles.Add("Admin");
+            if (user.UserTypeId == 4) roles.Add("SuperAdmin");
+            return Task.FromResult<IList<string>>(roles);
+        }
+        public Task<bool> IsInRoleAsync(User user, string roleName, CancellationToken cancellationToken) => throw new NotImplementedException();
+        public Task<IList<User>> GetUsersInRoleAsync(string roleName, CancellationToken cancellationToken) => throw new NotImplementedException();
 
         public void Dispose()
         {
@@ -42,7 +71,7 @@ namespace RoleplayersGuild.Site.Services
         {
             if (int.TryParse(userId, out int id))
             {
-                return await _dataService.GetUserAsync(id);
+                return await _userDataService.GetUserAsync(id);
             }
             return null;
         }
@@ -50,7 +79,7 @@ namespace RoleplayersGuild.Site.Services
         public async Task<User?> FindByNameAsync(string normalizedUserName, CancellationToken cancellationToken)
         {
             // Using GetUserByEmailAsync as the primary lookup, which matches your login logic.
-            return await _dataService.GetUserByEmailAsync(normalizedUserName);
+            return await _userDataService.GetUserByEmailAsync(normalizedUserName);
         }
 
         // The methods below are not needed for your app to start, but are required by the interface.

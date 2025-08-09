@@ -3,6 +3,8 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
 using RoleplayersGuild.Site.Model;
 using RoleplayersGuild.Site.Services;
+using RoleplayersGuild.Site.Services.DataServices;
+using RoleplayersGuild.Site.Services.Models;
 using System;
 using System.Linq;
 using System.Security.Claims;
@@ -13,16 +15,18 @@ namespace RoleplayersGuild.Site.Hubs
     [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
     public class CodexHub : Hub
     {
-        private readonly IDataService _dataService;
+        private readonly ICommunityDataService _communityDataService;
+        private readonly ICharacterDataService _characterDataService;
         private readonly IChatTrackerService _chatTracker;
-        private readonly IImageService _imageService;
+        private readonly IUrlProcessingService _urlProcessingService;
 
         // THE FIX IS HERE: Add IImageService imageService to the constructor parameters
-        public CodexHub(IDataService dataService, IChatTrackerService chatTracker, IImageService imageService)
+        public CodexHub(ICommunityDataService communityDataService, ICharacterDataService characterDataService, IChatTrackerService chatTracker, IUrlProcessingService urlProcessingService)
         {
-            _dataService = dataService;
+            _communityDataService = communityDataService;
+            _characterDataService = characterDataService;
             _chatTracker = chatTracker;
-            _imageService = imageService; // This line will now work
+            _urlProcessingService = urlProcessingService;
         }
 
         public override async Task OnConnectedAsync()
@@ -30,8 +34,7 @@ namespace RoleplayersGuild.Site.Hubs
             try
             {
                 await _chatTracker.UserConnected(Context.ConnectionId);
-                var channels = await _dataService.GetRecordsAsync<ChannelViewModel>(
-                    @"SELECT ""ChatRoomId"" AS ""Id"", ""ChatRoomName"" as ""Title"", 0 AS ""UserCount"" FROM ""ChatRooms"" WHERE ""IsPublic"" = TRUE ORDER BY ""ChatRoomName""");
+                var channels = await _communityDataService.GetPublicChannelsAsync();
                 await Clients.Caller.SendAsync("ReceiveChannelList", channels);
             }
             catch (Exception ex)
@@ -58,21 +61,27 @@ namespace RoleplayersGuild.Site.Hubs
 
         public async Task SelectCharacter(int characterId)
         {
-            var userId = int.Parse(Context.User.FindFirst(ClaimTypes.NameIdentifier).Value);
-            var userName = Context.User.FindFirst(ClaimTypes.Name).Value;
+            if (Context.User is null) return;
+            var userIdClaim = Context.User.FindFirst(ClaimTypes.NameIdentifier);
+            var userNameClaim = Context.User.FindFirst(ClaimTypes.Name);
 
-            var character = (await _dataService.GetRecordsAsync<ChatCharacterViewModel>(
-                @"SELECT c.""CharacterId"", c.""UserId"", c.""CharacterDisplayName"", c.""CharacterFirstName"", c.""CharacterMiddleName"", c.""CharacterLastName"", ca.""AvatarImageUrl""
-                  FROM ""Characters"" c
-                  LEFT JOIN ""CharacterAvatars"" ca ON c.""CharacterId"" = ca.""CharacterId""
-                  WHERE c.""CharacterId"" = @characterId AND c.""UserId"" = @userId",
-                new { characterId, userId })).FirstOrDefault();
+            if (userIdClaim is null || userNameClaim is null || !int.TryParse(userIdClaim.Value, out var userId))
+            {
+                // Cannot identify user, handle appropriately
+                return;
+            }
+            var userName = userNameClaim.Value;
 
-            if (character == null) return;
+            var character = await _characterDataService.GetCharacterForChatAsync(characterId);
 
-            character.AvatarImageUrl = _imageService.GetImageUrl(character.AvatarImageUrl);
+            if (character == null || character.UserId != userId) return;
 
-            character.UserName = userName;
+            character.AvatarImageUrl = _urlProcessingService.GetCharacterImageUrl((ImageUploadPath)character.AvatarImageUrl);
+
+            if (character.UserName is null)
+            {
+                character.UserName = userName;
+            }
             await _chatTracker.SetCharacter(userName, Context.ConnectionId, character);
         }
 
@@ -80,7 +89,7 @@ namespace RoleplayersGuild.Site.Hubs
         {
             try // <-- ADD THIS TRY BLOCK
             {
-                var userName = Context.User.FindFirst(ClaimTypes.Name)?.Value;
+                var userName = Context.User?.FindFirst(ClaimTypes.Name)?.Value;
                 if (string.IsNullOrEmpty(userName)) return;
 
                 await _chatTracker.UserJoinedChannel(userName, channelName);
@@ -105,7 +114,7 @@ namespace RoleplayersGuild.Site.Hubs
 
         public async Task SendChannelMessage(string channelName, string message)
         {
-            var userName = Context.User.FindFirst(ClaimTypes.Name)?.Value;
+            var userName = Context.User?.FindFirst(ClaimTypes.Name)?.Value;
             if (string.IsNullOrEmpty(userName)) return;
 
             var chatter = await _chatTracker.GetCharacterForUser(userName);

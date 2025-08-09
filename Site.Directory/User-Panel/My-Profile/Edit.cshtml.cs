@@ -2,18 +2,16 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.RazorPages;
 using RoleplayersGuild.Site.Model;
 using RoleplayersGuild.Site.Services;
+using RoleplayersGuild.Site.Services.DataServices;
 
 namespace RoleplayersGuild.Site.Directory.User_Panel.My_Profile
 {
     public class EditProfileModel : UserPanelBaseModel
     {
-        // UPDATED: Constructor to match the new base class signature.
-        public EditProfileModel(IDataService dataService, IUserService userService)
-            : base(dataService, userService)
-        {
-        }
+        private readonly IUserDataService _userDataService;
 
         [BindProperty]
         public string? AboutMe { get; set; }
@@ -23,16 +21,22 @@ namespace RoleplayersGuild.Site.Directory.User_Panel.My_Profile
 
         public List<BadgeSelectionViewModel> Badges { get; set; } = new();
 
+        public EditProfileModel(ICharacterDataService characterDataService, ICommunityDataService communityDataService, IMiscDataService miscDataService, IUserService userService, IUserDataService userDataService)
+            : base(characterDataService, communityDataService, miscDataService, userService)
+        {
+            _userDataService = userDataService;
+        }
+
         public async Task<IActionResult> OnGetAsync()
         {
             if (LoggedInUserId == 0) return Forbid();
 
-            var user = await DataService.GetUserAsync(LoggedInUserId);
+            var user = await _userDataService.GetUserAsync(LoggedInUserId);
             if (user is null) return NotFound();
 
             AboutMe = user.AboutMe;
 
-            var badgesData = await DataService.GetUserBadgesForEditingAsync(LoggedInUserId);
+            var badgesData = await _userDataService.GetUserBadgesForEditingAsync(LoggedInUserId);
             Badges = badgesData.ToList();
 
             return Page();
@@ -49,13 +53,13 @@ namespace RoleplayersGuild.Site.Directory.User_Panel.My_Profile
 
             if (!ModelState.IsValid)
             {
-                var badgesData = await DataService.GetUserBadgesForEditingAsync(LoggedInUserId);
+                var badgesData = await _userDataService.GetUserBadgesForEditingAsync(LoggedInUserId);
                 Badges = badgesData.ToList();
                 return Page();
             }
 
-            await DataService.UpdateUserAboutMeAsync(LoggedInUserId, AboutMe ?? string.Empty);
-            await DataService.UpdateUserBadgeDisplayAsync(LoggedInUserId, DisplayedBadgeIds);
+            await _userDataService.UpdateUserAboutMeAsync(LoggedInUserId, AboutMe ?? string.Empty);
+            await _userDataService.UpdateUserBadgeDisplayAsync(LoggedInUserId, DisplayedBadgeIds);
 
             TempData["Message"] = "Your profile has been updated successfully!";
             return RedirectToPage();

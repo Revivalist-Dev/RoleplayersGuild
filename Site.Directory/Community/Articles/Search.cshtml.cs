@@ -1,18 +1,18 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using RoleplayersGuild.Site.Model;
-using RoleplayersGuild.Site.Services;
+using RoleplayersGuild.Site.Services.DataServices;
 using System.Threading.Tasks;
 
 namespace RoleplayersGuild.Site.Directory.Community.Articles
 {
     public class SearchArticlesModel : PageModel
     {
-        private readonly IDataService _dataService;
+        private readonly IContentDataService _contentDataService;
 
-        public SearchArticlesModel(IDataService dataService)
+        public SearchArticlesModel(IContentDataService contentDataService)
         {
-            _dataService = dataService;
+            _contentDataService = contentDataService;
         }
 
         [BindProperty(SupportsGet = true)]
@@ -27,7 +27,7 @@ namespace RoleplayersGuild.Site.Directory.Community.Articles
         {
             const int pageSize = 20;
             // Corrected: Property is SelectedGenreIds
-            SearchResults = await _dataService.SearchArticlesAsync(
+            SearchResults = await _contentDataService.SearchArticlesAsync(
                 CurrentPage,
                 pageSize,
                 SearchInput.SearchTerm,

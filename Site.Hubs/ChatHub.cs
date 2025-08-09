@@ -2,7 +2,9 @@
 using System.Security.Claims;
 using System.Threading.Tasks;
 using RoleplayersGuild.Site.Services;
+using RoleplayersGuild.Site.Services.DataServices;
 using RoleplayersGuild.Site.Model;
+using RoleplayersGuild.Site.Services.Models;
 using System.Linq;
 using System;
 
@@ -10,19 +12,26 @@ namespace RoleplayersGuild.Site.Hubs
 {
     public class ChatHub : Hub
     {
-        private readonly IDataService _dataService;
-        private readonly IImageService _imageService;
+        private readonly ICharacterDataService _characterDataService;
+        private readonly ICommunityDataService _communityDataService;
+        private readonly IUrlProcessingService _urlProcessingService;
 
-        public ChatHub(IDataService dataService, IImageService imageService)
+        public ChatHub(ICharacterDataService characterDataService, ICommunityDataService communityDataService, IUrlProcessingService urlProcessingService)
         {
-            _dataService = dataService;
-            _imageService = imageService;
+            _characterDataService = characterDataService;
+            _communityDataService = communityDataService;
+            _urlProcessingService = urlProcessingService;
         }
 
         public async Task SendMessage(int chatRoomId, int characterId, string messageContent)
         {
+            if (Context.User is null)
+            {
+                await Clients.Caller.SendAsync("ReceiveError", "You must be logged in to chat.");
+                return;
+            }
             var currentUserId = Context.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            if (!int.TryParse(currentUserId, out int userId) || userId == 0)
+            if (currentUserId is null || !int.TryParse(currentUserId, out int userId) || userId == 0)
             {
                 await Clients.Caller.SendAsync("ReceiveError", "You must be logged in to chat.");
                 return;
@@ -34,20 +43,7 @@ namespace RoleplayersGuild.Site.Hubs
                 return;
             }
 
-            // CORRECTED: The SQL query now provides a default value for "CharacterNameClass"
-            // because this column does not exist on the base "Characters" table.
-            var character = (await _dataService.GetRecordsAsync<ChatCharacterViewModel>(
-                """
-                SELECT
-                    c."CharacterId", c."UserId", c."CharacterDisplayName",
-                    'NormalCharacter' AS "CharacterNameClass",
-                    ca."AvatarImageUrl"
-                FROM "Characters" c
-                LEFT JOIN "CharacterAvatars" ca ON c."CharacterId" = ca."CharacterId"
-                WHERE c."CharacterId" = @CharacterId
-                """,
-                new { CharacterId = characterId }
-            )).FirstOrDefault();
+            var character = await _characterDataService.GetCharacterForChatAsync(characterId);
 
             if (character == null || character.UserId != userId)
             {
@@ -55,10 +51,9 @@ namespace RoleplayersGuild.Site.Hubs
                 return;
             }
 
-            var finalAvatarUrl = _imageService.GetImageUrl(character.AvatarImageUrl)
-                                 ?? "/images/UserFiles/CharacterAvatars/NewAvatar.png";
+            var finalAvatarUrl = _urlProcessingService.GetCharacterImageUrl((ImageUploadPath)character.AvatarImageUrl);
 
-            await _dataService.AddChatRoomPostAsync(
+            await _communityDataService.AddChatRoomPostAsync(
                 chatRoomId,
                 userId,
                 character.CharacterId,

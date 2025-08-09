@@ -1,25 +1,19 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import $ from 'jquery';
-// Bootstrap JS is now loaded globally in _Layout.cshtml
-// import 'bootstrap/dist/js/bootstrap.bundle.min.js';
 import '../../Site.Styles/scss/site.scss';
+import App from './App';
 
 // Make jQuery available globally
 (window as any).$ = $;
 (window as any).jQuery = $;
 
-// Remove the .tsx extension from this import
-import CharacterEditor from './Site.Directory/User-Panel/My-Characters/CharacterEditor';
-
-const rootElement = document.getElementById('character-editor-root');
+const rootElement = document.getElementById('react-root');
 
 if (rootElement) {
-    const characterId = parseInt(rootElement.dataset.characterId || '0', 10);
-
     ReactDOM.createRoot(rootElement).render(
         <React.StrictMode>
-            <CharacterEditor characterId={characterId} />
+            <App />
         </React.StrictMode>,
     );
 }

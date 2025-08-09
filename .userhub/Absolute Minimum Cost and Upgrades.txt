@@ -1,0 +1,135 @@
+What AWS services are considered absolutely essential for a basic, low-cost web application?
+What are the minimum AWS resources required to host a .NET 9.0 website with a PostgreSQL database?
+How to remove non-essential components from an AWS Elastic Beanstalk environment to reduce costs?
+What are the minimal security group rules for an Elastic Beanstalk application to connect to a private RDS PostgreSQL database?
+What are the cheapest EC2 instance types for Windows Server Core?
+What is the lowest cost for a Multi-AZ PostgreSQL RDS instance?
+How can I reduce AWS CloudWatch logging and monitoring costs?
+How can I reduce S3 storage and data transfer costs for a website?
+You're asking to strip down the AWS setup to the bare essentials, focusing on the absolute minimum needed to get RoleplayersGuild.com live and running, with the cheapest possible configuration. This will involve compromises on high availability and resilience.
+
+Warning: This "absolutely essential" setup is suitable for very tight budgets, personal projects, or development environments. It is NOT recommended for a production website that requires high uptime, zero downtime, or protection against data loss in an Availability Zone outage.
+
+AWS Cost Optimization: The "Absolutely Essential" Setup for RoleplayersGuild.com
+
+This configuration prioritizes the lowest possible monthly cost by removing or minimizing all non-essential features and adhering strictly to the principle of "just enough."
+
+Region: US East (Ohio) - us-east-2
+
+Database Engine: PostgreSQL (as agreed, for cost-effectiveness)
+
+Core Components (Absolutely Essential):
+
+Component	Configuration (Minimum Essential)	Estimated Monthly Cost (USD)	Notes
+RDS Database	PostgreSQL, db.t3.micro (2vCPU, 1GiB RAM), Single-AZ, 20 GiB gp3 storage	$20 - $25	Compromise: No Multi-AZ means database downtime during maintenance or AZ failures. db.t3.micro is the absolute smallest, monitor closely for performance bottlenecks. Includes ~$1.60 for storage.
+EC2 Instances (EB)	1 x t3.medium (Windows Server Core, 2vCPU, 4GiB RAM), 50 GiB gp3 EBS (Root)	$45 - $50	Compromise: Only one instance means NO high availability for the application. Any instance failure or update will cause downtime. t3.medium is the absolute minimum viable for Windows. Includes Windows OS license (~$14.60) and ~$4 for EBS.
+Application Load Balancer	1 ALB, Public-facing, Minimal LCU usage	$25 - $30	Still necessary for HTTPS termination and routing to the single instance. Costs largely fixed.
+NAT Gateway	1 NAT Gateway, low data processing	$40 - $50	Still Essential: Your private EC2 instance needs to reach the internet (for updates, AWS service endpoints like CloudWatch Logs, S3 for bundles/logs, etc.). This is a fixed hourly cost that cannot be removed if instances are in private subnets and need outbound internet access.
+S3 Storage & Transfer	images.roleplayersguild.com (e.g., 20GB images), Minimal logs, Low data transfer out	$1 - $5	Smaller storage, minimal data transfer. Free Tier includes 5GB S3 Standard and 1GB Data Transfer Out (aggregated).
+CloudWatch	Basic Monitoring (5-min), Minimal Logs, No Alarms (initially)	$1 - $5	Reduced monitoring granularity. Logs ingestion/storage minimized. You'll need to manually check logs and health.
+VPC & IAM	(Network, Subnets, Route Tables, Internet Gateway, Egress-Only IGW, S3 VPC Endpoint, IAM Roles/Policies)	$0	Core networking and access management components remain free or negligible.
+Total Estimated Monthly Cost (Absolute Minimum)		$132 - $165 USD	This is the bare minimum to keep it running with essential functionality. Any traffic beyond truly minimal will likely push costs higher or require scaling up.
+
+Configuration Adjustments for Absolute Minimum Cost:
+
+    RDS Database:
+
+        DB Instance Class: db.t3.micro
+
+        Multi-AZ Deployment: DISABLE. (Select "Do not create a standby instance").
+
+        Allocated Storage: Minimum for PostgreSQL (20 GiB).
+
+        Delete Protection: You may want to DISABLE this during initial development for easier teardown, but enable it if you keep this database long-term, even for dev.
+
+    Elastic Beanstalk EC2 Instances:
+
+        Instances (Min/Max):
+
+            Min: 1
+
+            Max: 1
+
+            Compromise: This completely removes auto-scaling and high availability for your application. Any updates, failures, or reboots will cause downtime.
+
+        Instance Type: t3.medium (Windows Server Core)
+
+        Root Volume Size: 50 GiB (still reasonable for Windows OS).
+
+        CloudWatch Monitoring: Select 5 minutes (Basic Monitoring) for EC2 instances.
+
+        Deployment Policy: You'll be forced to use All at once. This will cause downtime during every deployment or configuration change.
+
+    CloudWatch Logs / Monitoring:
+
+        Health reporting: Select Basic (5-minute monitoring interval is default with Basic).
+
+        Health event streaming to CloudWatch Logs: Disable.
+
+        S3 log storage (from instances): Disable. (You'll need to rely on the limited CloudWatch default logs or manually collect if needed).
+
+        Instance log streaming to CloudWatch logs: Disable.
+
+            Compromise: This significantly cuts logging costs but makes debugging and monitoring much harder. You'll have very limited visibility into what's happening on your instances.
+
+    S3:
+
+        Ensure images are optimized (compressed).
+
+        If possible, manually prune old log files from S3 if you re-enable S3 logging later.
+
+    Managed Platform Updates:
+
+        You might be forced to disable this with a single instance/all-at-once deployment. If it's enabled, it will cause downtime during updates. Consider manual updates during off-hours if you need patches.
+
+Ideal Upgrades Over Time (Roadmap from "Essential"):
+
+Once you have some revenue or a larger user base, these are the upgrades that offer the most value for stability and performance.
+
+Priority 1: Basic Production Reliability & Scalability (~$50 - $100 increase)
+
+    Database: Enable Multi-AZ for RDS (PostgreSQL, db.t3.micro).
+
+        Expectation: Database downtime during maintenance or unplanned outages is virtually eliminated. Cost increases by roughly ~$30-40/month.
+
+    EC2 Instances: Increase Min instances to 2 and Max to 4 (or 6) on Elastic Beanstalk. Keep t3.medium.
+
+        Expectation: Your application now has high availability (no single point of failure) and can automatically scale to handle moderate traffic increases. Deployments can be done with minimal to no downtime ("rolling with additional batch"). Cost increases by ~$45/month (for the second t3.medium instance).
+
+    Monitoring: Enable Enhanced Monitoring (1-min) for EC2 and RDS. Enable Log Streaming to CloudWatch Logs for instances and ALB. Enable email notifications.
+
+        Expectation: You get real-time insights into your application and database health, faster issue detection, and automated alerts. Cost increases by ~$10-20/month.
+
+Priority 2: Performance & User Experience (~$50 - $100 increase from Priority 1)
+
+    Database: Upgrade RDS to db.t3.small or db.t3.large (PostgreSQL, Multi-AZ).
+
+        Expectation: More CPU and RAM for the database, leading to faster query execution, better caching, and improved overall database responsiveness. Increases cost by ~$20-50/month depending on size.
+
+    EC2 Instances: Upgrade instances to t3.large (Windows Server Core).
+
+        Expectation: Significantly more memory (8GiB) and CPU for your application instances, which is crucial for Windows Server. Your application will be more stable and handle more requests per instance. Increases cost by ~$60-70/month (for 2 instances).
+
+    ALB Configuration: Ensure HTTPS Listener (Port 443) with ACM certificate is configured, and HTTP to HTTPS redirect is enabled.
+
+        Expectation: All user traffic is encrypted, improving security, trust, and SEO. No direct cost increase for the ALB, but you need an ACM certificate (free).
+
+Priority 3: Advanced Optimization & Cost Savings at Scale (Variable)
+
+    Reserved Instances/Savings Plans: Once your baseline usage is stable (e.g., always running 2 t3.large EC2s and 1 db.t3.large RDS), commit to 1-year or 3-year RIs/Savings Plans.
+
+        Expectation: Reduce your steady-state compute costs by 20-60%+. Requires upfront payment or hourly commitment. This is the most significant cost reduction for predictable workloads.
+
+    Content Delivery Network (CDN): Implement AWS CloudFront for images.roleplayersguild.com.
+
+        Expectation: Faster image delivery to users globally, reduced load on your S3 bucket, and potentially lower overall data transfer costs at scale. Costs typically start low and scale with usage.
+
+    Caching: Consider Amazon ElastiCache (Redis) for database query caching.
+
+        Expectation: Dramatically reduces database load for frequently accessed data, speeding up page loads. Adds around ~$30-40/month for a small cache instance.
+
+    Cross-Platform Migration: Migrate EC2 instances from Windows Server Core to Linux if your .NET 9.0 application permits.
+
+        Expectation: Eliminates Windows Server license costs, potentially saving ~$15/instance/month. Requires testing to ensure application compatibility on Linux.
+
+By carefully planning these upgrades, you can grow RoleplayersGuild.com while keeping a tight rein on your AWS spending. Always monitor your costs in the AWS Billing Dashboard and CloudWatch to make informed decisions.

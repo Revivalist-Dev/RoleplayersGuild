@@ -1,4 +1,5 @@
 ﻿@model RoleplayersGuild.Site.Model.UserNavViewModel
+@inject RoleplayersGuild.Site.Services.IUserService _userService
 
 <div class="user-nav-panel">
     @if (Model.IsAuthenticated)
@@ -18,7 +19,7 @@
                             {
                                 <a class="list-group-item list-group-item-action d-flex justify-content-between align-items-center" asp-page="/User-Panel/My-Characters/My-Galleries/Index">Gallery Comments <span class="badge rounded-pill bg-danger">@Model.UnreadImageCommentCount</span></a>
                             }
-                            @if (Model.IsStaff && Model.AdminOpenItemCount > 0)
+                            @if (Model.AdminOpenItemCount > 0)
                             {
                                 <a class="list-group-item list-group-item-action d-flex justify-content-between align-items-center" asp-page="/Admin-Panel/Characters-Under-Review/Index">Character Approvals <span class="badge rounded-pill bg-danger">@Model.AdminOpenItemCount</span></a>
                             }
@@ -62,7 +63,7 @@
             <a href="#" class="user-nav-settings" title="Pin UserNav" data-bs-toggle="modal" data-bs-target="#userNavSettingsModal">
                 <i class="bi bi-gear-fill"></i>
             </a>
-            @if (Model.IsStaff)
+            @if (await _userService.IsCurrentUserStaffAsync())
             {
                 <a asp-page="/Admin-Panel/Index" class="user-nav-settings" title="Admin Panel">
                     <i class="bi bi-shield-lock-fill"></i>

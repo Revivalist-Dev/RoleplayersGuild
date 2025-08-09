@@ -1,6 +1,4 @@
 ﻿using Microsoft.AspNetCore.Identity;
-using RoleplayersGuild.Site.Model;
-using System;
 
 namespace RoleplayersGuild.Site.Services
 {

@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc.ViewComponents;
 using RoleplayersGuild.Site.Directory.User_Panel;
 using RoleplayersGuild.Site.Model;
 using RoleplayersGuild.Site.Services;
+using RoleplayersGuild.Site.Services.DataServices;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -17,12 +18,12 @@ namespace RoleplayersGuild.Site.Directory.Dashboard
         // The properties for ActiveChatRooms, PopularStories, etc., have been removed
         // as they are all now loaded dynamically.
 
-        public IndexDashboardModel(IDataService dataService, IUserService userService)
-            : base(dataService, userService) { }
+        public IndexDashboardModel(ICharacterDataService characterDataService, ICommunityDataService communityDataService, IMiscDataService miscDataService, IUserService userService)
+            : base(characterDataService, communityDataService, miscDataService, userService) { }
 
         public async Task OnGetAsync()
         {
-            Funding = await DataService.GetDashboardFundingAsync();
+            Funding = await _miscDataService.GetDashboardFundingAsync();
         }
 
         public ViewComponentResult OnGetCharacterList(string screenStatus)
@@ -39,14 +40,14 @@ namespace RoleplayersGuild.Site.Directory.Dashboard
 
         public async Task<IActionResult> OnGetDashboardListAsync(string itemType, string filter)
         {
-            var items = await DataService.GetDashboardItemsAsync(itemType, filter, LoggedInUserId);
+            var items = await _miscDataService.GetDashboardItemsAsync(itemType, filter, LoggedInUserId);
             return Partial("_DashboardList", items);
         }
 
         // NEW HANDLER for the chat room panel
         public async Task<IActionResult> OnGetChatRoomListAsync()
         {
-            var rooms = await DataService.GetDashboardChatRoomsAsync(LoggedInUserId);
+            var rooms = await _communityDataService.GetDashboardChatRoomsAsync(LoggedInUserId);
             return Partial("_ChatRoomList", rooms);
         }
     }

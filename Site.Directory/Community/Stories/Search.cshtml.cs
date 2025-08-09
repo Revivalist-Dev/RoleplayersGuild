@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using RoleplayersGuild.Site.Model;
 using RoleplayersGuild.Site.Services;
+using RoleplayersGuild.Site.Services.DataServices;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -10,12 +11,12 @@ namespace RoleplayersGuild.Site.Directory.Community.Stories
 {
     public class SearchModel : PageModel
     {
-        private readonly IDataService _dataService;
+        private readonly IContentDataService _contentDataService;
         private readonly IUserService _userService;
 
-        public SearchModel(IDataService dataService, IUserService userService)
+        public SearchModel(IContentDataService contentDataService, IUserService userService)
         {
-            _dataService = dataService;
+            _contentDataService = contentDataService;
             _userService = userService;
         }
 
@@ -34,14 +35,14 @@ namespace RoleplayersGuild.Site.Directory.Community.Stories
         public async Task OnGetAsync()
         {
             var currentUserId = _userService.GetUserId(User);
-            var userCanViewMature = _userService.GetUserPrefersMature(User);
+            var userCanViewMature = await _userService.GetUserPrefersMatureAsync(User);
 
-            StoriesResult = await _dataService.SearchStoriesAsync(CurrentPage, 10, SearchTerm, SelectedGenreIds, userCanViewMature, null, currentUserId);
+            StoriesResult = await _contentDataService.SearchStoriesAsync(CurrentPage, 10, SearchTerm, SelectedGenreIds, userCanViewMature, null, currentUserId);
 
             if (StoriesResult is not null && StoriesResult.Items.Any())
             {
                 var storyIds = StoriesResult.Items.Select(s => s.StoryId);
-                GenresLookup = await _dataService.GetGenresForStoryListAsync(storyIds);
+                GenresLookup = await _contentDataService.GetGenresForStoryListAsync(storyIds);
             }
         }
     }

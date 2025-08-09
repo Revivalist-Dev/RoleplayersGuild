@@ -1,0 +1,66 @@
+export interface Character {
+    characterId: number;
+    characterDisplayName: string;
+    characterFirstName: string;
+    characterMiddleName: string | null;
+    characterLastName: string | null;
+    characterBBFrame: string | null;
+    characterGender: number | null;
+    sexualOrientation: number | null;
+    characterSourceId: number | null;
+    characterSource?: string | null;
+    postLengthMin: number | null;
+    postLengthMax: number | null;
+    literacyLevel: number | null;
+    lfrpStatus: number;
+    lfrpStatusName?: string;
+    eroticaPreferences: number | null;
+    matureContent: boolean;
+    isPrivate: boolean;
+    disableLinkify: boolean;
+    cardImageUrl: string | null;
+    profileCss: string | null;
+    profileHtml: string | null;
+    customProfileEnabled: boolean;
+    universeId?: number | null;
+    universeName?: string | null;
+}
+
+export interface CharacterImage {
+    characterImageId: number;
+    characterImageUrl: string;
+    imageCaption: string | null;
+    isMature: boolean;
+    userId: number;
+    imageScale: number;
+    width: number;
+    height: number;
+}
+
+export interface CharacterInline {
+    inlineId: number;
+    inlineName: string;
+    inlineImageUrl: string;
+}
+
+export interface EditorData {
+    character: Character;
+    selectedGenreIds: number[];
+    images: CharacterImage[];
+    inlines: CharacterInline[];
+    avatarUrl: string | null;
+    cardUrl: string | null;
+}
+
+export interface EditorLookups {
+    genders: { genderId: number; genderName: string }[];
+    sexualOrientations: { sexualOrientationId: number; orientationName: string }[];
+    sources: { sourceId: number; sourceName: string }[];
+    postLengths: { postLengthId: number; postLengthName: string }[];
+    literacyLevels: { literacyLevelId: number; levelName: string }[];
+    lfrpStatuses: { lfrpStatusId: number; statusName: string }[];
+    eroticaPreferences: { eroticaPreferenceId: number; preferenceName: string }[];
+    genres: { genreId: number; genreName: string }[];
+}
+
+export type EditorTab = 'BBFrame' | 'Details' | 'Gallery' | 'Data' | 'Custom';

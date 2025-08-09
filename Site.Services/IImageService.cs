@@ -1,5 +1,4 @@
-﻿using Microsoft.AspNetCore.Http;
-using System.Threading.Tasks;
+﻿using RoleplayersGuild.Site.Services.Models;
 
 namespace RoleplayersGuild.Site.Services
 {
@@ -12,20 +11,14 @@ namespace RoleplayersGuild.Site.Services
         /// <param name="userId">The ID of the user uploading the file.</param>
         /// <param name="characterId">The ID of the character the file belongs to.</param>
         /// <param name="imageType">The logical type of image (e.g., "avatar", "card", "gallery").</param>
-        /// <returns>The relative storage path of the saved image (e.g., {userId}/{characterId}/Avatars/{ticks}.png), or null if upload failed.</returns>
-        Task<string?> UploadImageAsync(IFormFile uploadedFile, int userId, int characterId, string imageType);
+        /// <returns>A tuple containing the relative storage path, width, and height of the saved image, or (null, 0, 0) if upload failed.</returns>
+        Task<(ImageUploadPath? path, int width, int height)> UploadImageAsync(IFormFile uploadedFile, int userId, int characterId, string imageType);
 
         /// <summary>
         /// Deletes an image from storage using its full relative path.
         /// </summary>
         /// <param name="storedPath">The full relative path of the image to delete (from the database).</param>
-        Task DeleteImageAsync(string? storedPath);
+        Task DeleteImageAsync(ImageUploadPath? storedPath);
 
-        /// <summary>
-        /// Constructs the full, web-accessible URL for an image.
-        /// </summary>
-        /// <param name="storedPath">The full relative path of the image (from the database).</param>
-        /// <returns>A full URL for the image, or null if the path is empty.</returns>
-        string? GetImageUrl(string? storedPath);
     }
 }

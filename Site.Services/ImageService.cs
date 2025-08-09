@@ -1,17 +1,10 @@
 ﻿using Amazon.S3;
 using Amazon.S3.Transfer;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using RoleplayersGuild.Project.Configuration;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Processing;
-using System;
-using System.IO;
-using System.Linq;
-using System.Threading.Tasks;
+using RoleplayersGuild.Site.Services.Models;
+using RoleplayersGuild.Site.Services.DataServices;
 
 namespace RoleplayersGuild.Site.Services
 {
@@ -19,36 +12,48 @@ namespace RoleplayersGuild.Site.Services
     {
         private readonly string _imageHandlingMode;
         private readonly AwsSettings _awsSettings;
+        private readonly ImageSettings _imageSettings;
         private readonly IWebHostEnvironment _webHostEnvironment;
         private readonly IAmazonS3? _s3Client;
         private readonly ILogger<ImageService> _logger;
+        private readonly IUserDataService _userDataService;
 
         public ImageService(IConfiguration config, IWebHostEnvironment webHostEnvironment,
                             IOptions<AwsSettings> awsSettings, IOptions<ImageSettings> imageSettings,
-                            ILogger<ImageService> logger, IAmazonS3? s3Client = null)
+                            ILogger<ImageService> logger, IUserDataService userDataService, IAmazonS3? s3Client = null)
         {
             _webHostEnvironment = webHostEnvironment;
             _imageHandlingMode = config.GetValue<string>("ImageHandling", "S3")!;
             _awsSettings = awsSettings.Value;
-            // imageSettings is no longer used for pathing but might be for other rules.
+            _imageSettings = imageSettings.Value;
             _s3Client = s3Client;
             _logger = logger;
+            _userDataService = userDataService;
         }
 
         private string GetImageTypeSubfolder(string imageType) => imageType.ToLowerInvariant() switch
         {
-            "avatar" => "Avatars",
-            "card" => "Cards",
-            "inline" => "Inlines",
-            _ => "Images", // Default for gallery images
+            "avatar" => _awsSettings.AvatarsFolder,
+            "card" => _awsSettings.CardsFolder,
+            "inline" => _awsSettings.InlinesFolder,
+            _ => _awsSettings.ImagesFolder,
         };
 
-        public async Task<string?> UploadImageAsync(IFormFile uploadedFile, int userId, int characterId, string imageType)
+        public async Task<(ImageUploadPath? path, int width, int height)> UploadImageAsync(IFormFile uploadedFile, int userId, int characterId, string imageType)
         {
             if (uploadedFile is null || uploadedFile.Length == 0 || !IsSupportedImageType(uploadedFile.ContentType))
             {
-                _logger.LogWarning("UploadImageAsync failed due to invalid file.");
-                return null;
+                _logger.LogWarning("UploadImageAsync failed due to invalid file (null, zero length, or unsupported type).");
+                return (null, 0, 0);
+            }
+
+            var membershipTypeId = await _userDataService.GetMembershipTypeIdAsync(userId);
+            var maxFileSizeMb = GetMaxFileSizeForMembership(membershipTypeId);
+            if (uploadedFile.Length > maxFileSizeMb * 1024 * 1024)
+            {
+                _logger.LogWarning("UploadImageAsync failed for user {UserId} due to file size {FileSize} exceeding limit of {MaxFileSize} MB.", userId, uploadedFile.Length, maxFileSizeMb);
+                // Returning a specific error code or message could be useful here for the frontend.
+                return (null, 0, 0);
             }
 
             var fileExtension = Path.GetExtension(uploadedFile.FileName).ToLowerInvariant();
@@ -56,71 +61,56 @@ namespace RoleplayersGuild.Site.Services
 
             var imageTypeSubfolder = GetImageTypeSubfolder(imageType);
             var relativePath = Path.Combine(userId.ToString(), characterId.ToString(), imageTypeSubfolder, uniqueFileName);
+            int width = 0;
+            int height = 0;
 
             try
             {
+                await using var stream = uploadedFile.OpenReadStream();
+                using var image = await Image.LoadAsync(stream);
+                width = image.Width;
+                height = image.Height;
+                stream.Position = 0; // Reset stream position after reading dimensions
+
                 if (_imageHandlingMode.Equals("Local", StringComparison.OrdinalIgnoreCase))
                 {
                     var fullSavePath = Path.Combine(_webHostEnvironment.WebRootPath, "images", "UserFiles", relativePath);
-                    await ResizeAndSaveLocallyAsync(uploadedFile, fullSavePath, 1200, 1200);
+                    await ResizeAndSaveLocallyAsync(image, fullSavePath, 1200, 1200);
                 }
                 else // S3
                 {
-                    var s3Key = Path.Combine("UserFiles", relativePath).Replace('\\', '/');
-                    await using var stream = uploadedFile.OpenReadStream();
-                    using var image = await Image.LoadAsync(stream);
+                    var s3Key = Path.Combine("images", "UserFiles", relativePath).Replace('\\', '/');
                     await ResizeAndUploadToS3Async(image, s3Key, 1200, 1200);
                 }
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "An exception occurred during image upload for path {RelativePath}.", relativePath);
-                return null;
+                return (null, 0, 0);
             }
 
-            return relativePath;
+            return (new ImageUploadPath(relativePath), width, height);
         }
 
-        public string? GetImageUrl(string? storedPath)
+        public async Task DeleteImageAsync(ImageUploadPath? storedPath)
         {
-            // If the path is null or empty, return the generic default image URL.
-            if (string.IsNullOrEmpty(storedPath))
-            {
-                return "/images/Defaults/NewCharacter.png";
-            }
-
-            // Handle specific default image filenames by pointing to their new location.
-            if (storedPath.Contains("NewCharacter.png"))
-            {
-                return "/images/Defaults/NewCharacter.png";
-            }
-            if (storedPath.Contains("NewAvatar.png"))
-            {
-                return "/images/Defaults/NewAvatar.png";
-            }
-
-            // For all other paths, build the URL based on the storage mode.
-            if (_imageHandlingMode.Equals("Local", StringComparison.OrdinalIgnoreCase))
-            {
-                return $"/images/UserFiles/{storedPath.Replace('\\', '/')}";
-            }
-            else // S3
-            {
-                if (string.IsNullOrEmpty(_awsSettings.CloudFrontDomain)) return "/images/Defaults/NewCharacter.png";
-                return $"{_awsSettings.CloudFrontDomain.TrimEnd('/')}/UserFiles/{storedPath.Replace('\\', '/')}";
-            }
-        }
-
-        public async Task DeleteImageAsync(string? storedPath)
-        {
-            if (string.IsNullOrEmpty(storedPath) || storedPath.Contains("NewCharacter.png") || storedPath.Contains("NewAvatar.png"))
+            if (storedPath is null || string.IsNullOrEmpty(storedPath.Path) || storedPath.Path.Contains("NewCharacter.png") || storedPath.Path.Contains("NewAvatar.png"))
             {
                 return;
             }
+            
+            var cleanPath = storedPath.Path.Replace('\\', '/');
+            const string pathSegment = "images/UserFiles/";
+            if (cleanPath.Contains(pathSegment))
+            {
+                cleanPath = cleanPath.Substring(cleanPath.LastIndexOf(pathSegment) + pathSegment.Length);
+            }
+            cleanPath = cleanPath.TrimStart('/');
+
 
             if (_imageHandlingMode.Equals("Local", StringComparison.OrdinalIgnoreCase))
             {
-                var fullPath = Path.Combine(_webHostEnvironment.WebRootPath, "images", "UserFiles", storedPath);
+                var fullPath = Path.Combine(_webHostEnvironment.WebRootPath, "images", "UserFiles", cleanPath);
                 if (File.Exists(fullPath))
                 {
                     File.Delete(fullPath);
@@ -130,13 +120,22 @@ namespace RoleplayersGuild.Site.Services
             else // S3
             {
                 if (_s3Client is null) throw new InvalidOperationException("S3 client is not configured.");
-                var s3Key = Path.Combine("UserFiles", storedPath).Replace('\\', '/');
+                var s3Key = Path.Combine("images", "UserFiles", cleanPath).Replace('\\', '/');
                 await _s3Client.DeleteObjectAsync(_awsSettings.BucketName, s3Key);
                 _logger.LogInformation("Deleted S3 object: {BucketName}/{S3Key}", _awsSettings.BucketName, s3Key);
             }
         }
 
-        private async Task ResizeAndSaveLocallyAsync(IFormFile file, string fullPath, int maxWidth, int maxHeight)
+        private int GetMaxFileSizeForMembership(int membershipTypeId) => membershipTypeId switch
+        {
+            1 => _imageSettings.BronzeMaxFileSizeMb,
+            2 => _imageSettings.SilverMaxFileSizeMb,
+            3 => _imageSettings.GoldMaxFileSizeMb,
+            4 => _imageSettings.PlatinumMaxFileSizeMb,
+            _ => _imageSettings.MaxFileSizeMb,
+        };
+
+        private async Task ResizeAndSaveLocallyAsync(Image image, string fullPath, int maxWidth, int maxHeight)
         {
             var directory = Path.GetDirectoryName(fullPath);
             if (!string.IsNullOrEmpty(directory))
@@ -144,8 +143,6 @@ namespace RoleplayersGuild.Site.Services
                 System.IO.Directory.CreateDirectory(directory);
             }
 
-            await using var stream = file.OpenReadStream();
-            using var image = await Image.LoadAsync(stream);
             image.Mutate(ctx => ctx.Resize(new ResizeOptions
             {
                 Size = new Size(maxWidth, maxHeight),

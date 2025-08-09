@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using RoleplayersGuild.Site.Services;
+using RoleplayersGuild.Site.Services.DataServices;
 using System.ComponentModel.DataAnnotations;
 using System.Threading.Tasks;
 
@@ -10,15 +11,15 @@ namespace RoleplayersGuild.Site.Directory.Contact
     [Authorize]
     public class IndexModel : PageModel
     {
-        private readonly IDataService _dataService;
+        private readonly IMiscDataService _miscDataService;
         private readonly INotificationService _notificationService;
-        private readonly ICookieService _cookieService;
+        private readonly IUserService _userService;
 
-        public IndexModel(IDataService dataService, INotificationService notificationService, ICookieService cookieService)
+        public IndexModel(IMiscDataService miscDataService, INotificationService notificationService, IUserService userService)
         {
-            _dataService = dataService;
+            _miscDataService = miscDataService;
             _notificationService = notificationService;
-            _cookieService = cookieService;
+            _userService = userService;
         }
 
         [BindProperty]
@@ -48,13 +49,13 @@ namespace RoleplayersGuild.Site.Directory.Contact
                 return Page();
             }
 
-            var userId = _cookieService.GetUserId();
+            var userId = _userService.GetUserId(User);
             if (userId == 0)
             {
                 return RedirectToPage("/Account/Login");
             }
 
-            await _dataService.AddToDoItemAsync(Input.Title, Input.Description, userId);
+            await _miscDataService.AddToDoItemAsync(Input.Title, Input.Description, userId);
 
             // CORRECTED: Using the existing SendMessageToStaffAsync method
             await _notificationService.SendMessageToStaffAsync(

@@ -1,0 +1,21 @@
+--This script is intended to run after the main update script and should not be merged with it.
+
+-- Step 1: Update CharacterImages table
+UPDATE "CharacterImages"
+SET "CharacterImageUrl" = 'images/UserFiles/' || "CharacterImageUrl"
+WHERE "CharacterImageUrl" IS NOT NULL AND "CharacterImageUrl" NOT LIKE 'images/UserFiles/%';
+
+-- Step 2: Update CharacterAvatars table
+UPDATE "CharacterAvatars"
+SET "AvatarImageUrl" = 'images/UserFiles/' || "AvatarImageUrl"
+WHERE "AvatarImageUrl" IS NOT NULL AND "AvatarImageUrl" NOT LIKE 'images/UserFiles/%';
+
+-- Step 3: Update CharacterInlines table
+UPDATE "CharacterInlines"
+SET "InlineImageUrl" = 'images/UserFiles/' || "InlineImageUrl"
+WHERE "InlineImageUrl" IS NOT NULL AND "InlineImageUrl" NOT LIKE 'images/UserFiles/%';
+
+-- Step 4: Update Characters table for CardImageUrl
+UPDATE "Characters"
+SET "CardImageUrl" = 'images/UserFiles/' || "CardImageUrl"
+WHERE "CardImageUrl" IS NOT NULL AND "CardImageUrl" NOT LIKE 'images/UserFiles/%';

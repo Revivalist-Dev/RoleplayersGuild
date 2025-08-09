@@ -1,6 +1,8 @@
 ﻿@page "{id:int}"
 @model RoleplayersGuild.Site.Directory.Community.Characters.ViewCharacterModel
 @using RoleplayersGuild.Site.Utils
+@using System.Text.Json
+@inject RoleplayersGuild.Site.Services.IViteManifestService ViteAssets
 @{
     ViewData["Title"] = Model.Character.CharacterDisplayName;
     Layout = "_Layout2Col";
@@ -11,6 +13,7 @@
 
 @section head {
     <meta name="description" content="@Model.MetaDescription" />
+    @await ViteAssets.RenderViteStyles()
 }
 
 @section cphLeftCol {
@@ -27,7 +30,7 @@
             <div class="tab-pane fade show active" id="card-tab-pane" role="tabpanel">
                 <div class="card-img-wrapper">
                     @* CORRECTED: Use null-coalescing for a cleaner fallback *@
-                    <img src="@(Model.Character.DisplayImageUrl ?? defaultCardUrl)" class="rpg-img lazyload" alt="Display Image for @Model.Character.CharacterDisplayName">
+                    <img src="@(Model.Character.CardImageUrl ?? defaultCardUrl)" class="rpg-img lazyload" alt="Display Image for @Model.Character.CharacterDisplayName">
                 </div>
                 <div class="card-body p-2">
                     <h6 class="card-title text-truncate @Model.Character.CharacterNameClass">@Model.Character.CharacterDisplayName</h6>
@@ -92,82 +95,51 @@
         </div>
     }
 
-    <div class="card">
-        <div class="card-header">
-            <ul class="nav nav-tabs card-header-tabs" id="profileTab" role="tablist">
-                <li class="nav-item" role="presentation">
-                    <button class="nav-link active" id="overview-tab" data-bs-toggle="tab" data-bs-target="#overview-tab-pane" type="button" role="tab">Overview</button>
-                </li>
-                <li class="nav-item" role="presentation">
-                    <button class="nav-link" id="details-tab" data-bs-toggle="tab" data-bs-target="#details-tab-pane" type="button" role="tab">Details</button>
-                </li>
-                <li class="nav-item" role="presentation">
-                    <button class="nav-link" id="gallery-tab" data-bs-toggle="tab" data-bs-target="#gallery-tab-pane" type="button" role="tab">Gallery</button>
-                </li>
-                <li class="nav-item" role="presentation">
-                    <button class="nav-link" id="data-tab" data-bs-toggle="tab" data-bs-target="#data-tab-pane" type="button" role="tab">Data</button>
-                </li>
-            </ul>
-        </div>
-        <div class="card-body">
-            <div class="tab-content" id="profileTabContent">
-                <div class="tab-pane fade show active p-3" id="overview-tab-pane" role="tabpanel">
-                    @if (Model.Character.MatureContent && !Model.UserCanViewMatureContent)
-                    {
-                        <div class="alert alert-warning">This character's page contains mature content. You can enable mature content in your account settings.</div>
-                    }
-                    else
-                    {
-                        @Html.Raw(Model.CharacterBBFrameHtml)
-                    }
-                </div>
-                <div class="tab-pane fade p-3" id="details-tab-pane" role="tabpanel">
-                    <p class="mb-1"><strong>Full Name:</strong> @Model.Character.CharacterFirstName @Model.Character.CharacterMiddleName @Model.Character.CharacterLastName</p>
-                    <p class="mb-1"><strong>Gender:</strong> @Model.Character.Gender</p>
-                    <p class="mb-1"><strong>Sexual Orientation:</strong> @Model.Character.SexualOrientation</p>
-                    @if (!string.IsNullOrEmpty(Model.Character.UniverseName))
-                    {
-                        <p class="mb-0"><strong>Universe:</strong> <a asp-page="/Community/Universes/View" asp-route-id="@Model.Character.UniverseId">@Model.Character.UniverseName</a></p>
-                    }
-                    <hr />
-                    <ul class="list-unstyled">
-                        <li><strong>Contact Pref:</strong> @Model.Character.LfrpStatusName</li>
-                        <li><strong>Source:</strong> @Model.Character.CharacterSource</li>
-                        <li><strong>Post Length:</strong> @Model.Character.PostLengthMin to @Model.Character.PostLengthMax</li>
-                        <li><strong>Literacy Level:</strong> @Model.Character.LiteracyLevel</li>
-                        <li><strong>Genres:</strong> @string.Join(", ", Model.Genres)</li>
+    <script id="viewer-data" type="application/json">
+        @Html.Raw(JsonSerializer.Serialize(new {
+            character = Model.Character,
+            images = Model.Images,
+            bbFrameHtml = Model.CharacterBBFrameHtml,
+            isOwner = Model.IsOwner,
+            userCanViewMatureContent = Model.UserCanViewMatureContent,
+            genres = Model.Genres
+        }, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase }))
+    </script>
+
+    <div id="react-root" style="min-height: 900px;">
+        <div id="character-viewer-root" class="h-100">
+            <div class="card h-100">
+                <div class="card-header">
+                    <ul class="nav nav-tabs card-header-tabs">
+                        <li class="nav-item">
+                            <span class="nav-link placeholder col-2"></span>
+                        </li>
+                        <li class="nav-item">
+                            <span class="nav-link placeholder col-2"></span>
+                        </li>
+                        <li class="nav-item">
+                            <span class="nav-link placeholder col-2"></span>
+                        </li>
                     </ul>
                 </div>
-                <div class="tab-pane fade p-3" id="gallery-tab-pane" role="tabpanel">
-                    @if (!Model.Images.Any())
-                    {
-                        <div class="alert alert-info">This character's gallery is empty.</div>
-                    }
-                    else
-                    {
-                        <div class="row row-cols-2 row-cols-md-3 row-cols-lg-4 g-3">
-                            @foreach (var image in Model.Images)
-                            {
-                                <div class="col">
-                                    <a asp-page="/Community/Characters/Galleries/Image/Image" asp-route-id="@image.CharacterImageId" class="card h-100 text-decoration-none text-dark">
-                                        @* CORRECTED: Use null-coalescing for a cleaner fallback *@
-                                        <img src="@(image.CharacterImageUrl ?? defaultCardUrl)" class="card-img-top" alt="@image.ImageCaption" style="height: 200px; object-fit: cover;" />
-                                        @if (!string.IsNullOrEmpty(image.ImageCaption))
-                                        {
-                                            <div class="card-body p-2">
-                                                <p class="card-text small text-truncate">@image.ImageCaption</p>
-                                            </div>
-                                        }
-                                    </a>
-                                </div>
-                            }
-                        </div>
-                    }
-                </div>
-                <div class="tab-pane fade p-3" id="data-tab-pane" role="tabpanel">
-                    <p class="text-muted">Data section coming soon.</p>
+                <div class="card-body d-flex justify-content-center align-items-center" style="min-height: 650px;">
+                    <div class="rpg-loader">
+                        <div class="cell d-0"></div>
+                        <div class="cell d-1"></div>
+                        <div class="cell d-2"></div>
+                        <div class="cell d-1"></div>
+                        <div class="cell d-2"></div>
+                        <div class="cell d-3"></div>
+                        <div class="cell d-2"></div>
+                        <div class="cell d-3"></div>
+                        <div class="cell d-4"></div>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
+}
+
+@section Scripts {
+    @await ViteAssets.RenderViteScripts()
 }

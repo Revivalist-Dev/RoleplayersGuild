@@ -1,5 +1,4 @@
 ﻿using Microsoft.AspNetCore.Identity;
-using RoleplayersGuild.Site.Model; // Assuming 'User' model is still in Site.Model
 
 namespace RoleplayersGuild.Site.Services
 {

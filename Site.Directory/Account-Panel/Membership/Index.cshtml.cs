@@ -5,19 +5,19 @@ namespace RoleplayersGuild.Site.Directory.Account_Panel.Membership
 {
     public class IndexMembershipModel : PageModel
     {
-        private readonly ICookieService _cookieService;
+        private readonly IUserService _userService;
 
         public int CurrentUserId { get; private set; }
         public bool IsUserLoggedIn { get; private set; }
 
-        public IndexMembershipModel(ICookieService cookieService)
+        public IndexMembershipModel(IUserService userService)
         {
-            _cookieService = cookieService;
+            _userService = userService;
         }
 
         public void OnGet()
         {
-            CurrentUserId = _cookieService.GetUserId();
+            CurrentUserId = _userService.GetUserId(User);
             IsUserLoggedIn = CurrentUserId != 0;
         }
     }

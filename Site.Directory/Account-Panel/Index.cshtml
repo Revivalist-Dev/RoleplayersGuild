@@ -1,4 +1,9 @@
 ﻿@page
 @model RoleplayersGuild.Site.Directory.Account.IndexModel
 @{
+    ViewData["Title"] = "Account Panel";
 }
+
+<h1>@ViewData["Title"]</h1>
+
+<p>Welcome, @(User.Identity?.Name ?? "User")!</p>

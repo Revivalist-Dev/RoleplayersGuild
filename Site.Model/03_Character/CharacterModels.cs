@@ -49,7 +49,6 @@ namespace RoleplayersGuild.Site.Model
         public string? EmailAddress { get; set; }
         public DateTime? LastAction { get; set; }
         public bool ShowWhenOnline { get; set; }
-        public bool IsAdmin { get; set; }
         public bool ShowWriterLinkOnCharacters { get; set; }
         public DateTime? LastLogin { get; set; }
         public string? Gender { get; set; }
@@ -61,7 +60,6 @@ namespace RoleplayersGuild.Site.Model
         public string? CharacterStatus { get; set; }
         public string? LfrpStatusName { get; set; }
         public string? CharacterSource { get; set; }
-        public string? DisplayImageUrl { get; set; }
         public int? LiteracyLevelId { get; set; }
         public int? PostLengthMaxId { get; set; }
         public int? PostLengthMinId { get; set; }
@@ -88,10 +86,12 @@ namespace RoleplayersGuild.Site.Model
         public int CharacterImageId { get; set; }
         public int CharacterId { get; set; }
         public string? CharacterImageUrl { get; set; } // UPDATED to be nullable
-        public bool IsPrimary { get; set; }
         public bool IsMature { get; set; }
         public string? ImageCaption { get; set; }
         public int UserId { get; set; }
+        public int ImageScale { get; set; } = 1; // Default to 1 column span
+        public int Width { get; set; }
+        public int Height { get; set; }
     }
 
     public class CharacterAvatar

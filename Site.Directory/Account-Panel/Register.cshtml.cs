@@ -7,6 +7,7 @@ using Microsoft.Extensions.Logging; // Added for logging
 using RoleplayersGuild.Project.Configuration; // Added for settings
 using RoleplayersGuild.Site.Model;
 using RoleplayersGuild.Site.Services;
+using RoleplayersGuild.Site.Services.DataServices;
 using System;
 using System.Threading.Tasks;
 
@@ -18,20 +19,20 @@ namespace RoleplayersGuild.Site.Directory.Account_Panel
         private readonly IUserService _userService;
         private readonly IReCaptchaService _reCaptchaService;
         private readonly IConfiguration _configuration;
-        private readonly IDataService _dataService;
+        private readonly IUserDataService _userDataService;
         private readonly ILogger<RegisterModel> _logger;
 
         public RegisterModel(
             IUserService userService,
             IReCaptchaService reCaptchaService,
             IConfiguration configuration,
-            IDataService dataService,
+            IUserDataService userDataService,
             ILogger<RegisterModel> logger)
         {
             _userService = userService;
             _reCaptchaService = reCaptchaService;
             _configuration = configuration;
-            _dataService = dataService;
+            _userDataService = userDataService;
             _logger = logger;
         }
 
@@ -99,12 +100,12 @@ namespace RoleplayersGuild.Site.Directory.Account_Panel
             var referralId = HttpContext.Session.GetInt32("ReferralId");
             if (referralId.HasValue && referralId.Value != user.UserId)
             {
-                await _dataService.ExecuteAsync("""UPDATE "Users" SET "ReferredBy" = @ReferrerUserId WHERE "UserId" = @NewUserId""", new { ReferrerUserId = referralId.Value, NewUserId = user.UserId });
+                await _userDataService.SetUserReferrerAsync(user.UserId, referralId.Value);
 
                 var badgeId = _configuration.GetValue<int>("BadgeIds:Referral"); // Corrected config path
                 if (badgeId > 0)
                 {
-                    await _dataService.ExecuteAsync("""INSERT INTO "UserBadges" ("UserId", "BadgeId", "ReasonEarned") VALUES (@UserId, @BadgeId, @Reason)""", new { UserId = referralId.Value, BadgeId = badgeId, Reason = $"Referred User {user.UserId} to the site." });
+                    await _userDataService.AddUserBadgeAsync(referralId.Value, badgeId, $"Referred User {user.UserId} to the site.");
                 }
                 HttpContext.Session.Remove("ReferralId");
             }

@@ -51,7 +51,7 @@ namespace RoleplayersGuild.Site.Model
         public System.DateTime DatePosted { get; set; }
         public string? CharacterDisplayName { get; set; }
         public string? CharacterNameClass { get; set; }
-        public string? DisplayImageUrl { get; set; }
+        public string? CardImageUrl { get; set; }
         public bool ShowWhenOnline { get; set; }
         public System.DateTime? LastAction { get; set; }
     }

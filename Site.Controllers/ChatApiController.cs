@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using RoleplayersGuild.Site.Model;
 using RoleplayersGuild.Site.Services;
+using RoleplayersGuild.Site.Services.DataServices;
 using System.Collections.Generic;
 using System.Security.Claims;
 using System.Threading.Tasks;
@@ -14,18 +15,21 @@ namespace RoleplayersGuild.Site.Controllers
     [Route("api/[controller]")]
     public class ChatApiController : ControllerBase
     {
-        private readonly IDataService _dataService;
+        private readonly ICommunityDataService _communityDataService;
+        private readonly IBaseDataService _baseDataService;
         private readonly IUserService _userService;
         private readonly IPassCryptService _passCryptService;
         private readonly IJwtService _jwtService;
 
         public ChatApiController(
-            IDataService dataService,
+            ICommunityDataService communityDataService,
+            IBaseDataService baseDataService,
             IUserService userService,
             IPassCryptService passCryptService,
             IJwtService jwtService)
         {
-            _dataService = dataService;
+            _communityDataService = communityDataService;
+            _baseDataService = baseDataService;
             _userService = userService;
             _passCryptService = passCryptService;
             _jwtService = jwtService;
@@ -71,7 +75,7 @@ namespace RoleplayersGuild.Site.Controllers
         [HttpGet("GetPosts")]
         public async Task<ActionResult<IEnumerable<ChatRoomPostsWithDetails>>> GetChatPosts(int chatRoomId, int lastPostId = 0)
         {
-            var posts = await _dataService.GetChatRoomPostsAsync(chatRoomId, lastPostId);
+            var posts = await _communityDataService.GetChatRoomPostsAsync(chatRoomId, lastPostId);
             return Ok(posts);
         }
 
@@ -79,7 +83,7 @@ namespace RoleplayersGuild.Site.Controllers
         public async Task<ActionResult<IEnumerable<DashboardChatRoom>>> GetActiveRooms()
         {
             var userId = _userService.GetUserId(User);
-            var rooms = await _dataService.GetActiveChatRoomsForDashboardAsync(userId);
+            var rooms = await _communityDataService.GetActiveChatRoomsForDashboardAsync(userId);
             return Ok(rooms);
         }
         [HttpGet("GetCharacters")]
@@ -92,7 +96,7 @@ namespace RoleplayersGuild.Site.Controllers
                 return Unauthorized();
             }
 
-            var characters = await _dataService.GetRecordsAsync<CharacterSimpleViewModel>(
+            var characters = await _baseDataService.GetRecordsAsync<CharacterSimpleViewModel>(
                 @"SELECT ""CharacterId"", ""CharacterDisplayName"" FROM ""Characters"" WHERE ""UserId"" = @UserId ORDER BY ""CharacterDisplayName""",
                 new { UserId = userId }
             );

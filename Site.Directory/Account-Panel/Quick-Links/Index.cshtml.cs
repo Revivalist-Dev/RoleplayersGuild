@@ -6,19 +6,20 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using RoleplayersGuild.Site.Model;
 using RoleplayersGuild.Site.Services;
+using RoleplayersGuild.Site.Services.DataServices;
 
 // FIXED: Replaced hyphens with underscores for a valid C# namespace.
 namespace RoleplayersGuild.Site.Directory.Account_Panel.Quick_Links
 {
     public class IndexQuickLinksModel : PageModel
     {
-        private readonly IDataService _dataService;
-        private readonly ICookieService _cookieService;
+        private readonly IMiscDataService _miscDataService;
+        private readonly IUserService _userService;
 
-        public IndexQuickLinksModel(IDataService dataService, ICookieService cookieService)
+        public IndexQuickLinksModel(IMiscDataService miscDataService, IUserService userService)
         {
-            _dataService = dataService;
-            _cookieService = cookieService;
+            _miscDataService = miscDataService;
+            _userService = userService;
         }
 
         public List<QuickLink> QuickLinks { get; set; } = new();
@@ -33,17 +34,17 @@ namespace RoleplayersGuild.Site.Directory.Account_Panel.Quick_Links
 
         public async Task OnGetAsync()
         {
-            var userId = _cookieService.GetUserId();
+            var userId = _userService.GetUserId(User);
             if (userId != 0)
             {
-                var links = await _dataService.GetUserQuickLinksAsync(userId);
+                var links = await _miscDataService.GetUserQuickLinksAsync(userId);
                 QuickLinks = links.ToList();
             }
         }
 
         public async Task<IActionResult> OnPostAsync()
         {
-            var userId = _cookieService.GetUserId();
+            var userId = _userService.GetUserId(User);
             if (userId == 0) return Forbid();
 
             if (!ModelState.IsValid)
@@ -60,7 +61,7 @@ namespace RoleplayersGuild.Site.Directory.Account_Panel.Quick_Links
                 OrderNumber = NewLink.OrderNumber
             };
 
-            await _dataService.AddQuickLinkAsync(newLink);
+            await _miscDataService.AddQuickLinkAsync(newLink);
             Message = "Your new quick link has been added!";
             MessageType = "success";
             return RedirectToPage();
@@ -68,10 +69,10 @@ namespace RoleplayersGuild.Site.Directory.Account_Panel.Quick_Links
 
         public async Task<IActionResult> OnPostDeleteAsync(int linkId)
         {
-            var userId = _cookieService.GetUserId();
+            var userId = _userService.GetUserId(User);
             if (userId == 0) return Forbid();
 
-            await _dataService.DeleteQuickLinkAsync(linkId, userId);
+            await _miscDataService.DeleteQuickLinkAsync(linkId, userId);
             Message = "The quick link has been removed.";
             MessageType = "success";
             return RedirectToPage();

@@ -1,15 +1,16 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import axios from 'axios';
 
 // Import Components
 import DetailsTab from './components/DetailsTab';
-import GalleryTab from './components/GalleryTab';
+import GalleryTab, { GalleryTabHandle } from './components/GalleryTab';
 import BBFrameTab from './components/BBFrameTab';
-import CustomizeTab from './components/CustomizeTab';
+import DataTab from './components/DataTab';
+import CustomTab from './components/CustomTab';
 import LoadingSpinner from '../../Shared/Components/LoadingSpinner'; // ADDED: Import the new LoadingSpinner component
 
 // Import Shared Types
-import { Character, EditorData, EditorLookups, EditorTab } from './types';
+import { Character, CharacterImage, CharacterInline, EditorData, EditorLookups, EditorTab } from '../../../types';
 
 interface CharacterEditorProps {
     characterId: number;
@@ -21,6 +22,13 @@ const CharacterEditor: React.FC<CharacterEditorProps> = ({ characterId }) => {
     const [editorData, setEditorData] = useState<EditorData | null>(null);
     const [lookupData, setLookupData] = useState<EditorLookups | null>(null);
     const [activeTab, setActiveTab] = useState<EditorTab>('Details');
+    const galleryTabRef = useRef<GalleryTabHandle>(null);
+
+    // New states for hot-reloading images
+    const [galleryImages, setGalleryImages] = useState<CharacterImage[]>([]);
+    const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+    const [cardUrl, setCardUrl] = useState<string | null>(null);
+    const [inlines, setInlines] = useState<CharacterInline[]>([]);
 
     const fetchInitialData = useCallback(async () => {
         try {
@@ -36,6 +44,11 @@ const CharacterEditor: React.FC<CharacterEditorProps> = ({ characterId }) => {
 
             if (characterResponse) {
                 setEditorData(characterResponse.data);
+                // Initialize new states
+                setGalleryImages(characterResponse.data.images);
+                setAvatarUrl(characterResponse.data.avatarUrl);
+                setCardUrl(characterResponse.data.cardUrl);
+                setInlines(characterResponse.data.inlines);
             } else {
                 const newCharacter: Character = {
                     characterId: 0,
@@ -82,34 +95,62 @@ const CharacterEditor: React.FC<CharacterEditorProps> = ({ characterId }) => {
     }, [fetchInitialData]);
 
 
+    const handleGalleryUpload = (newImage: CharacterImage) => {
+        setGalleryImages(prev => [...prev, newImage]);
+    };
+
+    const handleAvatarChange = (newAvatarUrl: string) => {
+        setAvatarUrl(newAvatarUrl);
+    };
+
+    const handleCardChange = (newCardUrl: string) => {
+        setCardUrl(newCardUrl);
+    };
+
+    const handleInlinesChange = (newInlines: CharacterInline[]) => {
+        setInlines(newInlines);
+    };
+
+    const handleImagesChange = (newImages: CharacterImage[]) => {
+        setGalleryImages(newImages);
+    };
+
     const renderActiveTab = () => {
         if (!editorData || !lookupData) return null;
 
         switch (activeTab) {
+            case 'BBFrame':
+                return <BBFrameTab
+                    characterId={characterId}
+                    initialBBFrame={editorData.character.characterBBFrame}
+                    inlines={inlines}
+                    onUpdate={fetchInitialData}
+                    onInlinesChange={handleInlinesChange}
+                />;
             case 'Details':
                 return <DetailsTab
                     character={editorData.character}
                     lookups={lookupData}
                     selectedGenres={editorData.selectedGenreIds}
                     onSave={fetchInitialData}
-                    initialAvatarUrl={editorData.avatarUrl}
-                    initialCardUrl={editorData.cardUrl}
+                    avatarUrl={avatarUrl}
+                    cardUrl={cardUrl}
+                    onAvatarChange={handleAvatarChange}
+                    onCardChange={handleCardChange}
                 />;
             case 'Gallery':
                 return <GalleryTab
+                    ref={galleryTabRef}
                     characterId={characterId}
-                    initialImages={editorData.images}
+                    images={galleryImages}
                     onGalleryUpdate={fetchInitialData}
+                    onImageUpload={handleGalleryUpload}
+                    onImagesChange={handleImagesChange}
                 />;
-            case 'BBFrame':
-                return <BBFrameTab
-                    characterId={characterId}
-                    initialBBFrame={editorData.character.characterBBFrame}
-                    initialInlines={editorData.inlines}
-                    onUpdate={fetchInitialData}
-                />;
-            case 'Customize':
-                return <CustomizeTab
+            case 'Data':
+                return <DataTab />;
+            case 'Custom':
+                return <CustomTab
                     character={editorData.character}
                     onUpdate={fetchInitialData}
                 />;
@@ -138,20 +179,26 @@ const CharacterEditor: React.FC<CharacterEditorProps> = ({ characterId }) => {
             <div className="card-header">
                 <ul className="nav nav-tabs card-header-tabs">
                     <li className="nav-item">
-                        <button className={`nav-link ${activeTab === 'Details' ? 'active' : ''}`} onClick={() => setActiveTab('Details')}>Details</button>
-                    </li>
-                    <li className="nav-item">
                         <button className={`nav-link ${activeTab === 'BBFrame' ? 'active' : ''}`} disabled={isNewCharacter} onClick={() => setActiveTab('BBFrame')}>BBFrame & Inlines</button>
                     </li>
                     <li className="nav-item">
-                        <button className={`nav-link ${activeTab === 'Gallery' ? 'active' : ''}`} disabled={isNewCharacter} onClick={() => setActiveTab('Gallery')}>Gallery</button>
+                        <button className={`nav-link ${activeTab === 'Details' ? 'active' : ''}`} onClick={() => setActiveTab('Details')}>Details</button>
                     </li>
                     <li className="nav-item">
-                        <button className={`nav-link ${activeTab === 'Customize' ? 'active' : ''}`} disabled={isNewCharacter} onClick={() => setActiveTab('Customize')}>Customize</button>
+                        <button className={`nav-link ${activeTab === 'Gallery' ? 'active' : ''}`} disabled={isNewCharacter} onClick={() => {
+                            setActiveTab('Gallery');
+                            setTimeout(() => galleryTabRef.current?.relayout(), 100);
+                        }}>Gallery</button>
+                    </li>
+                    <li className="nav-item">
+                        <button className={`nav-link ${activeTab === 'Data' ? 'active' : ''}`} disabled={isNewCharacter} onClick={() => setActiveTab('Data')}>Data</button>
+                    </li>
+                    <li className="nav-item">
+                        <button className={`nav-link ${activeTab === 'Custom' ? 'active' : ''}`} disabled={isNewCharacter} onClick={() => setActiveTab('Custom')}>Custom</button>
                     </li>
                 </ul>
             </div>
-            <div className="card-body p-3">
+            <div className="card-body p-3 d-flex flex-column" style={{ minHeight: '650px' }}>
                 {renderActiveTab()}
             </div>
         </div>

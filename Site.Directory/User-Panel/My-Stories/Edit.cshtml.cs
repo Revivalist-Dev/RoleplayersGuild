@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc.Rendering;
 using RoleplayersGuild.Site.Model;
 using RoleplayersGuild.Site.Services;
+using RoleplayersGuild.Site.Services.DataServices;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -10,8 +11,9 @@ namespace RoleplayersGuild.Site.Directory.User_Panel.My_Stories
 {
     public class EditMyStoriesModel : UserPanelBaseModel
     {
-        private readonly IDataService _dataService;
-        private readonly IUserService _userService;
+        private readonly IContentDataService _contentDataService;
+        private readonly IUniverseDataService _universeDataService;
+        private readonly IUserDataService _userDataService;
 
         [BindProperty]
         public StoryInputModel Input { get; set; } = new();
@@ -22,26 +24,31 @@ namespace RoleplayersGuild.Site.Directory.User_Panel.My_Stories
 
         public bool IsNew => Input.StoryId == 0;
 
-        public EditMyStoriesModel(IDataService dataService, IUserService userService, ICookieService cookieService)
-            : base(dataService, userService) // Corrected: Passed userService to base constructor.
+        public EditMyStoriesModel(
+            ICharacterDataService characterDataService,
+            ICommunityDataService communityDataService,
+            IMiscDataService miscDataService,
+            IUserService userService,
+            IContentDataService contentDataService,
+            IUniverseDataService universeDataService,
+            IUserDataService userDataService)
+            : base(characterDataService, communityDataService, miscDataService, userService)
         {
-            _dataService = dataService;
-            _userService = userService;
+            _contentDataService = contentDataService;
+            _universeDataService = universeDataService;
+            _userDataService = userDataService;
         }
 
         public async Task<IActionResult> OnGetAsync(int? id)
         {
-            var userId = _userService.GetUserId(User);
-            if (userId == 0) return RedirectToPage("/Index");
-
             if (id.HasValue)
             {
-                var story = await _dataService.GetStoryWithDetailsAsync(id.Value);
-                if (story is null || story.UserId != userId) return Forbid();
+                var story = await _contentDataService.GetStoryWithDetailsAsync(id.Value);
+                if (story is null || story.UserId != LoggedInUserId) return Forbid();
 
                 Input = new StoryInputModel(story)
                 {
-                    SelectedGenreIds = (await _dataService.GetStoryGenresAsync(id.Value)).ToList()
+                    SelectedGenreIds = (await _contentDataService.GetStoryGenresAsync(id.Value)).ToList()
                 };
             }
             else
@@ -49,15 +56,12 @@ namespace RoleplayersGuild.Site.Directory.User_Panel.My_Stories
                 Input = new StoryInputModel();
             }
 
-            await PopulateSelectListsAsync(userId);
+            await PopulateSelectListsAsync(LoggedInUserId);
             return Page();
         }
 
         public async Task<IActionResult> OnPostAsync()
         {
-            var userId = _userService.GetUserId(User);
-            if (userId == 0) return Forbid();
-
             if (Request.Form.ContainsKey("Input.SelectedGenreIds"))
             {
                 Input.SelectedGenreIds = Request.Form["Input.SelectedGenreIds"]
@@ -68,16 +72,16 @@ namespace RoleplayersGuild.Site.Directory.User_Panel.My_Stories
 
             if (!ModelState.IsValid)
             {
-                await PopulateSelectListsAsync(userId);
+                await PopulateSelectListsAsync(LoggedInUserId);
                 return Page();
             }
 
-            int storyId = await _dataService.UpsertStoryAsync(Input, userId);
-            await _dataService.UpdateStoryGenresAsync(storyId, Input.SelectedGenreIds);
+            int storyId = await _contentDataService.UpsertStoryAsync(Input, LoggedInUserId);
+            await _contentDataService.UpdateStoryGenresAsync(storyId, Input.SelectedGenreIds);
 
             if (IsNew)
             {
-                await _dataService.AwardBadgeIfNotExistingAsync(34, userId); // Story Creator Badge
+                await _userDataService.AwardBadgeIfNotExistingAsync(34, LoggedInUserId); // Story Creator Badge
             }
 
             TempData["Message"] = "Story saved successfully!";
@@ -86,21 +90,19 @@ namespace RoleplayersGuild.Site.Directory.User_Panel.My_Stories
 
         public async Task<IActionResult> OnPostDeleteAsync(int id)
         {
-            var userId = _userService.GetUserId(User);
-            var story = await _dataService.GetStoryWithDetailsAsync(id);
-            if (userId == 0 || story is null || story.UserId != userId) return Forbid();
+            var story = await _contentDataService.GetStoryWithDetailsAsync(id);
+            if (story is null || story.UserId != LoggedInUserId) return Forbid();
 
-            await _dataService.DeleteStoryAsync(id);
+            await _contentDataService.DeleteStoryAsync(id);
             TempData["Message"] = "Story deleted successfully.";
             return RedirectToPage("./Index");
         }
 
         private async Task PopulateSelectListsAsync(int userId)
         {
-            Universes = new SelectList(await _dataService.GetUserUniversesAsync(userId), "UniverseId", "UniverseName", Input.UniverseId);
-            // CORRECTED: The text field is "ContentRatingName", not "ContentRating"
-            Ratings = new SelectList(await _dataService.GetContentRatingsAsync(), "ContentRatingId", "ContentRatingName", Input.ContentRatingId);
-            var allGenres = await _dataService.GetGenresAsync();
+            Universes = new SelectList(await _universeDataService.GetUserUniversesAsync(userId), "UniverseId", "UniverseName", Input.UniverseId);
+            Ratings = new SelectList(await _miscDataService.GetContentRatingsAsync(), "ContentRatingId", "ContentRatingName", Input.ContentRatingId);
+            var allGenres = await _miscDataService.GetGenresAsync();
             GenreSelection = allGenres.Select(g => new GenreSelectionViewModel
             {
                 GenreId = g.GenreId,

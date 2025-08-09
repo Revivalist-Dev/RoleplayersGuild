@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using RoleplayersGuild.Site.Services;
+using RoleplayersGuild.Site.Services.DataServices;
 using System.Text;
 using System.Threading.Tasks;
 using System.Xml.Linq;
@@ -9,8 +10,8 @@ namespace RoleplayersGuild.Site.Directory.Sitemap;
 
 public class UniversesModel : PageModel
 {
-    private readonly IDataService _dataService;
-    public UniversesModel(IDataService dataService) { _dataService = dataService; }
+    private readonly IBaseDataService _baseDataService;
+    public UniversesModel(IBaseDataService baseDataService) { _baseDataService = baseDataService; }
 
     public async Task<IActionResult> OnGetAsync()
     {
@@ -18,7 +19,7 @@ public class UniversesModel : PageModel
         var urlset = new XElement(ns + "urlset");
 
         // StatusID = 2 means 'Approved'
-        var universeIds = await _dataService.GetRecordsAsync<int>("SELECT UniverseId FROM Universes WHERE StatusID = 2");
+        var universeIds = await _baseDataService.GetRecordsAsync<int>("SELECT UniverseId FROM Universes WHERE StatusID = 2");
 
         foreach (var id in universeIds)
         {

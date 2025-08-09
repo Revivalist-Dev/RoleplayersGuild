@@ -2,15 +2,17 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using RoleplayersGuild.Site.Model;
 using RoleplayersGuild.Site.Services;
+using RoleplayersGuild.Site.Services.DataServices;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
 namespace RoleplayersGuild.Site.Directory.User_Panel.My_Universes
 {
-    // CORRECTED: Inherit from UserPanelBaseModel
     public class EditMyUniversesModel : UserPanelBaseModel
     {
+        private readonly IUniverseDataService _universeDataService;
+
         [BindProperty]
         public UniverseInputModel Input { get; set; } = new();
 
@@ -18,22 +20,25 @@ namespace RoleplayersGuild.Site.Directory.User_Panel.My_Universes
         public SelectList Sources { get; set; } = new(Enumerable.Empty<SelectListItem>());
         public List<GenreSelectionViewModel> GenreSelection { get; set; } = new();
 
-        // CORRECTED: Constructor now uses IUserService and the base class
-        public EditMyUniversesModel(IDataService dataService, IUserService userService)
-            : base(dataService, userService) { }
+        public EditMyUniversesModel(
+            ICharacterDataService characterDataService,
+            ICommunityDataService communityDataService,
+            IMiscDataService miscDataService,
+            IUserService userService,
+            IUniverseDataService universeDataService)
+            : base(characterDataService, communityDataService, miscDataService, userService)
+        {
+            _universeDataService = universeDataService;
+        }
 
         public async Task<IActionResult> OnGetAsync(int id)
         {
-            // CORRECTED: Use the modern UserService
-            var userId = UserService.GetUserId(User);
-            if (userId == 0) return Forbid();
-
-            var universe = await DataService.GetUniverseForEditAsync(id, userId);
+            var universe = await _universeDataService.GetUniverseForEditAsync(id, LoggedInUserId);
             if (universe is null) return Forbid();
 
             Input = new UniverseInputModel(universe)
             {
-                SelectedGenreIds = (await DataService.GetUniverseGenresAsync(id)).ToList()
+                SelectedGenreIds = (await _universeDataService.GetUniverseGenresAsync(id)).ToList()
             };
 
             await PopulateSelectListsAsync();
@@ -42,17 +47,14 @@ namespace RoleplayersGuild.Site.Directory.User_Panel.My_Universes
 
         public async Task<IActionResult> OnPostAsync()
         {
-            var userId = UserService.GetUserId(User);
-            if (userId == 0) return Forbid();
-
             if (!ModelState.IsValid)
             {
                 await PopulateSelectListsAsync();
                 return Page();
             }
 
-            await DataService.UpdateUniverseAsync(Input, userId);
-            await DataService.UpdateUniverseGenresAsync(Input.UniverseId, Input.SelectedGenreIds);
+            await _universeDataService.UpdateUniverseAsync(Input, LoggedInUserId);
+            await _universeDataService.UpdateUniverseGenresAsync(Input.UniverseId, Input.SelectedGenreIds);
 
             TempData["Message"] = "Universe saved successfully!";
             return RedirectToPage("./Index");
@@ -60,14 +62,13 @@ namespace RoleplayersGuild.Site.Directory.User_Panel.My_Universes
 
         private async Task PopulateSelectListsAsync()
         {
-            var ratings = await DataService.GetContentRatingsAsync();
-            // CORRECTED: The property name is "ContentRatingName", not "ContentRating"
+            var ratings = await _miscDataService.GetContentRatingsAsync();
             Ratings = new SelectList(ratings, "ContentRatingId", "ContentRatingName", Input.ContentRatingId);
 
-            var sources = await DataService.GetCharacterSourcesAsync();
+            var sources = await _miscDataService.GetCharacterSourcesAsync();
             Sources = new SelectList(sources, "SourceId", "SourceName", Input.SourceTypeId);
 
-            var allGenres = await DataService.GetGenresAsync();
+            var allGenres = await _miscDataService.GetGenresAsync();
             GenreSelection = allGenres.Select(g => new GenreSelectionViewModel
             {
                 GenreId = g.GenreId,

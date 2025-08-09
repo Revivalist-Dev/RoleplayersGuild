@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using RoleplayersGuild.Site.Model;
 using RoleplayersGuild.Site.Services;
+using RoleplayersGuild.Site.Services.DataServices;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -11,8 +12,7 @@ namespace RoleplayersGuild.Site.Directory.User_Panel.My_Proposals
 {
     public class EditMyProposalsModel : UserPanelBaseModel
     {
-        private readonly IDataService _dataService;
-        private readonly IUserService _userService;
+        private readonly IContentDataService _contentDataService;
 
         [BindProperty]
         public ProposalInputModel Input { get; set; } = new();
@@ -23,26 +23,27 @@ namespace RoleplayersGuild.Site.Directory.User_Panel.My_Proposals
 
         public bool IsNew => Input.ProposalId == 0;
 
-        public EditMyProposalsModel(IDataService dataService, IUserService userService, ICookieService cookieService)
-            : base(dataService, userService) // Corrected: Passed userService to base constructor.
+        public EditMyProposalsModel(
+            ICharacterDataService characterDataService,
+            ICommunityDataService communityDataService,
+            IMiscDataService miscDataService,
+            IUserService userService,
+            IContentDataService contentDataService)
+            : base(characterDataService, communityDataService, miscDataService, userService)
         {
-            _dataService = dataService;
-            _userService = userService;
+            _contentDataService = contentDataService;
         }
 
         public async Task<IActionResult> OnGetAsync(int? id)
         {
-            var userId = _userService.GetUserId(User);
-            if (userId == 0) return RedirectToPage("/");
-
             if (id.HasValue) // Editing
             {
-                var proposal = await _dataService.GetProposalAsync(id.Value);
-                if (proposal is null || proposal.UserId != userId) return Forbid();
+                var proposal = await _contentDataService.GetProposalAsync(id.Value);
+                if (proposal is null || proposal.UserId != LoggedInUserId) return Forbid();
 
                 Input = new ProposalInputModel(proposal)
                 {
-                    SelectedGenreIds = (await _dataService.GetProposalGenresAsync(id.Value)).ToList()
+                    SelectedGenreIds = (await _contentDataService.GetProposalGenresAsync(id.Value)).ToList()
                 };
             }
             else // New
@@ -56,17 +57,14 @@ namespace RoleplayersGuild.Site.Directory.User_Panel.My_Proposals
 
         public async Task<IActionResult> OnPostAsync()
         {
-            var userId = _userService.GetUserId(User);
-            if (userId == 0) return Forbid();
-
             if (!ModelState.IsValid)
             {
                 await PopulateSelectListsAsync();
                 return Page();
             }
 
-            int proposalId = await _dataService.UpsertProposalAsync(Input, userId);
-            await _dataService.UpdateProposalGenresAsync(proposalId, Input.SelectedGenreIds);
+            int proposalId = await _contentDataService.UpsertProposalAsync(Input, LoggedInUserId);
+            await _contentDataService.UpdateProposalGenresAsync(proposalId, Input.SelectedGenreIds);
 
             TempData["Message"] = "Proposal saved successfully!";
             return RedirectToPage("./Index");
@@ -74,21 +72,19 @@ namespace RoleplayersGuild.Site.Directory.User_Panel.My_Proposals
 
         public async Task<IActionResult> OnPostDeleteAsync(int id)
         {
-            var userId = _userService.GetUserId(User);
-            var proposal = await _dataService.GetProposalAsync(id);
-            if (userId == 0 || proposal is null || proposal.UserId != userId) return Forbid();
+            var proposal = await _contentDataService.GetProposalAsync(id);
+            if (proposal is null || proposal.UserId != LoggedInUserId) return Forbid();
 
-            await _dataService.DeleteProposalAsync(id, userId);
+            await _contentDataService.DeleteProposalAsync(id, LoggedInUserId);
             TempData["Message"] = "Proposal deleted successfully.";
             return RedirectToPage("./Index");
         }
         private async Task PopulateSelectListsAsync()
         {
-            // CORRECTED: The text field is "ContentRatingName", not "ContentRating"
-            Ratings = new SelectList(await _dataService.GetContentRatingsAsync(), "ContentRatingId", "ContentRatingName", Input.ContentRatingId);
-            Statuses = new SelectList(await _dataService.GetProposalStatusesAsync(), "StatusId", "StatusName", Input.StatusId);
+            Ratings = new SelectList(await _miscDataService.GetContentRatingsAsync(), "ContentRatingId", "ContentRatingName", Input.ContentRatingId);
+            Statuses = new SelectList(await _contentDataService.GetProposalStatusesAsync(), "StatusId", "StatusName", Input.StatusId);
 
-            var allGenres = await _dataService.GetGenresAsync();
+            var allGenres = await _miscDataService.GetGenresAsync();
             GenreSelection = allGenres.Select(g => new GenreSelectionViewModel
             {
                 GenreId = g.GenreId,

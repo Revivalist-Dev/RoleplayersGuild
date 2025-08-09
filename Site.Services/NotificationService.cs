@@ -1,32 +1,32 @@
 ﻿using MailKit.Net.Smtp;
 using MailKit.Security;
-using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.Configuration;
 using MimeKit;
-using RoleplayersGuild.Site.Model;
+using RoleplayersGuild.Site.Services.DataServices;
 using RoleplayersGuild.Site.Services.Models;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 
 namespace RoleplayersGuild.Site.Services
 {
     public class NotificationService : INotificationService
     {
         private readonly IConfiguration _config;
-        private readonly IDataService _dataService;
+        private readonly ICommunityDataService _communityDataService;
+        private readonly ICharacterDataService _characterDataService;
+        private readonly IUserDataService _userDataService;
         private readonly IHttpContextAccessor _httpContextAccessor;
         private readonly IRazorViewToStringRenderer _viewRenderer;
 
         public NotificationService(
             IConfiguration config,
-            IDataService dataService,
+            ICommunityDataService communityDataService,
+            ICharacterDataService characterDataService,
+            IUserDataService userDataService,
             IHttpContextAccessor httpContextAccessor,
             IRazorViewToStringRenderer viewRenderer)
         {
             _config = config;
-            _dataService = dataService;
+            _communityDataService = communityDataService;
+            _characterDataService = characterDataService;
+            _userDataService = userDataService;
             _httpContextAccessor = httpContextAccessor;
             _viewRenderer = viewRenderer;
         }
@@ -83,27 +83,18 @@ namespace RoleplayersGuild.Site.Services
 
         public async Task NewItemAlertAsync(int itemId, int senderCharacterId, string contentType)
         {
-            var senderCharacter = await _dataService.GetRecordAsync<Character>("""SELECT * FROM "CharactersWithDetails" WHERE "CharacterId" = @Id""", new { Id = senderCharacterId });
+            var senderCharacter = await _characterDataService.GetCharacterAsync(senderCharacterId);
             if (senderCharacter is null) return;
 
             IEnumerable<User> recipients;
             if (contentType == "Message")
             {
-                const string sql = """
-                    SELECT U.* FROM "Users" U JOIN "ThreadUsers" TU ON U."UserId" = TU."UserId"
-                    WHERE TU."ThreadId" = @Id AND U."ReceivesThreadNotifications" = TRUE
-                    """;
-                recipients = await _dataService.GetRecordsAsync<User>(sql, new { Id = itemId });
+                recipients = await _communityDataService.GetThreadRecipientsAsync(itemId);
             }
             else if (contentType == "Image Comment")
             {
-                const string sql = """
-                    SELECT U.* FROM "Users" U
-                    JOIN "Characters" C ON U."UserId" = C."UserId"
-                    JOIN "CharacterImages" CI ON C."CharacterId" = CI."CharacterId"
-                    WHERE CI."CharacterImageId" = @Id AND U."ReceivesImageCommentNotifications" = TRUE
-                    """;
-                recipients = await _dataService.GetRecordsAsync<User>(sql, new { Id = itemId });
+                var owner = await _characterDataService.GetImageOwnerAsync(itemId);
+                recipients = owner != null ? new List<User> { owner } : Enumerable.Empty<User>();
             }
             else
             {
@@ -135,8 +126,7 @@ namespace RoleplayersGuild.Site.Services
         {
             if (string.IsNullOrEmpty(user.EmailAddress)) return;
 
-            const string tokenSql = """INSERT INTO "RecoveryAttempts" ("UserId") VALUES (@UserId) RETURNING "RecoveryKey";""";
-            var token = await _dataService.GetScalarAsync<Guid>(tokenSql, new { UserId = user.UserId });
+            var token = await _userDataService.CreatePasswordRecoveryTokenAsync(user.UserId);
 
             var request = _httpContextAccessor.HttpContext?.Request;
             var baseUrl = $"{request?.Scheme}://{request?.Host}";
@@ -154,24 +144,24 @@ namespace RoleplayersGuild.Site.Services
 
         public async Task SendMessageToStaffAsync(string threadTitle, string messageContent)
         {
-            var staffUsers = await _dataService.GetRecordsAsync<User>("""SELECT * FROM "Users" WHERE "UserTypeId" IN (2, 3, 4)""");
+            var staffUsers = await _userDataService.GetStaffUsersAsync();
             var systemCharacterId = _config.GetValue<int>("SystemSettings:SystemCharacterId");
 
             foreach (var staffUser in staffUsers)
             {
                 // Each staff member gets their own private thread with the system
                 // CORRECTED: Pass the System User ID (1) as the creator of the thread.
-                var threadId = await _dataService.CreateNewThreadAsync(threadTitle, 1);
-                await _dataService.InsertMessageAsync(threadId, systemCharacterId, messageContent);
+                var threadId = await _communityDataService.CreateNewThreadAsync(threadTitle, 1);
+                await _communityDataService.InsertMessageAsync(threadId, systemCharacterId, messageContent);
 
                 // Add the staff member to the thread using their current "send as" character
-                await _dataService.InsertThreadUserAsync(staffUser.UserId, threadId, 2, staffUser.CurrentSendAsCharacter, 1); // 2 = Unread
+                await _communityDataService.InsertThreadUserAsync(staffUser.UserId, threadId, 2, staffUser.CurrentSendAsCharacter, 1); // 2 = Unread
             }
         }
 
         public async Task NotifyStoryOwnerOfNewPostAsync(int storyId, int storyOwnerId, int postingCharacterId)
         {
-            var postingCharacter = await _dataService.GetCharacterAsync(postingCharacterId);
+            var postingCharacter = await _characterDataService.GetCharacterAsync(postingCharacterId);
             if (postingCharacter is null) return;
 
             // Don't send a notification if the owner is posting in their own story
@@ -181,16 +171,16 @@ namespace RoleplayersGuild.Site.Services
             var message = $"<div class=\"ThreadAlert alert-info\"><p><strong>{postingCharacter.CharacterDisplayName}</strong> has posted in your story. <a href=\"/Stories/View/{storyId}\">Click here to see the new post</a>.</p></div>";
 
             // CORRECTED: Pass the System User ID (1) as the creator of the thread.
-            var threadId = await _dataService.CreateNewThreadAsync(threadTitle, 1);
+            var threadId = await _communityDataService.CreateNewThreadAsync(threadTitle, 1);
 
             var systemCharacterId = _config.GetValue<int>("SystemSettings:SystemCharacterId");
-            await _dataService.InsertMessageAsync(threadId, systemCharacterId, message);
+            await _communityDataService.InsertMessageAsync(threadId, systemCharacterId, message);
 
             // Get the owner's "send as" character to add them to the thread
-            var ownerCharacterId = await _dataService.GetScalarAsync<int>("""SELECT "CurrentSendAsCharacter" FROM "Users" WHERE "UserId" = @UserId""", new { UserId = storyOwnerId });
+            var ownerCharacterId = await _userDataService.GetSendAsCharacterIdForUserAsync(storyOwnerId);
             if (ownerCharacterId > 0)
             {
-                await _dataService.InsertThreadUserAsync(storyOwnerId, threadId, 2, ownerCharacterId, 1); // 2 = Unread
+                await _communityDataService.InsertThreadUserAsync(storyOwnerId, threadId, 2, ownerCharacterId, 1); // 2 = Unread
             }
         }
     }

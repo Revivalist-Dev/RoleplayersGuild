@@ -6,7 +6,7 @@ namespace RoleplayersGuild.Site.Directory.Error
 {
     public class IndexErrorModel : PageModel
     {
-        private readonly ICookieService _cookieService;
+        private readonly IUserService _userService;
 
         public string ErrorMessage { get; private set; } = string.Empty;
         public bool ShowMarketing { get; private set; }
@@ -14,9 +14,9 @@ namespace RoleplayersGuild.Site.Directory.Error
         [BindProperty(SupportsGet = true)]
         public string? ErrorType { get; set; }
 
-        public IndexErrorModel(ICookieService cookieService)
+        public IndexErrorModel(IUserService userService)
         {
-            _cookieService = cookieService;
+            _userService = userService;
         }
 
         public void OnGet()
@@ -34,7 +34,7 @@ namespace RoleplayersGuild.Site.Directory.Error
                     break;
             }
 
-            ShowMarketing = _cookieService.GetUserId() == 0;
+            ShowMarketing = _userService.GetUserId(User) == 0;
         }
     }
 }

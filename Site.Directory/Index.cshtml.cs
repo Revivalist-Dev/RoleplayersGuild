@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.Mvc.ViewComponents;
 using RoleplayersGuild.Site.Model;
 using RoleplayersGuild.Site.Services;
+using RoleplayersGuild.Site.Services.DataServices;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -14,7 +15,7 @@ namespace RoleplayersGuild.Site.Directory
     public class IndexModel : PageModel
     {
         private readonly IUserService _userService;
-        private readonly IDataService _dataService;
+        private readonly IContentDataService _contentDataService;
 
         [BindProperty]
         public LoginInputModel Input { get; set; } = new();
@@ -24,10 +25,10 @@ namespace RoleplayersGuild.Site.Directory
 
         public IEnumerable<ArticleWithDetails> RecentArticles { get; private set; } = Enumerable.Empty<ArticleWithDetails>();
 
-        public IndexModel(IUserService userService, IDataService dataService)
+        public IndexModel(IUserService userService, IContentDataService contentDataService)
         {
             _userService = userService;
-            _dataService = dataService;
+            _contentDataService = contentDataService;
         }
 
         public async Task<IActionResult> OnGetAsync()
@@ -37,8 +38,7 @@ namespace RoleplayersGuild.Site.Directory
                 return RedirectToPage("/Dashboard/Index");
             }
 
-            const string sql = """SELECT * FROM "ArticlesForListing" WHERE ("CategoryId" <> 7 AND "CategoryId" <> 8 AND "CategoryId" <> 9 AND "CategoryId" <> 10) ORDER BY "CreatedDateTime" DESC LIMIT 5""";
-            RecentArticles = await _dataService.GetRecordsAsync<ArticleWithDetails>(sql);
+            RecentArticles = await _contentDataService.GetRecentArticlesAsync();
             return Page();
         }
 
@@ -53,8 +53,10 @@ namespace RoleplayersGuild.Site.Directory
             var result = await _userService.LoginAsync(Input.Email, Input.Password);
 
             // --- UPDATED LOGIC ---
-            if (result.IsSuccess)
+            if (result.IsSuccess && result.User != null)
             {
+                await _userService.SignInUserAsync(result.User);
+
                 if (result.PasswordNeedsUpgrade)
                 {
                     // Legacy password was correct. Flag user to update it.

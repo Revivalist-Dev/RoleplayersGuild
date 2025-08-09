@@ -52,6 +52,8 @@
     @await Component.InvokeAsync("SiteFooter")
 
     <script src="~/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+    <script src="~/vendor/imagesloaded/imagesloaded.pkgd.min.js"></script>
+    <script src="~/vendor/packery/packery.pkgd.min.js"></script>
     @await ViteAssets.RenderViteScripts()
 
     @await RenderSectionAsync("Scripts", required: false)

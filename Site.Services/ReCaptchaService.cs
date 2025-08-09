@@ -1,10 +1,4 @@
 ﻿using Microsoft.Extensions.Options;
-using Microsoft.Extensions.Logging;
-using RoleplayersGuild.Project.Configuration;
-using System;
-using System.Collections.Generic;
-using System.Net.Http;
-using System.Threading.Tasks;
 using System.Text.Json; // 1. Using System.Text.Json
 using System.Text.Json.Serialization; // For JsonPropertyName attribute
 

@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Identity; // Required for PasswordVerificationResult
+﻿using Microsoft.AspNetCore.Identity;
 
 namespace RoleplayersGuild.Site.Services
 {

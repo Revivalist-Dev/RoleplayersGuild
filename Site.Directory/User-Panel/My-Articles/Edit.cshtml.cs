@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc.Rendering;
 using RoleplayersGuild.Site.Model;
 using RoleplayersGuild.Site.Services;
+using RoleplayersGuild.Site.Services.DataServices;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -10,7 +11,8 @@ namespace RoleplayersGuild.Site.Directory.User_Panel.My_Articles
 {
     public class EditMyArticlesModel : UserPanelBaseModel
     {
-        // NOTE: Redundant fields were removed. 'DataService' and 'UserService' from the base class will be used.
+        private readonly IContentDataService _contentDataService;
+        private readonly IUniverseDataService _universeDataService;
 
         [BindProperty]
         public ArticleInputModel Input { get; set; } = new();
@@ -22,27 +24,28 @@ namespace RoleplayersGuild.Site.Directory.User_Panel.My_Articles
 
         public bool IsNewArticle => Input.ArticleId == 0;
 
-        // UPDATED: Constructor to match the new base class signature.
-        public EditMyArticlesModel(IDataService dataService, IUserService userService)
-            : base(dataService, userService)
+        public EditMyArticlesModel(ICharacterDataService characterDataService, ICommunityDataService communityDataService, IMiscDataService miscDataService, IUserService userService, IContentDataService contentDataService, IUniverseDataService universeDataService)
+            : base(characterDataService, communityDataService, miscDataService, userService)
         {
+            _contentDataService = contentDataService;
+            _universeDataService = universeDataService;
         }
 
         public async Task<IActionResult> OnGetAsync(int? id)
         {
-            var userId = UserService.GetUserId(User);
+            var userId = _userService.GetUserId(User);
             if (userId == 0) return RedirectToPage("/");
 
             if (id.HasValue)
             {
-                var article = await DataService.GetArticleWithDetailsAsync(id.Value);
+                var article = await _contentDataService.GetArticleWithDetailsAsync(id.Value);
                 if (article is null || article.OwnerUserId != userId)
                 {
                     return Forbid();
                 }
                 Input = new ArticleInputModel(article)
                 {
-                    SelectedGenreIds = (await DataService.GetArticleGenresAsync(id.Value)).ToList()
+                    SelectedGenreIds = (await _contentDataService.GetArticleGenresAsync(id.Value)).ToList()
                 };
             }
 
@@ -52,7 +55,7 @@ namespace RoleplayersGuild.Site.Directory.User_Panel.My_Articles
 
         public async Task<IActionResult> OnPostAsync()
         {
-            var userId = UserService.GetUserId(User);
+            var userId = _userService.GetUserId(User);
             if (userId == 0) return Forbid();
 
             if (!ModelState.IsValid)
@@ -61,8 +64,8 @@ namespace RoleplayersGuild.Site.Directory.User_Panel.My_Articles
                 return Page();
             }
 
-            int articleId = await DataService.UpsertArticleAsync(Input, userId);
-            await DataService.UpdateArticleGenresAsync(articleId, Input.SelectedGenreIds);
+            int articleId = await _contentDataService.UpsertArticleAsync(Input, userId);
+            await _contentDataService.UpdateArticleGenresAsync(articleId, Input.SelectedGenreIds);
 
             TempData["Message"] = "Article saved successfully!";
             return RedirectToPage("./Index");
@@ -70,26 +73,26 @@ namespace RoleplayersGuild.Site.Directory.User_Panel.My_Articles
 
         public async Task<IActionResult> OnPostDeleteAsync(int id)
         {
-            var userId = UserService.GetUserId(User);
-            var article = await DataService.GetArticleWithDetailsAsync(id);
+            var userId = _userService.GetUserId(User);
+            var article = await _contentDataService.GetArticleWithDetailsAsync(id);
 
             if (userId == 0 || article is null || article.OwnerUserId != userId)
             {
                 return Forbid();
             }
 
-            await DataService.DeleteArticleAsync(id);
+            await _contentDataService.DeleteArticleAsync(id);
             TempData["Message"] = "Article deleted successfully.";
             return RedirectToPage("./Index");
         }
 
         private async Task PopulateSelectListsAsync(int userId)
         {
-            Categories = new SelectList(await DataService.GetCategoriesAsync(), "CategoryId", "CategoryName", Input.CategoryId);
-            Universes = new SelectList(await DataService.GetUserUniversesAsync(userId), "UniverseId", "UniverseName", Input.UniverseId);
-            Ratings = new SelectList(await DataService.GetContentRatingsAsync(), "ContentRatingId", "ContentRatingName", Input.ContentRatingId);
+            Categories = new SelectList(await _miscDataService.GetCategoriesAsync(), "CategoryId", "CategoryName", Input.CategoryId);
+            Universes = new SelectList(await _universeDataService.GetUserUniversesAsync(userId), "UniverseId", "UniverseName", Input.UniverseId);
+            Ratings = new SelectList(await _miscDataService.GetContentRatingsAsync(), "ContentRatingId", "ContentRatingName", Input.ContentRatingId);
 
-            var allGenres = await DataService.GetGenresAsync();
+            var allGenres = await _miscDataService.GetGenresAsync();
             GenreSelection = allGenres.Select(g => new GenreSelectionViewModel
             {
                 GenreId = g.GenreId,

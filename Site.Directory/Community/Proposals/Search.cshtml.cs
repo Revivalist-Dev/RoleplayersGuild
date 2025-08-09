@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using RoleplayersGuild.Site.Model;
 using RoleplayersGuild.Site.Services;
+using RoleplayersGuild.Site.Services.DataServices;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
@@ -9,11 +10,11 @@ namespace RoleplayersGuild.Site.Directory.Community.Proposals
 {
     public class SearchModel : PageModel
     {
-        private readonly IDataService _dataService;
+        private readonly IContentDataService _contentDataService;
 
-        public SearchModel(IDataService dataService)
+        public SearchModel(IContentDataService contentDataService)
         {
-            _dataService = dataService;
+            _contentDataService = contentDataService;
         }
 
         [BindProperty(SupportsGet = true)]
@@ -27,7 +28,7 @@ namespace RoleplayersGuild.Site.Directory.Community.Proposals
         public async Task OnGetAsync()
         {
             const int pageSize = 20;
-            ProposalsResult = await _dataService.SearchProposalsAsync(CurrentPage, pageSize, SelectedGenreIds);
+            ProposalsResult = await _contentDataService.SearchProposalsAsync(CurrentPage, pageSize, SelectedGenreIds);
         }
     }
 }

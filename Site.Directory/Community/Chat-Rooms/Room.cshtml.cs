@@ -5,20 +5,24 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using RoleplayersGuild.Site.Model;
 using RoleplayersGuild.Site.Services;
+using RoleplayersGuild.Site.Services.DataServices;
+using RoleplayersGuild.Site.Services.Models;
 
 namespace RoleplayersGuild.Site.Directory.Community.Chat_Rooms
 {
     public class RoomModel : PageModel
     {
-        private readonly IDataService _dataService;
+        private readonly ICommunityDataService _communityDataService;
+        private readonly IBaseDataService _baseDataService;
         private readonly IUserService _userService;
-        private readonly IImageService _imageService; // Add ImageService
+        private readonly IUrlProcessingService _urlProcessingService;
 
-        public RoomModel(IDataService dataService, IUserService userService, IImageService imageService) // Update constructor
+        public RoomModel(ICommunityDataService communityDataService, IBaseDataService baseDataService, IUserService userService, IUrlProcessingService urlProcessingService)
         {
-            _dataService = dataService;
+            _communityDataService = communityDataService;
+            _baseDataService = baseDataService;
             _userService = userService;
-            _imageService = imageService; // Add ImageService
+            _urlProcessingService = urlProcessingService;
         }
 
         public ChatRoomWithDetails ChatRoom { get; set; } = new();
@@ -28,7 +32,7 @@ namespace RoleplayersGuild.Site.Directory.Community.Chat_Rooms
 
         public async Task<IActionResult> OnGetAsync(int id)
         {
-            var room = await _dataService.GetChatRoomWithDetailsAsync(id);
+            var room = await _communityDataService.GetChatRoomWithDetailsAsync(id);
             if (room is null)
             {
                 return NotFound();
@@ -36,17 +40,17 @@ namespace RoleplayersGuild.Site.Directory.Community.Chat_Rooms
             ChatRoom = room;
 
             // Fetch participants for the left column
-            var participants = await _dataService.GetChatRoomParticipantsAsync(id);
+            var participants = await _communityDataService.GetChatRoomParticipantsAsync(id);
             foreach (var p in participants)
             {
-                p.AvatarImageUrl = _imageService.GetImageUrl(p.AvatarImageUrl);
+                p.AvatarImageUrl = _urlProcessingService.GetCharacterImageUrl((ImageUploadPath)p.AvatarImageUrl);
             }
             Participants = participants.ToList();
 
             var userId = _userService.GetUserId(User);
             if (userId != 0)
             {
-                var characters = await _dataService.GetRecordsAsync<CharactersForListing>(
+                var characters = await _baseDataService.GetRecordsAsync<CharactersForListing>(
                     """
                     SELECT "CharacterId", "CharacterDisplayName"
                     FROM "CharactersForListing" 
@@ -54,7 +58,7 @@ namespace RoleplayersGuild.Site.Directory.Community.Chat_Rooms
                     """,
                     new { userId });
                 UserCharacters = characters.ToList();
-                CurrentSendAsCharacterId = await _dataService.GetScalarAsync<int>("""SELECT "CurrentSendAsCharacter" FROM "Users" WHERE "UserId" = @userId""", new { userId });
+                CurrentSendAsCharacterId = await _baseDataService.GetScalarAsync<int>("""SELECT "CurrentSendAsCharacter" FROM "Users" WHERE "UserId" = @userId""", new { userId });
             }
 
             return Page();

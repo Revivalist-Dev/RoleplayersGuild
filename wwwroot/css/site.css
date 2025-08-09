@@ -143,6 +143,7 @@ body {
   height: 100%;
   margin: 0;
   padding-bottom: 20px;
+  background-color: transparent;
   background-repeat: no-repeat;
   background-attachment: fixed;
 }
@@ -356,7 +357,7 @@ body.is-dragging {
 }
 .user-nav-flyout .user-nav-panel {
   box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
-  border-radius: 0.375rem;
+  border-radius: 0;
   width: 280px;
   max-height: calc(100vh - 40px);
   overflow-y: auto;
@@ -394,13 +395,13 @@ body.is-dragging {
   flex-direction: row;
 }
 .user-nav-flyout.dock-left .user-nav-controls {
-  border-radius: 0 5px 5px 0;
+  border-radius: 0;
 }
 .user-nav-flyout.dock-right {
   flex-direction: row-reverse;
 }
 .user-nav-flyout.dock-right .user-nav-controls {
-  border-radius: 5px 0 0 5px;
+  border-radius: 0;
 }
 
 .Post {
@@ -441,6 +442,153 @@ body.is-dragging {
   flex-shrink: 0;
 }
 
+/* Global Loading Spinner Styles */
+.rpg-loader {
+  --cell-size: 52px;
+  --cell-spacing: 1px;
+  --cells: 3;
+  --total-size: calc(var(--cells) * (var(--cell-size) + 2 * var(--cell-spacing)));
+  display: flex;
+  flex-wrap: wrap;
+  width: var(--total-size);
+  height: var(--total-size);
+  /* Dark Mode override */
+  /* Animation Delays */
+}
+.rpg-loader .cell {
+  flex: 0 0 var(--cell-size);
+  margin: var(--cell-spacing);
+  background-color: transparent;
+  box-sizing: border-box;
+  border-radius: 4px;
+  animation: 1.5s ripple ease infinite;
+  --cell-color: var(--bs-primary);
+}
+[data-theme=dark] .rpg-loader .cell {
+  --cell-color: #60EFFF;
+}
+.rpg-loader .d-1 {
+  animation-delay: 100ms;
+}
+.rpg-loader .d-2 {
+  animation-delay: 200ms;
+}
+.rpg-loader .d-3 {
+  animation-delay: 300ms;
+}
+.rpg-loader .d-4 {
+  animation-delay: 400ms;
+}
+
+@keyframes ripple {
+  0% {
+    background-color: transparent;
+  }
+  30% {
+    background-color: var(--cell-color);
+  }
+  60% {
+    background-color: transparent;
+  }
+  100% {
+    background-color: transparent;
+  }
+}
+.packery-grid {
+  margin: 0 auto;
+}
+
+.gutter-sizer {
+  width: 1%;
+}
+
+.grid-sizer,
+.grid-item {
+  box-sizing: border-box;
+}
+
+.grid-item img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  padding: 2px;
+}
+
+/* Default: 2 columns */
+.grid-sizer, .grid-item {
+  width: 49.5%;
+}
+
+.grid-item--width2 {
+  width: 100%;
+}
+
+/* 3 columns */
+@media screen and (min-width: 576px) {
+  .grid-sizer, .grid-item {
+    width: 32.66%;
+  }
+  .grid-item--width2 {
+    width: 66.32%;
+  }
+  .grid-item--width3 {
+    width: 100%;
+  }
+}
+/* 4 columns */
+@media screen and (min-width: 768px) {
+  .grid-sizer, .grid-item {
+    width: 24.25%;
+  }
+  .grid-item--width2 {
+    width: 49.5%;
+  }
+  .grid-item--width3 {
+    width: 74.75%;
+  }
+  .grid-item--width4 {
+    width: 100%;
+  }
+}
+/* 5 columns */
+@media screen and (min-width: 992px) {
+  .grid-sizer, .grid-item {
+    width: 19.2%;
+  }
+  .grid-item--width2 {
+    width: 39.4%;
+  }
+  .grid-item--width3 {
+    width: 59.6%;
+  }
+  .grid-item--width4 {
+    width: 79.8%;
+  }
+  .grid-item--width5 {
+    width: 100%;
+  }
+}
+/* 6 columns */
+@media screen and (min-width: 1200px) {
+  .grid-sizer, .grid-item {
+    width: 15.83%;
+  }
+  .grid-item--width2 {
+    width: 32.66%;
+  }
+  .grid-item--width3 {
+    width: 49.49%;
+  }
+  .grid-item--width4 {
+    width: 66.32%;
+  }
+  .grid-item--width5 {
+    width: 83.15%;
+  }
+  .grid-item--width6 {
+    width: 100%;
+  }
+}
 .bbframe {
   min-width: 730px;
   overflow-wrap: break-word;

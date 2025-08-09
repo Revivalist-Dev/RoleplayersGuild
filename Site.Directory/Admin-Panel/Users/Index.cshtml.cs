@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using RoleplayersGuild.Site.Model;
 using RoleplayersGuild.Site.Services;
+using RoleplayersGuild.Site.Services.DataServices;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Threading.Tasks;
@@ -12,18 +13,18 @@ namespace RoleplayersGuild.Site.Directory.Admin_Panel.Users
     // [Authorize(Policy = "IsStaff")]
     public class IndexModel : PageModel
     {
-        private readonly IDataService _dataService;
-        private readonly ICookieService _cookieService;
+        private readonly IUserDataService _userDataService;
+        private readonly IUserService _userService;
 
-        public IndexModel(IDataService dataService, ICookieService cookieService)
+        public IndexModel(IUserDataService userDataService, IUserService userService)
         {
-            _dataService = dataService;
-            _cookieService = cookieService;
+            _userDataService = userDataService;
+            _userService = userService;
         }
 
         [TempData] public string? Message { get; set; }
         [TempData] public bool IsSuccess { get; set; }
-        public bool IsSuperAdmin => _cookieService.GetUserTypeId() >= 3;
+        public bool IsSuperAdmin => User.IsInRole("SuperAdmin");
 
         public IEnumerable<UserListingViewModel> AllUsers { get; set; } = new List<UserListingViewModel>();
         public User? SelectedUser { get; set; }
@@ -43,20 +44,20 @@ namespace RoleplayersGuild.Site.Directory.Admin_Panel.Users
                 SELECT "UserId", (CAST("UserId" AS VARCHAR) || ' - ' || COALESCE("Username", '')) AS "Username" 
                 FROM "Users" ORDER BY "UserId"
                 """;
-            AllUsers = await _dataService.GetRecordsAsync<UserListingViewModel>(userListSql);
+            AllUsers = await _userDataService.GetRecordsAsync<UserListingViewModel>(userListSql);
 
             if (id.HasValue)
             {
-                SelectedUser = await _dataService.GetUserAsync(id.Value);
+                SelectedUser = await _userDataService.GetUserAsync(id.Value);
                 if (SelectedUser is null) return NotFound();
 
                 UserTypeId = SelectedUser.UserTypeId;
 
-                UserCharacters = await _dataService.GetRecordsAsync<Character>("""SELECT "CharacterId", "CharacterDisplayName" FROM "Characters" WHERE "UserId" = @id""", new { id });
-                UserBadges = await _dataService.GetRecordsAsync<UserBadgeViewModel>("""SELECT b."BadgeName", b."BadgeImageUrl", ub."UserBadgeId" FROM "Badges" b JOIN "UserBadges" ub ON b."BadgeId" = ub."BadgeId" WHERE ub."UserId" = @id""", new { id });
-                UserNotes = await _dataService.GetRecordsAsync<UserNoteViewModel>("""SELECT * FROM "UserNotesWithDetails" WHERE "UserId" = @id ORDER BY "NoteTimestamp" DESC""", new { id });
+                UserCharacters = await _userDataService.GetRecordsAsync<Character>("""SELECT "CharacterId", "CharacterDisplayName" FROM "Characters" WHERE "UserId" = @id""", new { id });
+                UserBadges = await _userDataService.GetRecordsAsync<UserBadgeViewModel>("""SELECT b."BadgeName", b."BadgeImageUrl", ub."UserBadgeId" FROM "Badges" b JOIN "UserBadges" ub ON b."BadgeId" = ub."BadgeId" WHERE ub."UserId" = @id""", new { id });
+                UserNotes = await _userDataService.GetRecordsAsync<UserNoteViewModel>("""SELECT * FROM "UserNotesWithDetails" WHERE "UserId" = @id ORDER BY "NoteTimestamp" DESC""", new { id });
 
-                var allBadges = await _dataService.GetRecordsAsync<Badge>("""SELECT "BadgeId", "BadgeName" FROM "Badges" ORDER BY "BadgeName" """);
+                var allBadges = await _userDataService.GetRecordsAsync<Badge>("""SELECT "BadgeId", "BadgeName" FROM "Badges" ORDER BY "BadgeName" """);
                 AllBadges = new SelectList(allBadges, "BadgeId", "BadgeName");
 
                 var userTypes = new List<object> {
@@ -70,15 +71,15 @@ namespace RoleplayersGuild.Site.Directory.Admin_Panel.Users
 
         public async Task<IActionResult> OnPostUpdateUserTypeAsync(int id)
         {
-            if (!IsSuperAdmin) return Forbid();
-            await _dataService.ExecuteAsync("""UPDATE "Users" SET "UserTypeId" = @UserTypeId WHERE "UserId" = @id""", new { UserTypeId, id });
+            if (!User.IsInRole("SuperAdmin")) return Forbid();
+            await _userDataService.ExecuteAsync("""UPDATE "Users" SET "UserTypeId" = @UserTypeId WHERE "UserId" = @id""", new { UserTypeId, id });
             return RedirectToPage(new { id });
         }
 
         public async Task<IActionResult> OnPostBanUserAsync(int id)
         {
-            if (!IsSuperAdmin) return Forbid();
-            await _dataService.BanUserAsync(id);
+            if (!User.IsInRole("SuperAdmin")) return Forbid();
+            await _userDataService.BanUserAsync(id);
             return RedirectToPage("./Index");
         }
 
@@ -89,14 +90,14 @@ namespace RoleplayersGuild.Site.Directory.Admin_Panel.Users
                 Message = "You must select a badge to award."; IsSuccess = false;
                 return RedirectToPage(new { id });
             }
-            await _dataService.ExecuteAsync("""INSERT INTO "UserBadges" ("UserId", "BadgeId") VALUES (@UserId, @BadgeId)""", new { UserId = id, BadgeId = BadgeToAwardId.Value });
+            await _userDataService.ExecuteAsync("""INSERT INTO "UserBadges" ("UserId", "BadgeId") VALUES (@UserId, @BadgeId)""", new { UserId = id, BadgeId = BadgeToAwardId.Value });
             Message = "Badge awarded successfully."; IsSuccess = true;
             return RedirectToPage(new { id });
         }
 
         public async Task<IActionResult> OnPostRemoveBadgeAsync(int id, int userBadgeId)
         {
-            await _dataService.ExecuteAsync("""DELETE FROM "UserBadges" WHERE "UserBadgeId" = @userBadgeId""", new { userBadgeId });
+            await _userDataService.ExecuteAsync("""DELETE FROM "UserBadges" WHERE "UserBadgeId" = @userBadgeId""", new { userBadgeId });
             Message = "Badge removed."; IsSuccess = true;
             return RedirectToPage(new { id });
         }
@@ -108,8 +109,8 @@ namespace RoleplayersGuild.Site.Directory.Admin_Panel.Users
                 Message = "Note content cannot be empty."; IsSuccess = false;
                 return RedirectToPage(new { id });
             }
-            var createdByUserId = _cookieService.GetUserId();
-            await _dataService.ExecuteAsync("""INSERT INTO "UserNotes" ("UserId", "CreatedByUserId", "NoteContent") VALUES (@UserId, @CreatedBy, @Content)""", new { UserId = id, CreatedBy = createdByUserId, Content = NewNoteContent });
+            var createdByUserId = _userService.GetUserId(User);
+            await _userDataService.ExecuteAsync("""INSERT INTO "UserNotes" ("UserId", "CreatedByUserId", "NoteContent") VALUES (@UserId, @CreatedBy, @Content)""", new { UserId = id, CreatedBy = createdByUserId, Content = NewNoteContent });
             Message = "Note added."; IsSuccess = true;
             return RedirectToPage(new { id });
         }

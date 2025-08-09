@@ -1,5 +1,6 @@
 ﻿@page "{id:int}"
 @model RoleplayersGuild.Site.Directory.Community.Stories.ViewStoryModel
+@inject RoleplayersGuild.Site.Services.IUserService _userService
 @{
     // CORRECTED: Switched to the simpler single-column layout
     Layout = "_Layout1Col";
@@ -20,7 +21,7 @@
                 <a asp-page="/Community/Universes/View" asp-route-id="@Model.Story.UniverseId" class="btn btn-primary w-100">View Universe</a>
             </div>
         }
-        @if (Model.IsStaff)
+        @if (await _userService.IsCurrentUserStaffAsync())
         {
             <div class="col-12 col-sm-3">
                 <a asp-page="/Admin-Panel/Stories/Edit" asp-route-id="@Model.Story.StoryId" class="btn btn-danger w-100">Admin Console</a>

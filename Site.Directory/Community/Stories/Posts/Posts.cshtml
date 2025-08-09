@@ -1,6 +1,7 @@
 ﻿@page "{id:int}"
 @model RoleplayersGuild.Site.Directory.Community.Stories.PostsModel
 @using RoleplayersGuild.Site.Utils
+@inject RoleplayersGuild.Site.Services.IUserService _userService
 @{
     ViewData["Title"] = Model.Story?.StoryTitle ?? "Story Posts";
     Layout = "_Layout2Col";
@@ -28,7 +29,7 @@
                     <a asp-page="/Community/Universes/View" asp-route-id="@Model.Story.UniverseId" class="btn btn-primary w-100">View Universe</a>
                 </div>
             }
-            @if (Model.IsStaff)
+            @if (await _userService.IsCurrentUserStaffAsync())
             {
                 <div class="col-12 col-sm-3">
                     <a asp-page="/Admin-Panel/Stories/Edit" asp-route-id="@Model.Story.StoryId" class="btn btn-danger w-100">Admin Console</a>
@@ -70,7 +71,7 @@
                             <li class="UserName"><a asp-page="/Community/Users/View" asp-route-id="@post.CharacterOwnerUserId" class="@post.CharacterNameClass">@post.CharacterDisplayName</a></li>
                             <li class="UserImage @(DateUtils.IsOnline(post.LastAction) ? "Online" : "Offline")">
                                 <a asp-page="/Community/Users/View" asp-route-id="@post.CharacterOwnerUserId">
-                                    <img src="@(string.IsNullOrEmpty(post.DisplayImageUrl) ? "/images/UserFiles/CharacterImages/NewCharacter.png" : post.DisplayImageUrl)" alt="Character Image" />
+                                    <img src="@(string.IsNullOrEmpty(post.CardImageUrl) ? "/images/UserFiles/CharacterImages/NewCharacter.png" : post.CardImageUrl)" alt="Character Image" />
                                 </a>
                             </li>
                             @if (DateUtils.IsOnline(post.LastAction))

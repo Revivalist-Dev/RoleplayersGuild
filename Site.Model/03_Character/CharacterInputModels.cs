@@ -91,7 +91,7 @@ namespace RoleplayersGuild.Site.Model
     {
         public int ImageId { get; set; }
         public string? ImageCaption { get; set; }
-        public bool IsPrimary { get; set; }
+        public int ImageScale { get; set; }
     }
 
     public class SearchInputModel

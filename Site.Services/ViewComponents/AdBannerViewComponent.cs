@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using RoleplayersGuild.Site.Model;
 using RoleplayersGuild.Site.Services;
+using RoleplayersGuild.Site.Services.DataServices;
 using System.Threading.Tasks;
 
 namespace RoleplayersGuild.Site.Services.ViewComponents
@@ -14,12 +15,12 @@ namespace RoleplayersGuild.Site.Services.ViewComponents
 
     public class AdBannerViewComponent : ViewComponent
     {
-        private readonly IDataService _dataService;
+        private readonly IMiscDataService _miscDataService;
         private readonly IUserService _userService; // Using IUserService to check membership
 
-        public AdBannerViewComponent(IDataService dataService, IUserService userService)
+        public AdBannerViewComponent(IMiscDataService miscDataService, IUserService userService)
         {
-            _dataService = dataService;
+            _miscDataService = miscDataService;
             _userService = userService;
         }
 
@@ -32,7 +33,7 @@ namespace RoleplayersGuild.Site.Services.ViewComponents
             }
 
             // Fetch a random ad from the database (AdType 1 for top banner)
-            var ad = await _dataService.GetRandomAdAsync(1);
+            var ad = await _miscDataService.GetRandomAdAsync(1);
 
             if (ad is null)
             {

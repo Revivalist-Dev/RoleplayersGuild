@@ -8,6 +8,8 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using RoleplayersGuild.Site.Model; // Added for CharacterInline model
+using RoleplayersGuild.Site.Services.DataServices;
+using RoleplayersGuild.Site.Services.Models;
 
 namespace RoleplayersGuild.Site.Services
 {
@@ -26,7 +28,7 @@ namespace RoleplayersGuild.Site.Services
 
     public class TagNode : BBNode
     {
-        public string TagName { get; set; }
+        public string TagName { get; set; } = string.Empty;
         public string? Attribute { get; set; }
         public List<BBNode> Content { get; set; } = new List<BBNode>();
         public override string ToString() => $"TagNode:[{TagName}] ({Start}-{End})";
@@ -44,8 +46,8 @@ namespace RoleplayersGuild.Site.Services
 
     public class BBCodeService : IBBCodeService
     {
-        private readonly IDataService _dataService;
-        private readonly IImageService _imageService; // Correctly inject IImageService
+        private readonly ICharacterDataService _characterDataService;
+        private readonly IUrlProcessingService _urlProcessingService;
         private readonly Dictionary<string, BBTag> _tags;
         private string _currentText = "";
 
@@ -53,10 +55,10 @@ namespace RoleplayersGuild.Site.Services
         private static readonly Regex EmoteRegex = BuildEmoteRegex();
 
         // CORRECTED: Constructor now injects IImageService instead of obsolete ImageSettings
-        public BBCodeService(IDataService dataService, IImageService imageService)
+        public BBCodeService(ICharacterDataService characterDataService, IUrlProcessingService urlProcessingService)
         {
-            _dataService = dataService;
-            _imageService = imageService;
+            _characterDataService = characterDataService;
+            _urlProcessingService = urlProcessingService;
             _tags = InitializeTags();
         }
 
@@ -320,9 +322,10 @@ namespace RoleplayersGuild.Site.Services
         #region Custom Tag Renderers
         private Task<string> RenderColorTag(TagNode node, string content, int characterId)
         {
+            if (node is null) return Task.FromResult(string.Empty);
             var allowedColors = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
                 { "red", "blue", "white", "yellow", "pink", "gray", "green", "orange", "purple", "black", "brown", "cyan" };
-            string color = node?.Attribute ?? "";
+            string color = node.Attribute ?? "";
 
             if (allowedColors.Contains(color))
             {
@@ -384,14 +387,12 @@ namespace RoleplayersGuild.Site.Services
             // Case 1: Inline image by ID, e.g., [img=123]alt text[/img]
             if (!string.IsNullOrEmpty(node.Attribute) && int.TryParse(node.Attribute, out int inlineId))
             {
-                var inline = (await _dataService.GetRecordsAsync<CharacterInline>(
-                    """SELECT * FROM "CharacterInlines" WHERE "CharacterId" = @characterId AND "InlineId" = @inlineId""",
-                    new { characterId, inlineId })).FirstOrDefault();
+                var inline = await _characterDataService.GetCharacterInlineAsync(characterId, inlineId);
 
                 if (inline != null)
                 {
                     // Use the IImageService to get the full, correct URL
-                    string? url = _imageService.GetImageUrl(inline.InlineImageUrl);
+                    string? url = _urlProcessingService.GetCharacterImageUrl((ImageUploadPath)inline.InlineImageUrl);
                     // The content of the tag is used as alt text, with a fallback to the inline name
                     string altText = WebUtility.HtmlEncode(string.IsNullOrWhiteSpace(content) ? inline.InlineName : content);
                     return $"<img class=\"ImageBlock\" src=\"{url}\" alt=\"{altText}\" />";

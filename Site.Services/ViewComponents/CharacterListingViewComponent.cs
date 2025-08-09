@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using RoleplayersGuild.Site.Model;
 using RoleplayersGuild.Site.Services;
+using RoleplayersGuild.Site.Services.DataServices;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -8,14 +9,15 @@ namespace RoleplayersGuild.Site.Services.ViewComponents
 {
     public class CharacterListingViewComponent : ViewComponent
     {
-        private readonly IDataService _dataService;
+        private readonly ICharacterDataService _characterDataService;
         private readonly IUserService _userService;
+        private readonly IUrlProcessingService _urlProcessingService;
 
-        // IConfiguration has been removed from the constructor
-        public CharacterListingViewComponent(IDataService dataService, IUserService userService)
+        public CharacterListingViewComponent(ICharacterDataService characterDataService, IUserService userService, IUrlProcessingService urlProcessingService)
         {
-            _dataService = dataService;
+            _characterDataService = characterDataService;
             _userService = userService;
+            _urlProcessingService = urlProcessingService;
         }
 
         public async Task<IViewComponentResult> InvokeAsync(
@@ -26,10 +28,7 @@ namespace RoleplayersGuild.Site.Services.ViewComponents
         {
             var currentUserId = _userService.GetUserId(UserClaimsPrincipal);
 
-            // 1. Get the character data. The DataService now handles all image URL processing.
-            var characters = await _dataService.GetCharactersForListingAsync(screenStatus, recordCount, currentUserId);
-
-            // 2. The entire loop that modified DisplayImageUrl has been removed.
+            var characters = (await _characterDataService.GetCharactersForListingAsync(screenStatus, recordCount, currentUserId)).ToList();
 
             string title = screenStatus switch
             {
@@ -43,7 +42,7 @@ namespace RoleplayersGuild.Site.Services.ViewComponents
                 Title = title,
                 DisplaySize = string.IsNullOrEmpty(displaySize) ? "profile-card-vertical" : displaySize,
                 ShowFooter = showFooter,
-                Characters = characters.ToList() // Pass the data directly to the view
+                Characters = characters
             };
 
             return View(viewModel);

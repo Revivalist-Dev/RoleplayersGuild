@@ -17,11 +17,10 @@ namespace RoleplayersGuild.Site.Model
     public class UserNavViewModel
     {
         public bool IsAuthenticated { get; set; }
-        public bool IsStaff { get; set; }
         public int UnreadThreadCount { get; set; }
         public int UnreadImageCommentCount { get; set; }
         public int AdminOpenItemCount { get; set; }
-        public int TotalNotificationCount => UnreadThreadCount + UnreadImageCommentCount + (IsStaff ? AdminOpenItemCount : 0);
+        public int TotalNotificationCount => UnreadThreadCount + UnreadImageCommentCount + AdminOpenItemCount;
         public List<QuickLink> QuickLinks { get; set; } = new();
     }
 

@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using RoleplayersGuild.Site.Model;
 using RoleplayersGuild.Site.Services;
+using RoleplayersGuild.Site.Services.DataServices;
 using RoleplayersGuild.Site.Utils;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -12,19 +13,12 @@ namespace RoleplayersGuild.Site.Directory.User_Panel.My_Chat_Rooms
     {
         public IEnumerable<ChatRoomWithDetails> ChatRooms { get; private set; } = new List<ChatRoomWithDetails>();
 
-        // UPDATED: Constructor to match the new base class signature.
-        public IndexMyChatroomsModel(IDataService dataService, IUserService userService)
-            : base(dataService, userService) { }
+        public IndexMyChatroomsModel(ICharacterDataService characterDataService, ICommunityDataService communityDataService, IMiscDataService miscDataService, IUserService userService)
+            : base(characterDataService, communityDataService, miscDataService, userService) { }
 
         public async Task<IActionResult> OnGetAsync()
         {
-            const string sql = """
-                SELECT * FROM "ChatRoomsForListing" 
-                WHERE ("UniverseOwnerId" = @UserId OR "SubmittedByUserId" = @UserId) 
-                ORDER BY "ChatRoomName"
-                """;
-
-            var rooms = await DataService.GetRecordsAsync<ChatRoomWithDetails>(sql, new { UserId = LoggedInUserId });
+            var rooms = await _communityDataService.GetMyChatRoomsAsync(LoggedInUserId);
             if (rooms != null)
             {
                 ChatRooms = rooms;

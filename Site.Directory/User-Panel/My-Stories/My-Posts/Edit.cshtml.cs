@@ -5,17 +5,23 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using RoleplayersGuild.Site.Model;
 using RoleplayersGuild.Site.Services;
+using RoleplayersGuild.Site.Services.DataServices;
 
-namespace RoleplayersGuild.Site.Directory.User_Panel.My_Stories
+namespace RoleplayersGuild.Site.Directory.User_Panel.My_Stories.My_Posts
 {
     public class EditMyPostModel : UserPanelBaseModel
     {
-        // NOTE: Redundant fields were removed. 'DataService' and 'UserService' from the base class will be used.
+        private readonly IContentDataService _contentDataService;
 
-        // UPDATED: Constructor to match the new base class signature.
-        public EditMyPostModel(IDataService dataService, IUserService userService)
-            : base(dataService, userService)
+        public EditMyPostModel(
+            ICharacterDataService characterDataService,
+            ICommunityDataService communityDataService,
+            IMiscDataService miscDataService,
+            IUserService userService,
+            IContentDataService contentDataService)
+            : base(characterDataService, communityDataService, miscDataService, userService)
         {
+            _contentDataService = contentDataService;
         }
 
         [BindProperty]
@@ -24,10 +30,7 @@ namespace RoleplayersGuild.Site.Directory.User_Panel.My_Stories
 
         public async Task<IActionResult> OnGetAsync(int id)
         {
-            var userId = UserService.GetUserId(User);
-            if (userId == 0) return Forbid();
-
-            var post = await DataService.GetStoryPostForEditAsync(id, userId);
+            var post = await _contentDataService.GetStoryPostForEditAsync(id, LoggedInUserId);
             if (post is null) return NotFound();
 
             Input = new PostInputModel
@@ -38,16 +41,13 @@ namespace RoleplayersGuild.Site.Directory.User_Panel.My_Stories
                 PostContent = post.PostContent ?? ""
             };
 
-            await PopulateCharactersAsync(userId);
+            await PopulateCharactersAsync(LoggedInUserId);
             return Page();
         }
 
         public async Task<IActionResult> OnPostAsync()
         {
-            var userId = UserService.GetUserId(User);
-            if (userId == 0) return Forbid();
-
-            await PopulateCharactersAsync(userId);
+            await PopulateCharactersAsync(LoggedInUserId);
             if (!ModelState.IsValid)
             {
                 return Page();
@@ -59,13 +59,13 @@ namespace RoleplayersGuild.Site.Directory.User_Panel.My_Stories
                 return Forbid();
             }
 
-            await DataService.UpdateStoryPostAsync(Input.StoryPostId, Input.CharacterId, Input.PostContent);
+            await _contentDataService.UpdateStoryPostAsync(Input.StoryPostId, Input.CharacterId, Input.PostContent);
             return RedirectToPage("/Community/Stories/Posts", new { id = Input.StoryId });
         }
 
         private async Task PopulateCharactersAsync(int userId)
         {
-            var characters = await DataService.GetActiveCharactersForUserAsync(userId);
+            var characters = await _characterDataService.GetActiveCharactersForUserAsync(userId);
             UserCharacters = new SelectList(characters, "CharacterId", "CharacterDisplayName", Input.CharacterId);
         }
     }

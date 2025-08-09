@@ -1,0 +1,21 @@
+Website: RoleplayersGuild.com
+
+Primary Language: C#
+
+Web Framework: ASP.NET Core (using Razor Pages)
+
+Real-time Chat: SignalR
+
+Current Database: PostgreSQL
+
+Data Access Library: Dapper
+
+Frontend Libraries: Bootstrap, jQuery
+
+Styling: Sass (SCSS)
+
+Image Storage: AWS S3 or Local File System
+
+Development IDE: Visual Studio
+
+Web Server: Kestrel

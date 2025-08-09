@@ -75,69 +75,10 @@ namespace RoleplayersGuild.Site.Services
 
         #region --- Specific Implementations for User Properties ---
 
-        public int GetUserId()
-        {
-            var cookieValue = GetEncryptedCookie("UserId");
-            return int.TryParse(cookieValue, out int userId) ? userId : 0;
-        }
-
-        public void SetUserId(int userId)
-        {
-            SetEncryptedCookie("UserId", userId.ToString());
-        }
-
-        public int GetMembershipTypeId()
-        {
-            var cookieValue = GetEncryptedCookie("MembershipTypeId");
-            return int.TryParse(cookieValue, out int id) ? id : 0;
-        }
-
-        public void SetMembershipTypeId(int membershipTypeId)
-        {
-            SetEncryptedCookie("MembershipTypeId", membershipTypeId.ToString());
-        }
-
-        public int GetUserTypeId()
-        {
-            var cookieValue = GetEncryptedCookie("UserTypeId");
-            return int.TryParse(cookieValue, out int id) ? id : 0;
-        }
-
-        public void SetUserTypeId(int userTypeId)
-        {
-            SetEncryptedCookie("UserTypeId", userTypeId.ToString());
-        }
-
-        public bool GetHideStream()
-        {
-            var cookieValue = GetEncryptedCookie("HideStream");
-            return bool.TryParse(cookieValue, out bool hideStream) && hideStream;
-        }
-
-        public void SetHideStream(bool hideStream)
-        {
-            SetEncryptedCookie("HideStream", hideStream.ToString());
-        }
-
         public bool GetUserPrefersMature()
         {
             var cookieValue = GetEncryptedCookie("ShowMatureContent");
             return bool.TryParse(cookieValue, out bool prefersMature) && prefersMature;
-        }
-
-        // FIX: Implemented IsStaff() based on UserTypeId and removed old methods.
-        public bool IsStaff()
-        {
-            var userTypeId = GetUserTypeId();
-            // UserTypeIds 2 (Staff), 3 (Admin), and 4 (SuperAdmin) are staff.
-            return userTypeId >= 2 && userTypeId <= 4;
-        }
-
-        public bool IsAdmin()
-        {
-            var userTypeId = GetUserTypeId();
-            // UserTypeIds 3 (Admin) and 4 (SuperAdmin) are admins.
-            return userTypeId == 3 || userTypeId == 4;
         }
         #endregion
     }

@@ -1,11 +1,4 @@
-﻿// In F:\Visual Studio\RoleplayersGuild\Site.Services\UserActivityMiddleware.cs
-
-using Microsoft.AspNetCore.Http;
-using System;
-using System.IO;
-using System.Threading.Tasks;
-
-namespace RoleplayersGuild.Site.Services
+﻿namespace RoleplayersGuild.Site.Services
 {
     public class UserActivityMiddleware
     {
@@ -16,7 +9,7 @@ namespace RoleplayersGuild.Site.Services
             _next = next;
         }
 
-        public async Task InvokeAsync(HttpContext context, IDataService dataService, IUserService userService)
+        public async Task InvokeAsync(HttpContext context, IUserService userService)
         {
             var userId = userService.GetUserId(context.User);
 
@@ -27,9 +20,7 @@ namespace RoleplayersGuild.Site.Services
 
                 if (!DateTime.TryParse(lastUpdateString, out var lastUpdate) || (now - lastUpdate).TotalSeconds >= 60)
                 {
-                    await dataService.ExecuteAsync(
-                        """UPDATE "Users" SET "LastAction" = NOW() AT TIME ZONE 'UTC' WHERE "UserId" = @UserId""",
-                        new { UserId = userId });
+                    await userService.UpdateUserLastActionAsync(userId);
 
                     context.Session.SetString("LastActivityUpdate", now.ToString("o"));
                 }

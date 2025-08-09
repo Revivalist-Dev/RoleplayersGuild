@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using RoleplayersGuild.Site.Services;
+using RoleplayersGuild.Site.Services.DataServices;
 using System.ComponentModel.DataAnnotations;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
@@ -11,11 +12,11 @@ namespace RoleplayersGuild.Site.Directory.Admin_Panel.Site_Privacy_Policy
     [Authorize(Policy = "IsAdmin")]
     public class IndexModel : PageModel
     {
-        private readonly IDataService _dataService;
+        private readonly IMiscDataService _miscDataService;
 
-        public IndexModel(IDataService dataService)
+        public IndexModel(IMiscDataService miscDataService)
         {
-            _dataService = dataService;
+            _miscDataService = miscDataService;
         }
 
         [BindProperty]
@@ -30,7 +31,7 @@ namespace RoleplayersGuild.Site.Directory.Admin_Panel.Site_Privacy_Policy
         public async Task<IActionResult> OnGetAsync()
         {
             // Corrected: SQL query uses PascalCase
-            PageContent = await _dataService.GetScalarAsync<string>("""SELECT "PrivacyPolicyContent" FROM "GeneralSettings" """) ?? "";
+            PageContent = await _miscDataService.GetScalarAsync<string>("""SELECT "PrivacyPolicyContent" FROM "GeneralSettings" """) ?? "";
             return Page();
         }
 
@@ -42,7 +43,7 @@ namespace RoleplayersGuild.Site.Directory.Admin_Panel.Site_Privacy_Policy
             }
 
             // Corrected: SQL query uses PascalCase
-            await _dataService.ExecuteAsync("""UPDATE "GeneralSettings" SET "PrivacyPolicyContent" = @Content""", new { Content = PageContent });
+            await _miscDataService.ExecuteAsync("""UPDATE "GeneralSettings" SET "PrivacyPolicyContent" = @Content""", new { Content = PageContent });
 
             IsSuccess = true;
             Message = "Yay, you did it. Want a cookie? Too bad, <a href=\"/Information/Legal/Terms-Of-Use\" target=\"_blank\">go make sure you did it right</a>.";

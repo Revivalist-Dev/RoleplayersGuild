@@ -1,5 +1,6 @@
 ﻿@page "{id:int}"
 @model RoleplayersGuild.Site.Directory.Community.Articles.ViewArticleModel
+@inject RoleplayersGuild.Site.Services.IUserService _userService
 @{
     ViewData["Title"] = Model.Article?.ArticleTitle ?? "Article";
     Layout = "_Layout1Col";
@@ -19,7 +20,7 @@
             {
                 <a asp-page="/Community/Universes/View" asp-route-id="@Model.Article.UniverseId" class="btn btn-info mb-2 me-2">View Universe</a>
             }
-            @if (Model.IsAdmin)
+            @if (await _userService.IsCurrentUserStaffAsync())
             {
                 <a asp-page="/Admin-Panel/Articles/Edit" asp-route-id="@Model.Article.ArticleId" class="btn btn-danger mb-2">Admin Console</a>
             }

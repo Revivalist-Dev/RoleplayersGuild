@@ -22,7 +22,6 @@ namespace RoleplayersGuild.Site.Model
         public bool ReceivesDevEmails { get; set; }
         public bool ReceivesErrorFixEmails { get; set; }
         public bool ReceivesGeneralEmailBlasts { get; set; }
-        public bool IsAdmin { get; set; }
         public bool ReceiveAdminAnnouncements { get; set; }
         public DateTime? LastHalloweenBadge { get; set; }
         public DateTime? LastChristmasBadge { get; set; }

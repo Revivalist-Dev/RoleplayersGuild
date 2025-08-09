@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using RoleplayersGuild.Site.Model;
+using RoleplayersGuild.Site.Services.DataServices;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -7,12 +8,18 @@ namespace RoleplayersGuild.Site.Services.ViewComponents
 {
     public class UserNavViewComponent : ViewComponent
     {
-        private readonly IDataService _dataService;
+        private readonly ICommunityDataService _communityDataService;
+        private readonly ICharacterDataService _characterDataService;
+        private readonly IUserDataService _userDataService;
+        private readonly IMiscDataService _miscDataService;
         private readonly IUserService _userService;
 
-        public UserNavViewComponent(IDataService dataService, IUserService userService)
+        public UserNavViewComponent(ICommunityDataService communityDataService, ICharacterDataService characterDataService, IUserDataService userDataService, IMiscDataService miscDataService, IUserService userService)
         {
-            _dataService = dataService;
+            _communityDataService = communityDataService;
+            _characterDataService = characterDataService;
+            _userDataService = userDataService;
+            _miscDataService = miscDataService;
             _userService = userService;
         }
 
@@ -27,16 +34,15 @@ namespace RoleplayersGuild.Site.Services.ViewComponents
                 var user = await _userService.GetCurrentUserAsync();
                 if (user != null)
                 {
-                    viewModel.IsStaff = user.IsAdmin;
-                    viewModel.UnreadThreadCount = await _dataService.GetUnreadThreadCountAsync(user.UserId);
-                    viewModel.UnreadImageCommentCount = await _dataService.GetUnreadImageCommentCountAsync(user.UserId);
+                    viewModel.UnreadThreadCount = await _communityDataService.GetUnreadThreadCountAsync(user.UserId);
+                    viewModel.UnreadImageCommentCount = await _userDataService.GetUnreadImageCommentCountAsync(user.UserId);
 
-                    if (viewModel.IsStaff)
+                    if (User.IsInRole("Staff") || User.IsInRole("Admin") || User.IsInRole("SuperAdmin"))
                     {
-                        viewModel.AdminOpenItemCount = await _dataService.GetScalarAsync<int>("""SELECT COUNT(*) FROM "Characters" WHERE "IsApproved" = FALSE""");
+                        viewModel.AdminOpenItemCount = await _characterDataService.GetUnapprovedCharacterCountAsync();
                     }
 
-                    var quickLinks = await _dataService.GetUserQuickLinksAsync(user.UserId);
+                    var quickLinks = await _miscDataService.GetUserQuickLinksAsync(user.UserId);
                     viewModel.QuickLinks = quickLinks.ToList();
                 }
             }

@@ -9,7 +9,14 @@
         @RenderSection("cphLeftCol", required: false)
     </div>
     <div class="col">
-        @RenderSection("cphRightCol", required: true)
+        @if (IsSectionDefined("cphRightCol"))
+        {
+            @RenderSection("cphRightCol", required: false)
+        }
+        else
+        {
+            @RenderBody()
+        }
     </div>
 </div>
 

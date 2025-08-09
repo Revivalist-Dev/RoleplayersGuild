@@ -12,9 +12,9 @@ namespace RoleplayersGuild.Project.Configuration
         // ADD THIS LINE
         public string? CloudFrontDomain { get; set; }
 
-        public string CharacterImagesFolder { get; set; } = string.Empty;
-        public string CharacterInlinesFolder { get; set; } = string.Empty;
-        public string CharacterAvatarsFolder { get; set; } = string.Empty;
-        public string CharacterCardsFolder { get; set; } = string.Empty;
+        public string ImagesFolder { get; set; } = string.Empty;
+        public string InlinesFolder { get; set; } = string.Empty;
+        public string AvatarsFolder { get; set; } = string.Empty;
+        public string CardsFolder { get; set; } = string.Empty;
     }
 }

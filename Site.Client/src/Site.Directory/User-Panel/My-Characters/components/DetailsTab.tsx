@@ -1,78 +1,91 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Character, EditorLookups } from '../types';
-import CharacterCardPreview from './CharacterCardPreview'; // Import the new preview component
+import { Character, EditorLookups } from '../../../../types';
+import CharacterCardPreview from './CharacterCardPreview';
+import ImageCropModal from './ImageCropModal';
 
 interface DetailsTabProps {
     character: Character;
     lookups: EditorLookups;
     selectedGenres: number[];
     onSave: () => void;
-    // Pass in the initial URLs from the parent EditorData
-    initialAvatarUrl: string | null;
-    initialCardUrl: string | null;
+    avatarUrl: string | null;
+    cardUrl: string | null;
+    onAvatarChange: (newUrl: string) => void;
+    onCardChange: (newUrl: string) => void;
 }
 
-const DetailsTab: React.FC<DetailsTabProps> = ({ character, lookups, selectedGenres, onSave, initialAvatarUrl, initialCardUrl }) => {
+const DetailsTab: React.FC<DetailsTabProps> = ({ character, lookups, selectedGenres, onSave, avatarUrl, cardUrl, onAvatarChange, onCardChange }) => {
     const [avatarFile, setAvatarFile] = useState<File | null>(null);
     const [cardFile, setCardFile] = useState<File | null>(null);
+
+    // Cropping Modal State
+    const [imageToCrop, setImageToCrop] = useState<string | null>(null);
+    const [croppingAvatar, setCroppingAvatar] = useState(false);
+    const [croppingCard, setCroppingCard] = useState(false);
 
     // State for the form data
     const [formData, setFormData] = useState({ ...character, selectedGenreIds: selectedGenres });
 
     // State for the image preview URLs
-    const [avatarPreviewUrl, setAvatarPreviewUrl] = useState<string | null>(initialAvatarUrl);
-    const [cardPreviewUrl, setCardPreviewUrl] = useState<string | null>(initialCardUrl);
 
     const [isSaving, setIsSaving] = useState(false);
     const [saveStatus, setSaveStatus] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
 
     useEffect(() => {
         setFormData({ ...character, selectedGenreIds: selectedGenres });
-        setAvatarPreviewUrl(initialAvatarUrl);
-        setCardPreviewUrl(initialCardUrl);
-    }, [character, selectedGenres, initialAvatarUrl, initialCardUrl]);
+    }, [character, selectedGenres, avatarUrl, cardUrl]);
 
     // Clean up object URLs to prevent memory leaks
     useEffect(() => {
-        return () => {
-            if (avatarPreviewUrl && avatarPreviewUrl.startsWith('blob:')) {
-                URL.revokeObjectURL(avatarPreviewUrl);
-            }
-            if (cardPreviewUrl && cardPreviewUrl.startsWith('blob:')) {
-                URL.revokeObjectURL(cardPreviewUrl);
-            }
-        };
-    }, [avatarPreviewUrl, cardPreviewUrl]);
-
+        // No longer need to manage blob URLs here as they are handled by the parent
+    }, []);
 
     const handleAvatarFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files ? e.target.files[0] : null;
-        setAvatarFile(file);
-        if (avatarPreviewUrl && avatarPreviewUrl.startsWith('blob:')) {
-            URL.revokeObjectURL(avatarPreviewUrl);
-        }
-        if (file) {
-            setAvatarPreviewUrl(URL.createObjectURL(file));
-        } else {
-            setAvatarPreviewUrl(initialAvatarUrl);
+        const files = e.target.files;
+        if (files && files.length > 0) {
+            const reader = new FileReader();
+            reader.onload = () => {
+                setImageToCrop(reader.result as string);
+                setCroppingAvatar(true);
+            };
+            reader.readAsDataURL(files[0]);
         }
     };
 
     const handleCardFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files ? e.target.files[0] : null;
-        setCardFile(file);
-        if (cardPreviewUrl && cardPreviewUrl.startsWith('blob:')) {
-            URL.revokeObjectURL(cardPreviewUrl);
-        }
-        if (file) {
-            setCardPreviewUrl(URL.createObjectURL(file));
-        } else {
-            setCardPreviewUrl(initialCardUrl);
-        }
+        const files = e.target.files;
+        if (files && files.length > 0) {
+            const reader = new FileReader();
+            reader.onload = () => {
+                setImageToCrop(reader.result as string);
+                setCroppingCard(true);
+            };
+            reader.readAsDataURL(files[0]);        }
     };
 
-    // ... (handleChange, handleGenreChange, and handleSave methods remain the same)
+    const handleAvatarCropComplete = (blob: Blob) => {
+        const file = new File([blob], "avatar.png", { type: "image/png" });
+        setAvatarFile(file);
+        const newUrl = URL.createObjectURL(file);
+        onAvatarChange(newUrl);
+        closeCropModal();
+    };
+
+    const handleCardCropComplete = (blob: Blob) => {
+        const file = new File([blob], "card.png", { type: "image/png" });
+        setCardFile(file);
+        const newUrl = URL.createObjectURL(file);
+        onCardChange(newUrl);
+        closeCropModal();
+    };
+
+    const closeCropModal = () => {
+        setImageToCrop(null);
+        setCroppingAvatar(false);
+        setCroppingCard(false);
+    };
+
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
         const { name, value, type } = e.target;
         const inputValue = type === 'checkbox' ? (e.target as HTMLInputElement).checked : value;
@@ -94,19 +107,15 @@ const DetailsTab: React.FC<DetailsTabProps> = ({ character, lookups, selectedGen
         setIsSaving(true);
         setSaveStatus(null);
 
-        const submissionData = new FormData();        
-        // Iterate over the formData state to build the submission data
+        const submissionData = new FormData();
         Object.entries(formData).forEach(([key, value]) => {
             if (key === 'selectedGenreIds' && Array.isArray(value)) {
-                // Handle the array of genre IDs
                 value.forEach(id => submissionData.append(key, String(id)));
             } else if (value !== null && value !== undefined) {
-                // Append all other non-null/undefined values
                 submissionData.append(key, String(value));
             }
         });
 
-        // Append files if they exist
         if (avatarFile) submissionData.append('avatarImage', avatarFile);
         if (cardFile) submissionData.append('cardImage', cardFile);
 
@@ -138,9 +147,16 @@ const DetailsTab: React.FC<DetailsTabProps> = ({ character, lookups, selectedGen
         }
     };
 
-
     return (
         <div className="row g-4">
+            {imageToCrop && (
+                <ImageCropModal
+                    src={imageToCrop}
+                    onCropComplete={croppingAvatar ? handleAvatarCropComplete : handleCardCropComplete}
+                    onClose={closeCropModal}
+                    aspect={croppingAvatar ? 1 : 9 / 16}
+                />
+            )}
             {/* Left Column: The Form */}
             <div className="col-lg-7">
                 <form onSubmit={handleSave}>
@@ -273,8 +289,8 @@ const DetailsTab: React.FC<DetailsTabProps> = ({ character, lookups, selectedGen
             <div className="col-lg-5">
                 <CharacterCardPreview
                     displayName={formData.characterDisplayName}
-                    cardImageUrl={cardPreviewUrl}
-                    avatarImageUrl={avatarPreviewUrl}
+                    cardImageUrl={cardUrl}
+                    avatarImageUrl={avatarUrl}
                 />
             </div>
         </div>
