@@ -1,0 +1,39 @@
+.grid {
+  background: #DDD;
+}
+
+/* clear fix */
+.grid:after {
+  content: '';
+  display: block;
+  clear: both;
+}
+
+.gridItem {
+  float: left;
+  width: 100px;
+  height: 100px;
+  background: #C09;
+  border: 2px solid hsla(0, 0%, 0%, 0.5);
+}
+
+.gridItem--width2 { width: 200px; }
+.gridItem--height2 { height: 200px; }
+
+.gridItem:hover {
+  border-color: hsla(0, 0%, 100%, 0.5);
+  cursor: move;
+}
+
+.gridItem.is-dragging,
+.gridItem.is-positioning-post-drag {
+  background: #C90;
+  z-index: 2;
+}
+
+:global(.packery-drop-placeholder) {
+  outline: 3px dashed hsla(0, 0%, 0%, 0.5);
+  outline-offset: -6px;
+  -webkit-transition: -webkit-transform 0.2s;
+          transition: transform 0.2s;
+}

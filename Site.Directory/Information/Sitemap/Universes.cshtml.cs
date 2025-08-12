@@ -6,12 +6,12 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Xml.Linq;
 
-namespace RoleplayersGuild.Site.Directory.Sitemap;
+namespace RoleplayersGuild.Site.Directory.Information.Sitemap;
 
 public class UniversesModel : PageModel
 {
-    private readonly IBaseDataService _baseDataService;
-    public UniversesModel(IBaseDataService baseDataService) { _baseDataService = baseDataService; }
+    private readonly IUniverseDataService _universeDataService;
+    public UniversesModel(IUniverseDataService universeDataService) { _universeDataService = universeDataService; }
 
     public async Task<IActionResult> OnGetAsync()
     {
@@ -19,7 +19,7 @@ public class UniversesModel : PageModel
         var urlset = new XElement(ns + "urlset");
 
         // StatusID = 2 means 'Approved'
-        var universeIds = await _baseDataService.GetRecordsAsync<int>("SELECT UniverseId FROM Universes WHERE StatusID = 2");
+        var universeIds = await _universeDataService.GetRecordsAsync<int>("SELECT UniverseId FROM Universes WHERE StatusID = 2");
 
         foreach (var id in universeIds)
         {

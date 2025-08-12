@@ -99,7 +99,10 @@ namespace RoleplayersGuild.Site.Controllers
             if (cardImage is not null)
             {
                 var (path, _, _) = await _imageService.UploadImageAsync(cardImage, userId, newCharacterId, "card");
-                input.CardImageUrl = path.ToString();
+                if (path is not null)
+                {
+                    input.CardImageUrl = path.ToString();
+                }
             }
 
             await _characterDataService.UpdateCharacterAsync(input);
@@ -147,7 +150,10 @@ namespace RoleplayersGuild.Site.Controllers
                 if (character.CardImageUrl is not null)
                     await _imageService.DeleteImageAsync((ImageUploadPath)character.CardImageUrl);
                 var (path, _, _) = await _imageService.UploadImageAsync(cardImage, userId, id, "card");
-                input.CardImageUrl = path.ToString();
+                if (path is not null)
+                {
+                    input.CardImageUrl = path.ToString();
+                }
             }
             else
             {
@@ -210,18 +216,32 @@ namespace RoleplayersGuild.Site.Controllers
             var character = await _characterDataService.GetCharacterForEditAsync(id, userId);
             if (character == null) return Forbid();
 
-            var uploadedFileNames = new List<string>();
+            var newImages = new List<CharacterImage>();
             foreach (var file in uploadedImages)
             {
                 var (path, width, height) = await _imageService.UploadImageAsync(file, userId, id, "gallery");
                 if (path is not null)
                 {
-                    await _characterDataService.AddImageAsync(path.ToString(), id, userId, false, "New gallery image", width, height);
-                    uploadedFileNames.Add(path.ToString());
+                    var newImageId = await _characterDataService.AddImageAsync(path.ToString(), id, userId, false, "New gallery image", width, height);
+                    if (newImageId > 0)
+                    {
+                        newImages.Add(new CharacterImage
+                        {
+                            CharacterImageId = newImageId,
+                            CharacterImageUrl = _urlProcessingService.GetCharacterImageUrl(path),
+                            ImageCaption = "New gallery image",
+                            IsMature = false,
+                            UserId = userId,
+                            CharacterId = id,
+                            Width = width,
+                            Height = height,
+                            ImageScale = 0
+                        });
+                    }
                 }
             }
 
-            return Ok(new { message = $"{uploadedFileNames.Count} image(s) uploaded successfully." });
+            return Ok(newImages);
         }
 
         [HttpPost("{id:int}/inlines/upload")]
@@ -305,6 +325,35 @@ namespace RoleplayersGuild.Site.Controllers
             }
 
             return Ok(new { message = "Gallery updated successfully." });
+        }
+        [HttpPost("UpdateImagePositions")]
+        public async Task<IActionResult> UpdateImagePositions([FromBody] ImagePositionUpdateModel input)
+        {
+            var userId = _userService.GetUserId(User);
+            if (userId == 0) return Unauthorized();
+
+            var character = await _characterDataService.GetCharacterForEditAsync(input.CharacterId, userId);
+            if (character is null) return Forbid();
+
+            await _characterDataService.UpdateImagePositionsAsync(input.ImageIds);
+
+            return Ok(new { message = "Image positions updated successfully." });
+        }
+
+        [HttpPost("DeleteImages")]
+        public async Task<IActionResult> DeleteImages([FromBody] List<int> imageIds)
+        {
+            var userId = _userService.GetUserId(User);
+            if (userId == 0) return Unauthorized();
+
+            if (imageIds == null || !imageIds.Any())
+            {
+                return BadRequest(new { message = "No image IDs provided for deletion." });
+            }
+
+            await _characterDataService.DeleteImagesAsync(imageIds, userId);
+
+            return Ok(new { message = "Images deleted successfully." });
         }
 
         [HttpPut("{id:int}/profile")]

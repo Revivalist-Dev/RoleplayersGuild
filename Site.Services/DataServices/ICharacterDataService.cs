@@ -17,12 +17,14 @@ namespace RoleplayersGuild.Site.Services.DataServices
         Task<int> GetAssignedUserBadgeIdAsync(int characterId);
         Task<IEnumerable<Character>> GetActiveCharactersForUserAsync(int userId);
         Task<CharacterImage?> GetImageAsync(int imageId);
-        Task AddImageAsync(string imageUrl, int characterId, int userId, bool isMature, string imageCaption, int width, int height);
+        Task<int> AddImageAsync(string imageUrl, int characterId, int userId, bool isMature, string imageCaption, int width, int height);
         Task UpdateImageAsync(int imageId, bool isMature, string imageCaption);
         Task<CharacterImage?> GetImageWithOwnerAsync(int imageId);
         Task<int> GetAvailableImageSlotCountAsync(int userId, int characterId);
         Task UpdateImageDetailsAsync(int imageId, string caption, int imageScale);
+        Task UpdateImagePositionsAsync(List<int> imageIds);
         Task DeleteImageRecordAsync(int imageId);
+        Task DeleteImagesAsync(List<int> imageIds, int userId);
         Task<IEnumerable<CharactersForListing>> GetCharactersForListingAsync(string screenStatus, int recordCount, int currentUserId);
         Task<CharacterWithDetails?> GetCharacterWithDetailsAsync(int characterId);
         Task<IEnumerable<Genre>> GetCharacterGenresAsync(int characterId);

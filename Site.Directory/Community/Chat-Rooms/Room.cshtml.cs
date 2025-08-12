@@ -13,14 +13,12 @@ namespace RoleplayersGuild.Site.Directory.Community.Chat_Rooms
     public class RoomModel : PageModel
     {
         private readonly ICommunityDataService _communityDataService;
-        private readonly IBaseDataService _baseDataService;
         private readonly IUserService _userService;
         private readonly IUrlProcessingService _urlProcessingService;
 
-        public RoomModel(ICommunityDataService communityDataService, IBaseDataService baseDataService, IUserService userService, IUrlProcessingService urlProcessingService)
+        public RoomModel(ICommunityDataService communityDataService, IUserService userService, IUrlProcessingService urlProcessingService)
         {
             _communityDataService = communityDataService;
-            _baseDataService = baseDataService;
             _userService = userService;
             _urlProcessingService = urlProcessingService;
         }
@@ -50,15 +48,15 @@ namespace RoleplayersGuild.Site.Directory.Community.Chat_Rooms
             var userId = _userService.GetUserId(User);
             if (userId != 0)
             {
-                var characters = await _baseDataService.GetRecordsAsync<CharactersForListing>(
+                var characters = await _communityDataService.GetRecordsAsync<CharactersForListing>(
                     """
                     SELECT "CharacterId", "CharacterDisplayName"
-                    FROM "CharactersForListing" 
+                    FROM "CharactersForListing"
                     WHERE "UserId" = @userId AND "CharacterStatusId" = 1
                     """,
                     new { userId });
                 UserCharacters = characters.ToList();
-                CurrentSendAsCharacterId = await _baseDataService.GetScalarAsync<int>("""SELECT "CurrentSendAsCharacter" FROM "Users" WHERE "UserId" = @userId""", new { userId });
+                CurrentSendAsCharacterId = await _communityDataService.GetScalarAsync<int>("""SELECT "CurrentSendAsCharacter" FROM "Users" WHERE "UserId" = @userId""", new { userId });
             }
 
             return Page();

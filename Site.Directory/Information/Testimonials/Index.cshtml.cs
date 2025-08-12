@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc.RazorPages;
 
-namespace RoleplayersGuild.Site.Directory.Testimonials
+namespace RoleplayersGuild.Site.Directory.Information.Testimonials
 {
     public class IndexModel : PageModel
     {

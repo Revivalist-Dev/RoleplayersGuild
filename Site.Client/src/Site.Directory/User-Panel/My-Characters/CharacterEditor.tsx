@@ -3,7 +3,7 @@ import axios from 'axios';
 
 // Import Components
 import DetailsTab from './components/DetailsTab';
-import GalleryTab, { GalleryTabHandle } from './components/GalleryTab';
+import GalleryTab from './components/GalleryTab';
 import BBFrameTab from './components/BBFrameTab';
 import DataTab from './components/DataTab';
 import CustomTab from './components/CustomTab';
@@ -22,7 +22,6 @@ const CharacterEditor: React.FC<CharacterEditorProps> = ({ characterId }) => {
     const [editorData, setEditorData] = useState<EditorData | null>(null);
     const [lookupData, setLookupData] = useState<EditorLookups | null>(null);
     const [activeTab, setActiveTab] = useState<EditorTab>('Details');
-    const galleryTabRef = useRef<GalleryTabHandle>(null);
 
     // New states for hot-reloading images
     const [galleryImages, setGalleryImages] = useState<CharacterImage[]>([]);
@@ -96,7 +95,7 @@ const CharacterEditor: React.FC<CharacterEditorProps> = ({ characterId }) => {
 
 
     const handleGalleryUpload = (newImage: CharacterImage) => {
-        setGalleryImages(prev => [...prev, newImage]);
+        setGalleryImages(prev => [newImage, ...prev]);
     };
 
     const handleAvatarChange = (newAvatarUrl: string) => {
@@ -140,12 +139,10 @@ const CharacterEditor: React.FC<CharacterEditorProps> = ({ characterId }) => {
                 />;
             case 'Gallery':
                 return <GalleryTab
-                    ref={galleryTabRef}
                     characterId={characterId}
                     images={galleryImages}
-                    onGalleryUpdate={fetchInitialData}
                     onImageUpload={handleGalleryUpload}
-                    onImagesChange={handleImagesChange}
+                    onGalleryUpdate={handleImagesChange}
                 />;
             case 'Data':
                 return <DataTab />;
@@ -185,10 +182,7 @@ const CharacterEditor: React.FC<CharacterEditorProps> = ({ characterId }) => {
                         <button className={`nav-link ${activeTab === 'Details' ? 'active' : ''}`} onClick={() => setActiveTab('Details')}>Details</button>
                     </li>
                     <li className="nav-item">
-                        <button className={`nav-link ${activeTab === 'Gallery' ? 'active' : ''}`} disabled={isNewCharacter} onClick={() => {
-                            setActiveTab('Gallery');
-                            setTimeout(() => galleryTabRef.current?.relayout(), 100);
-                        }}>Gallery</button>
+                        <button className={`nav-link ${activeTab === 'Gallery' ? 'active' : ''}`} disabled={isNewCharacter} onClick={() => setActiveTab('Gallery')}>Gallery</button>
                     </li>
                     <li className="nav-item">
                         <button className={`nav-link ${activeTab === 'Data' ? 'active' : ''}`} disabled={isNewCharacter} onClick={() => setActiveTab('Data')}>Data</button>

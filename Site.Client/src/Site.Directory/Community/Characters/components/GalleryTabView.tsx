@@ -1,72 +1,53 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
+import Packery from 'packery';
 import { CharacterImage } from '../../../../types';
-import PackeryGrid, { PackeryGridHandle } from '../../../Shared/Components/PackeryGrid';
-import { forwardRef, useImperativeHandle, useRef, useEffect } from 'react';
-import Draggabilly from 'draggabilly';
+import styles from './GalleryTabView.module.css';
 
 interface GalleryTabViewProps {
     images: CharacterImage[];
-    onSortEnd: (images: CharacterImage[]) => void;
 }
 
-export interface GalleryTabViewHandle {
-    relayout: () => void;
-}
-
-const GalleryTabView = forwardRef<GalleryTabViewHandle, GalleryTabViewProps>(({ images, onSortEnd }, ref) => {
-    const packeryGridRef = useRef<PackeryGridHandle>(null);
+const GalleryTabView: React.FC<GalleryTabViewProps> = ({ images }) => {
+    const gridRef = useRef<HTMLDivElement>(null);
+    const pckry = useRef<any | null>(null);
 
     useEffect(() => {
-        const pckry = packeryGridRef.current?.packery();
-        if (pckry) {
-            const items = pckry.getItemElements();
-            items.forEach((item: HTMLElement) => {
-                const draggie = new Draggabilly(item);
-                pckry.bindDraggabillyEvents(draggie);
+        if (gridRef.current && images.length > 0) {
+            pckry.current = new (Packery as any)(gridRef.current, {
+                itemSelector: `.${styles.gridItem}`,
+                columnWidth: 100,
+                rowHeight: 100,
+                gutter: 10
             });
 
-            pckry.on('dragItemPositioned', () => {
-                const itemElems = pckry.getItemElements();
-                const newImages = itemElems.map((elem: HTMLElement) => {
-                    const id = parseInt(elem.getAttribute('data-id') || '0', 10);
-                    return images.find(img => img.characterImageId === id);
-                }).filter((img): img is CharacterImage => !!img);
-                onSortEnd(newImages);
+            pckry.current.on('layoutComplete', () => {
+                if (gridRef.current) {
+                    gridRef.current.classList.add(styles.layoutReady);
+                }
             });
         }
-    }, [images, onSortEnd]);
 
-    useImperativeHandle(ref, () => ({
-        relayout: () => {
-            packeryGridRef.current?.relayout();
-        }
-    }));
-
-    if (!images || images.length === 0) {
-        return <p className="text-muted">This character has no images in their gallery.</p>;
-    }
-
-    const getGridItemClass = (scale: number | null | undefined) => {
-        const scaleValue = Math.round(scale || 1);
-        if (scaleValue > 1 && scaleValue <= 6) {
-            return `grid-item grid-item--width${scaleValue}`;
-        }
-        return 'grid-item';
-    };
+        return () => {
+            pckry.current?.destroy();
+        };
+    }, [images]);
 
     return (
-        <div style={{ maxHeight: '800px', overflowY: 'auto' }}>
-            <PackeryGrid ref={packeryGridRef}>
-                {images.map(image => (
-                    <div key={image.characterImageId} data-id={image.characterImageId} className={getGridItemClass(image.imageScale)}>
-                        <a href={image.characterImageUrl} target="_blank" rel="noopener noreferrer">
-                            <img src={image.characterImageUrl} alt="Character Image" style={{ width: '100%', height: 'auto', display: 'block' }} />
-                        </a>
-                    </div>
-                ))}
-            </PackeryGrid>
+        <div ref={gridRef} className={styles.grid}>
+            {images.map(image => (
+                <div
+                    key={image.characterImageId}
+                    className={styles.gridItem}
+                    style={{
+                        width: `${image.imageScale * 100}px`,
+                        height: `${image.imageScale * 100}px`
+                    }}
+                >
+                    <img src={image.characterImageUrl} alt={image.imageCaption || 'Character Image'} className={styles.gridItemImage} />
+                </div>
+            ))}
         </div>
     );
-});
+};
 
 export default GalleryTabView;

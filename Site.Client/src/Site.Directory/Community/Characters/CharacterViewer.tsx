@@ -1,9 +1,9 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Character, CharacterImage } from '../../../types';
 import BBFrameTabView from './components/BBFrameTabView';
 import DataTabView from './components/DataTabView';
 import DetailsTabView from './components/DetailsTabView';
-import GalleryTabView, { GalleryTabViewHandle } from './components/GalleryTabView';
+import GalleryTabView from './components/GalleryTabView';
 
 interface CharacterViewerProps {
     character: Character;
@@ -22,8 +22,10 @@ const CharacterViewer: React.FC<CharacterViewerProps> = ({
     userCanViewMatureContent,
     genres
 }) => {
-    const [activeTab, setActiveTab] = useState<'BBFrame' | 'Details' | 'Gallery' | 'Data'>('BBFrame');
-    const galleryTabRef = useRef<GalleryTabViewHandle>(null);
+    const [activeTab, setActiveTab] = useState<'BBFrame' | 'Details' | 'Data'>('BBFrame');
+
+    useEffect(() => {
+    }, [activeTab]);
 
     const renderTabContent = () => {
         switch (activeTab) {
@@ -35,8 +37,6 @@ const CharacterViewer: React.FC<CharacterViewerProps> = ({
                 />;
             case 'Details':
                 return <DetailsTabView character={character} genres={genres} />;
-            case 'Gallery':
-                return <GalleryTabView ref={galleryTabRef} initialImages={images} />;
             case 'Data':
                 return <DataTabView />;
             default:
@@ -55,17 +55,11 @@ const CharacterViewer: React.FC<CharacterViewerProps> = ({
                         <button className={`nav-link ${activeTab === 'Details' ? 'active' : ''}`} onClick={() => setActiveTab('Details')}>Details</button>
                     </li>
                     <li className="nav-item" role="presentation">
-                        <button className={`nav-link ${activeTab === 'Gallery' ? 'active' : ''}`} onClick={() => {
-                            setActiveTab('Gallery');
-                            setTimeout(() => galleryTabRef.current?.relayout(), 100);
-                        }}>Gallery</button>
-                    </li>
-                    <li className="nav-item" role="presentation">
                         <button className={`nav-link ${activeTab === 'Data' ? 'active' : ''}`} onClick={() => setActiveTab('Data')}>Data</button>
                     </li>
                 </ul>
             </div>
-            <div className={`card-body ${activeTab === 'Gallery' ? 'p-0' : ''}`}>
+            <div className={`card-body`}>
                 <div className="tab-content" id="profileTabContent">
                     <div className="tab-pane fade show active" role="tabpanel">
                         {renderTabContent()}

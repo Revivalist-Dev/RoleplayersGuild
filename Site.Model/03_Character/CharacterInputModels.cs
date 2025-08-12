@@ -93,6 +93,11 @@ namespace RoleplayersGuild.Site.Model
         public string? ImageCaption { get; set; }
         public int ImageScale { get; set; }
     }
+    public class ImagePositionUpdateModel
+    {
+        public int CharacterId { get; set; }
+        public List<int> ImageIds { get; set; } = new();
+    }
 
     public class SearchInputModel
     {

@@ -45,21 +45,21 @@
 		<Copy SourceFiles="@(CertificateFile)" DestinationFolder="$(PublishDir)\Site.Certificates" SkipUnchangedFiles="true" />
 	</Target>
 
-	<Target Name="CopyVendorAssets" BeforeTargets="CompileScss">
+	<Target Name="CopyVendorAssets" BeforeTargets="CompileScss" Condition="'$(BuildingInsideDocker)' != 'true'">
 		<!-- Ensures the wwwroot/vendor directory exists -->
 		<MakeDir Directories="wwwroot/vendor" />
 		<!-- Copies the vendor assets from node_modules -->
 		<Exec Command="npm run copy:assets" />
 	</Target>
 
-	<Target Name="CompileScss" BeforeTargets="RunViteBuild">
+	<Target Name="CompileScss" BeforeTargets="RunViteBuild" Condition="'$(BuildingInsideDocker)' != 'true'">
 		<!-- Ensures the wwwroot/css directory exists -->
 		<MakeDir Directories="wwwroot/css" />
 		<!-- Compiles the SCSS to CSS -->
 		<Exec Command="npm run build:css" />
 	</Target>
 
-	<Target Name="RunViteBuild" BeforeTargets="Build">
+	<Target Name="RunViteBuild" BeforeTargets="Build" Condition="'$(BuildingInsideDocker)' != 'true'">
 		<RemoveDir Directories="wwwroot/react-dist" />
 
 		<Exec Command="npm install" WorkingDirectory="Site.Client" />

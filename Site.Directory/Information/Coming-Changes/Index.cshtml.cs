@@ -6,7 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace RoleplayersGuild.Site.Directory.Coming_Changes
+namespace RoleplayersGuild.Site.Directory.Information.Coming_Changes
 {
     public class IndexModel : PageModel
     {

@@ -6,19 +6,19 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Xml.Linq;
 
-namespace RoleplayersGuild.Site.Directory.Sitemap; // Corrected namespace
+namespace RoleplayersGuild.Site.Directory.Information.Sitemap;
 
 public class ImagesModel : PageModel
 {
-    private readonly IBaseDataService _baseDataService;
-    public ImagesModel(IBaseDataService baseDataService) { _baseDataService = baseDataService; }
+    private readonly ICharacterDataService _characterDataService;
+    public ImagesModel(ICharacterDataService characterDataService) { _characterDataService = characterDataService; }
 
     public async Task<IActionResult> OnGetAsync()
     {
         XNamespace ns = "http://www.sitemaps.org/schemas/sitemap/0.9";
         var urlset = new XElement(ns + "urlset");
 
-        var imageIds = await _baseDataService.GetRecordsAsync<int>("SELECT CharacterImageID FROM Character_Images WHERE IsMature = 0");
+        var imageIds = await _characterDataService.GetRecordsAsync<int>("SELECT CharacterImageID FROM Character_Images WHERE IsMature = 0");
 
         foreach (var id in imageIds)
         {

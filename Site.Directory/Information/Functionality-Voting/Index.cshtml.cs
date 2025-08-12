@@ -8,7 +8,7 @@ using RoleplayersGuild.Site.Model;
 using RoleplayersGuild.Site.Services;
 using RoleplayersGuild.Site.Services.DataServices;
 
-namespace RoleplayersGuild.Site.Directory.Functionality_Voting
+namespace RoleplayersGuild.Site.Directory.Information.Functionality_Voting
 {
     public class IndexModel : PageModel
     {

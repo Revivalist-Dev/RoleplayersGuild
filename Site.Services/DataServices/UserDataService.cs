@@ -149,8 +149,8 @@ namespace RoleplayersGuild.Site.Services.DataServices
                 CharacterId = d.CharacterId,
                 CharacterDisplayName = d.CharacterDisplayName,
                 CharacterNameClass = d.CharacterNameClass,
-                CardImageUrl = _urlProcessingService.GetCharacterImageUrl(d.CardImageUrl),
-                AvatarImageUrl = _urlProcessingService.GetCharacterImageUrl(d.AvatarImageUrl)
+                CardImageUrl = _urlProcessingService.GetCharacterImageUrl((Models.ImageUploadPath)d.CardImageUrl),
+                AvatarImageUrl = _urlProcessingService.GetCharacterImageUrl((Models.ImageUploadPath)d.AvatarImageUrl)
             }).ToList();
         }
         public Task<IEnumerable<BadgeSelectionViewModel>> GetUserBadgesForEditingAsync(int userId)

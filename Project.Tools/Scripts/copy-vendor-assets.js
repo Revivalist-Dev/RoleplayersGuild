@@ -23,6 +23,14 @@ const assetsToCopy = {
     'imagesloaded': {
         src: path.join(projectRoot, 'Site.Client', 'node_modules', 'imagesloaded', 'imagesloaded.pkgd.min.js'),
         dest: path.join(vendorDest, 'imagesloaded', 'imagesloaded.pkgd.min.js')
+    },
+    '@microsoft/signalr': {
+        src: path.join(projectRoot, 'node_modules', '@microsoft', 'signalr', 'dist', 'browser'),
+        dest: path.join(projectRoot, 'wwwroot', 'lib', 'microsoft', 'signalr', 'dist', 'browser')
+    },
+    'linkifyjs': {
+        src: path.join(projectRoot, 'node_modules', 'linkifyjs', 'dist', 'linkify.min.js'),
+        dest: path.join(projectRoot, 'wwwroot', 'js', 'linkify.min.js')
     }
 };
 

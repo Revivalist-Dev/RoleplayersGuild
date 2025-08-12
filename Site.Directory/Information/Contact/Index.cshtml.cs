@@ -6,7 +6,7 @@ using RoleplayersGuild.Site.Services.DataServices;
 using System.ComponentModel.DataAnnotations;
 using System.Threading.Tasks;
 
-namespace RoleplayersGuild.Site.Directory.Contact
+namespace RoleplayersGuild.Site.Directory.Information.Contact
 {
     [Authorize]
     public class IndexModel : PageModel

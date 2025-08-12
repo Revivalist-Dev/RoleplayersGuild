@@ -6,7 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace RoleplayersGuild.Site.Directory.Badges
+namespace RoleplayersGuild.Site.Directory.Information.Badges
 {
     public class IndexModel : PageModel
     {

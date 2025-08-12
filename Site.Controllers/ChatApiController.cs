@@ -16,20 +16,17 @@ namespace RoleplayersGuild.Site.Controllers
     public class ChatApiController : ControllerBase
     {
         private readonly ICommunityDataService _communityDataService;
-        private readonly IBaseDataService _baseDataService;
         private readonly IUserService _userService;
         private readonly IPassCryptService _passCryptService;
         private readonly IJwtService _jwtService;
 
         public ChatApiController(
             ICommunityDataService communityDataService,
-            IBaseDataService baseDataService,
             IUserService userService,
             IPassCryptService passCryptService,
             IJwtService jwtService)
         {
             _communityDataService = communityDataService;
-            _baseDataService = baseDataService;
             _userService = userService;
             _passCryptService = passCryptService;
             _jwtService = jwtService;
@@ -96,7 +93,7 @@ namespace RoleplayersGuild.Site.Controllers
                 return Unauthorized();
             }
 
-            var characters = await _baseDataService.GetRecordsAsync<CharacterSimpleViewModel>(
+            var characters = await _communityDataService.GetRecordsAsync<CharacterSimpleViewModel>(
                 @"SELECT ""CharacterId"", ""CharacterDisplayName"" FROM ""Characters"" WHERE ""UserId"" = @UserId ORDER BY ""CharacterDisplayName""",
                 new { UserId = userId }
             );

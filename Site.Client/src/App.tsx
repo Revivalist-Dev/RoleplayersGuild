@@ -10,7 +10,7 @@ const App: React.FC = () => {
         const characterId = parseInt(editorRoot.dataset.characterId || '0', 10);
         const initialAvatarUrl = editorRoot.dataset.initialAvatarUrl || null;
         const initialCardUrl = editorRoot.dataset.initialCardUrl || null;
-        return <CharacterEditor characterId={characterId} initialAvatarUrl={initialAvatarUrl} initialCardUrl={initialCardUrl} />;
+        return <CharacterEditor characterId={characterId} />;
     }
 
     if (viewerRoot) {

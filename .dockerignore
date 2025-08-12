@@ -1,0 +1,13 @@
+# General
+**/bin/
+**/obj/
+**/node_modules/
+.git
+.vs
+.vscode
+*.user
+*.suo
+
+# Project specific
+/deployment/
+README.md

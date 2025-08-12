@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 using System.Text;
 using System.Xml.Linq;
 
-namespace RoleplayersGuild.Site.Directory.Sitemap; // Corrected namespace
+namespace RoleplayersGuild.Site.Directory.Information.Sitemap;
 
 public class IndexModel : PageModel
 {

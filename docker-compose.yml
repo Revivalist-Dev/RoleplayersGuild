@@ -1,0 +1,74 @@
+services:
+  roleplayersguild:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: roleplayersguild
+    environment:
+      - ConnectionStrings__DefaultConnection=Host=host.docker.internal;Port=5432;Database=rpgdb-local;Username=postgres;Password=Hitoki1582!
+      - ImageHandling=S3 # We will use S3 mode, but point it to our local MinIO
+      - AwsSettings__ServiceURL=http://minio:9000
+      - AwsSettings__AccessKeyId=minioadmin
+      - AwsSettings__SecretAccessKey=minioadmin
+      - AwsSettings__BucketName=localimages-roleplayersguild-com
+      - AwsSettings__CloudFrontDomain=http://localhost:9000/localimages-roleplayersguild-com
+    volumes:
+      - dataprotection-keys:/root/.aspnet/DataProtection-Keys
+    depends_on:
+      - minio
+
+  rpgateway:
+    build:
+      context: ../RPGateway
+      dockerfile: Dockerfile
+    container_name: rpgateway
+    depends_on:
+      - roleplayersguild
+
+  minio:
+    image: minio/minio:latest
+    container_name: minio
+    ports:
+      - "9000:9000" # S3 API
+      - "9001:9001" # MinIO Console
+    volumes:
+      - ../RoleplayersGuild-Local/s3-data:/data
+    environment:
+      - MINIO_ROOT_USER=minioadmin
+      - MINIO_ROOT_PASSWORD=minioadmin
+    command: server /data --console-address ":9001"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+
+  createbuckets:
+    image: minio/mc
+    depends_on:
+      - minio
+    entrypoint: >
+      /bin/sh -c "
+      until /usr/bin/mc alias set local http://minio:9000 minioadmin minioadmin; do
+        echo '...waiting for minio...' && sleep 1;
+      done;
+      /usr/bin/mc mb local/localimages-roleplayersguild-com;
+      /usr/bin/mc anonymous set download local/localimages-roleplayersguild-com;
+      "
+
+  nginx:
+    build:
+      context: ./deployment/nginx
+      dockerfile: Dockerfile
+    container_name: nginx
+    ports:
+      - "80:80" # Expose Nginx on port 80 of the host
+    depends_on:
+      - rpgateway
+
+networks:
+  default:
+    name: rpguild-network
+
+volumes:
+  dataprotection-keys:

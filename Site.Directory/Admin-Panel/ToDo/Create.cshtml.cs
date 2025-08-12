@@ -14,12 +14,12 @@ namespace RoleplayersGuild.Site.Directory.Admin_Panel.ToDo
     // [Authorize(Policy = "IsStaff")]
     public class CreateModel : PageModel
     {
-        private readonly IBaseDataService _baseDataService;
+        private readonly IMiscDataService _miscDataService;
         private readonly IUserService _userService;
 
-        public CreateModel(IBaseDataService baseDataService, IUserService userService)
+        public CreateModel(IMiscDataService miscDataService, IUserService userService)
         {
-            _baseDataService = baseDataService;
+            _miscDataService = miscDataService;
             _userService = userService;
         }
 
@@ -52,7 +52,7 @@ namespace RoleplayersGuild.Site.Directory.Admin_Panel.ToDo
                 VALUES (@ItemName, @StatusId, @TypeId, @AssignedToUserId, @CreatedByUserId, @ItemDescription)
                 """;
 
-            await _baseDataService.ExecuteAsync(sql, new
+            await _miscDataService.ExecuteAsync(sql, new
             {
                 ToDoItem.ItemName,
                 ToDoItem.StatusId,
@@ -67,13 +67,13 @@ namespace RoleplayersGuild.Site.Directory.Admin_Panel.ToDo
 
         private async Task PopulateSelectListsAsync()
         {
-            var users = await _baseDataService.GetRecordsAsync<User>("""SELECT "UserId", "Username" FROM "Users" WHERE "UserTypeId" IN (2, 3, 4) ORDER BY "Username" """);
+            var users = await _miscDataService.GetRecordsAsync<User>("""SELECT "UserId", "Username" FROM "Users" WHERE "UserTypeId" IN (2, 3, 4) ORDER BY "Username" """);
             AssignableUsers = new SelectList(users, "UserId", "Username");
 
-            var statuses = await _baseDataService.GetRecordsAsync<ToDoStatus>("""SELECT "StatusId", "StatusName" FROM "TodoItemStatuses" ORDER BY "StatusName" """);
+            var statuses = await _miscDataService.GetRecordsAsync<ToDoStatus>("""SELECT "StatusId", "StatusName" FROM "TodoItemStatuses" ORDER BY "StatusName" """);
             Statuses = new SelectList(statuses, "StatusId", "StatusName");
 
-            var types = await _baseDataService.GetRecordsAsync<ToDoType>("""SELECT "TypeId", "TypeName" FROM "TodoItemTypes" ORDER BY "TypeName" """);
+            var types = await _miscDataService.GetRecordsAsync<ToDoType>("""SELECT "TypeId", "TypeName" FROM "TodoItemTypes" ORDER BY "TypeName" """);
             Types = new SelectList(types, "TypeId", "TypeName");
         }
     }

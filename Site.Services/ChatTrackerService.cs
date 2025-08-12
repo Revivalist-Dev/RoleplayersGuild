@@ -8,9 +8,9 @@ namespace RoleplayersGuild.Site.Services
 {
     public class ChatTrackerService : IChatTrackerService
     {
-        private static readonly ConcurrentDictionary<string, ConcurrentDictionary<string, ChatCharacterViewModel>> _channels = new(System.StringComparer.OrdinalIgnoreCase);
-        private static readonly ConcurrentDictionary<string, ChatCharacterViewModel> _userCharacters = new(System.StringComparer.OrdinalIgnoreCase);
-        private static readonly ConcurrentDictionary<string, string> _connectionUsers = new();
+        private readonly ConcurrentDictionary<string, ConcurrentDictionary<string, ChatCharacterViewModel>> _channels = new(System.StringComparer.OrdinalIgnoreCase);
+        private readonly ConcurrentDictionary<string, ChatCharacterViewModel> _userCharacters = new(System.StringComparer.OrdinalIgnoreCase);
+        private readonly ConcurrentDictionary<string, string> _connectionUsers = new();
 
         public Task UserConnected(string connectionId)
         {

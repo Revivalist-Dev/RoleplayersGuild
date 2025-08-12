@@ -1,62 +1,200 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import axios from 'axios';
-import { DragEndEvent } from '@dnd-kit/core';
-import { arrayMove } from '@dnd-kit/sortable';
+import Packery from 'packery';
+import Draggabilly from 'draggabilly';
+import imagesLoaded from 'imagesloaded';
 import { CharacterImage } from '../../../../types';
 import ImageManager from './ImageManager';
-import GalleryTabView, { GalleryTabViewHandle } from '../../../Community/Characters/components/GalleryTabView';
-import { forwardRef, useImperativeHandle, useRef } from 'react';
+import styles from './GalleryTab.module.css';
+import { forwardRef, useImperativeHandle } from 'react';
 
 interface GalleryTabProps {
     characterId: number;
     images: CharacterImage[];
-    onGalleryUpdate: () => void;
+    onGalleryUpdate: (images: CharacterImage[]) => void;
     onImageUpload: (newImage: CharacterImage) => void;
-    onImagesChange: (images: CharacterImage[]) => void;
 }
 
 export interface GalleryTabHandle {
-    relayout: () => void;
+    // relayout: () => void;
 }
 
-const GalleryTab = forwardRef<GalleryTabHandle, GalleryTabProps>(({ characterId, images, onGalleryUpdate, onImageUpload, onImagesChange }, ref) => {
-    const galleryTabViewRef = useRef<GalleryTabViewHandle>(null);
-    const [imagesToDelete, setImagesToDelete] = useState<number[]>([]);
+const getGridItemStyle = (image: CharacterImage): React.CSSProperties => {
+    const baseSize = 150; // Corresponds to the .gridItem width/height in CSS
+    const scaleMultiplier = 1 + (image.imageScale ?? 0) * 0.25; // 0=100%, 1=125%, 2=150%, etc.
+
+    if (image.width && image.height) {
+        const aspectRatio = image.width / image.height;
+        let width = baseSize;
+        let height = baseSize;
+
+        if (aspectRatio > 1) {
+            // Wider than tall
+            width = baseSize * aspectRatio;
+        } else {
+            // Taller than wide
+            height = baseSize / aspectRatio;
+        }
+
+        return {
+            width: `${width * scaleMultiplier}px`,
+            height: `${height * scaleMultiplier}px`,
+        };
+    }
+
+    // Default style if no dimensions
+    return {
+        width: `${baseSize * scaleMultiplier}px`,
+        height: `${baseSize * scaleMultiplier}px`,
+    };
+};
+
+const GalleryTab = forwardRef<GalleryTabHandle, GalleryTabProps>(({ characterId, images, onGalleryUpdate, onImageUpload }, ref) => {
+    const [initialImages, setInitialImages] = useState<CharacterImage[]>(images);
+    const [currentImages, setCurrentImages] = useState<CharacterImage[]>(images);
+    const [pendingDeletions, setPendingDeletions] = useState<number[]>([]);
     const [isSaving, setIsSaving] = useState(false);
     const [status, setStatus] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+    const [selectedImageId, setSelectedImageId] = useState<number | null>(null);
+    const [resizingId, setResizingId] = useState<number | null>(null);
+    const containerRef = useRef<HTMLDivElement>(null);
+    const gridRef = useRef<HTMLDivElement>(null);
+    const pckry = useRef<any | null>(null);
+
+    useEffect(() => {
+        if (gridRef.current && !pckry.current) {
+            pckry.current = new (Packery as any)(gridRef.current, {
+                itemSelector: '.grid-item',
+                columnWidth: 100,
+                gutter: 5
+            });
+
+            pckry.current.on('dragItemPositioned', () => {
+                const itemElems = pckry.current?.getItemElements();
+                if (itemElems) {
+                    const newImageIds = itemElems.map((elem: HTMLElement) => parseInt(elem.getAttribute('data-id') || '0', 10));
+                    handleOrderChange(newImageIds);
+                }
+            });
+        }
+
+        return () => {
+            if (pckry.current) {
+                pckry.current.destroy();
+                pckry.current = null;
+            }
+        };
+    }, []);
+
+    useEffect(() => {
+        if (pckry.current && gridRef.current) {
+            imagesLoaded(gridRef.current, () => {
+                if (pckry.current && gridRef.current) {
+                    pckry.current.reloadItems();
+                    
+                    const itemElems = Array.from(gridRef.current.querySelectorAll('.grid-item'));
+                    itemElems.forEach(item => {
+                        if (!item.classList.contains('is-draggable')) {
+                            const draggie = new Draggabilly(item as HTMLElement);
+                            pckry.current.bindDraggabillyEvents(draggie);
+                        }
+                    });
+
+                    pckry.current.layout();
+                }
+            });
+        }
+    }, [currentImages]);
 
 
     const handleCaptionChange = (id: number, caption: string) => {
-        // This will be handled by the parent component
+        const newImages = currentImages.map(img => img.characterImageId === id ? { ...img, imageCaption: caption } : img);
+        setCurrentImages(newImages);
     };
 
     const handleImageScaleChange = (id: number, scale: number) => {
-        // This will be handled by the parent component
+        const newImages = currentImages.map(img => img.characterImageId === id ? { ...img, imageScale: scale } : img);
+        setCurrentImages(newImages);
+        setResizingId(id); // Track which image is being resized
+    };
+
+    useEffect(() => {
+        if (resizingId && pckry.current && gridRef.current) {
+            const itemElement = gridRef.current.querySelector(`[data-id="${resizingId}"]`);
+            if (itemElement) {
+                // Use a timeout to allow React to render the style change before fitting
+                setTimeout(() => {
+                    pckry.current.fit(itemElement);
+                    setResizingId(null); // Reset after fitting
+                }, 0);
+            }
+        } else if (pckry.current) {
+            pckry.current.layout();
+        }
+    }, [currentImages, resizingId]);
+
+    const handleResizeStart = (id: number) => {
+        setResizingId(id);
+    };
+
+    const handleResizeEnd = (id: number) => {
+        setResizingId(null);
+    };
+
+    const handleResize = (id: number) => {
+    };
+
+    const handleSoftDelete = (imageId: number) => {
+        setPendingDeletions(prev => [...prev, imageId]);
+        setCurrentImages(prev => prev.filter(img => img.characterImageId !== imageId));
     };
 
     const handleDelete = (id: number) => {
         if (!window.confirm('Are you sure you want to delete this image? This cannot be undone.')) return;
-        // This will be handled by the parent component
+        
+        setCurrentImages(currentImages.filter(img => img.characterImageId !== id));
+
         if (id > 0) {
-            setImagesToDelete(current => [...current, id]);
+            setPendingDeletions(current => [...current, id]);
         }
     };
+
+    const handleOrderChange = useCallback((newImageIds: number[]) => {
+        setCurrentImages(prevImages => {
+            const imageMap = new Map(prevImages.map(img => [img.characterImageId, img]));
+            const reorderedImages = newImageIds.map(id => imageMap.get(id)).filter(Boolean) as CharacterImage[];
+            return reorderedImages;
+        });
+    }, []);
+
+    const handleDragStart = useCallback(() => {
+        if (containerRef.current) {
+            containerRef.current.classList.add('is-dragging');
+        }
+    }, []);
+
+    const handleDragEnd = useCallback((newImageIds: number[]) => {
+        if (containerRef.current) {
+            containerRef.current.classList.remove('is-dragging');
+        }
+        handleOrderChange(newImageIds);
+    }, [handleOrderChange]);
 
     const handleUpdateGallery = async (e: React.FormEvent) => {
         e.preventDefault();
         setIsSaving(true);
         setStatus(null);
-        const updates = images.map((img, index) => ({ 
+        const updates = currentImages.map((img, index) => ({
             imageId: img.characterImageId, 
             imageCaption: img.imageCaption, 
             imageScale: img.imageScale, 
             sortOrder: index 
         }));
         try {
-            await axios.put(`/api/characters/${characterId}/gallery/update`, { images: updates, imagesToDelete: imagesToDelete });
+            await axios.put(`/api/characters/${characterId}/gallery/update`, { images: updates, imagesToDelete: pendingDeletions });
             setStatus({ message: 'Gallery updated successfully!', type: 'success' });
-            setImagesToDelete([]);
-            onGalleryUpdate();
+            setPendingDeletions([]);
+            onGalleryUpdate(currentImages);
         } catch (error) {
             setStatus({ message: 'Failed to update gallery.', type: 'error' });
         } finally {
@@ -74,25 +212,14 @@ const GalleryTab = forwardRef<GalleryTabHandle, GalleryTabProps>(({ characterId,
         const formData = new FormData();
         Array.from(filesToUpload).forEach(file => { formData.append('uploadedImages', file); });
         try {
-            const response = await axios.post<{ uploadedFileNames: string[] }>(`/api/characters/${characterId}/gallery/upload`, formData);
+            const response = await axios.post<CharacterImage[]>(`/api/characters/${characterId}/gallery/upload`, formData);
             setStatus({ message: 'Images uploaded successfully!', type: 'success' });
-            
-            // Assuming the API returns the details of the new image
-            // This part needs to be adjusted based on the actual API response
-            if (response.data && response.data.uploadedFileNames) {
-                response.data.uploadedFileNames.forEach(fileName => {
-                    const newImage: CharacterImage = {
-                        characterImageId: Date.now(), // Temporary ID
-                        characterImageUrl: fileName,
-                        isMature: false,
-                        imageCaption: 'New Image',
-                        imageScale: 1,
-                        width: 0, // These would ideally come from the server
-                        height: 0,
-                        userId: 0 // This will be set by the server
-                    };
-                    onImageUpload(newImage);
-                });
+
+            if (response.data) {
+                // Append new images returned from the server
+                setCurrentImages(currentImages => [...currentImages, ...response.data]);
+                // Optionally, call the gallery update to inform the parent component
+                onGalleryUpdate([...currentImages, ...response.data]);
             }
             
             const uploadInput = document.getElementById('gallery-upload-input') as HTMLInputElement;
@@ -105,42 +232,68 @@ const GalleryTab = forwardRef<GalleryTabHandle, GalleryTabProps>(({ characterId,
         }
     };
 
-    const handleDragEnd = (event: DragEndEvent) => {
-        const { active, over } = event;
-        if (over && active.id !== over.id) {
-            const oldIndex = images.findIndex((item) => item.characterImageId === active.id);
-            const newIndex = images.findIndex((item) => item.characterImageId === over.id);
-            onImagesChange(arrayMove(images, oldIndex, newIndex));
+    const handleSaveGallery = async () => {
+        setIsSaving(true);
+        setStatus(null);
+
+        try {
+            // 1. Handle Reordering
+            const imageIds = currentImages.map(img => img.characterImageId);
+            await axios.post('/api/Characters/UpdateImagePositions', {
+                characterId: characterId,
+                imageIds: imageIds
+            });
+
+            // 2. Handle Deletions
+            if (pendingDeletions.length > 0) {
+                await axios.post('/api/Characters/DeleteImages', pendingDeletions);
+            }
+
+            // 3. Success: Reset state
+            setInitialImages(currentImages);
+            setPendingDeletions([]);
+            setStatus({ message: 'Gallery saved successfully!', type: 'success' });
+
+        } catch (error) {
+            setStatus({ message: 'Failed to save gallery.', type: 'error' });
+            // Optional: Revert changes on failure
+            // setCurrentImages(initialImages);
+        } finally {
+            setIsSaving(false);
         }
     };
 
-    useImperativeHandle(ref, () => ({
-        relayout: () => {
-            galleryTabViewRef.current?.relayout();
-        }
-    }));
 
     return (
-        <div className="d-flex flex-column h-100">
+        <div ref={containerRef} className="d-flex flex-column h-100">
             <div className="row g-3 flex-grow-1" style={{ minHeight: 0 }}>
                 <div className="col-lg-8 d-flex flex-column">
                     <div className="card h-100">
-                        <div className="card-header"><h5 className="mb-0">Gallery Preview</h5></div>
-                        <div className="card-body">
-                            <GalleryTabView ref={galleryTabViewRef} images={images} onSortEnd={onImagesChange} />
+                        <div className="card-body d-flex flex-column">
+                            <div ref={gridRef} className={`grid w-100 h-100 ${styles.gridContainer}`} style={{ border: "1px dashed #ccc" }}>
+                                {currentImages.map(image => (
+                                    <div key={image.characterImageId} className={`grid-item ${styles.gridItem}`} style={getGridItemStyle(image)} data-id={image.characterImageId}>
+                                        <img src={image.characterImageUrl} alt={image.imageCaption || ''} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                    </div>
+                                ))}
+                            </div>
                         </div>
                     </div>
                 </div>
                 <div className="col-lg-4 d-flex flex-column h-100">
                     <ImageManager
-                        images={images}
-                        onSortEnd={handleDragEnd}
+                        images={currentImages}
                         onCaptionChange={handleCaptionChange}
-                        onDelete={handleDelete}
+                        onDelete={handleSoftDelete}
                         onImageScaleChange={handleImageScaleChange}
+                        onResizeStart={handleResizeStart}
+                        onResizeEnd={handleResizeEnd}
+                        onResize={handleResize}
                         onUpload={handleUploadNewImages}
                         onSaveChanges={handleUpdateGallery}
                         isSaving={isSaving}
+                        isEditable={true}
+                        selectedImageId={selectedImageId}
                     />
                 </div>
             </div>

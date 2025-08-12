@@ -92,12 +92,13 @@ namespace RoleplayersGuild.Site.Services.DataServices
         public Task<int> GetAssignedUserBadgeIdAsync(int characterId) => GetScalarAsync<int>("""SELECT "UserBadgeId" FROM "UserBadges" WHERE "AssignedToCharacterId" = @characterId""", new { characterId });
         public Task<IEnumerable<Character>> GetActiveCharactersForUserAsync(int userId) => GetRecordsAsync<Character>("""SELECT * FROM "CharactersForListing" WHERE "UserId" = @userId AND "IsApproved" = TRUE""", new { userId });
         public Task<CharacterImage?> GetImageAsync(int imageId) => GetRecordAsync<CharacterImage>("""SELECT CI.*, C."UserId" FROM "CharacterImages" CI JOIN "Characters" C ON CI."CharacterId" = C."CharacterId" WHERE CI."CharacterImageId" = @imageId""", new { imageId });
-        public Task AddImageAsync(string imageUrl, int characterId, int userId, bool isMature, string imageCaption, int width, int height) =>
-            ExecuteAsync("""
-            INSERT INTO "CharacterImages" 
-                ("CharacterImageUrl", "CharacterId", "UserId", "IsMature", "ImageCaption", "Width", "Height") 
-            VALUES 
-                (@ImageUrl, @CharacterId, @UserId, @IsMature, @ImageCaption, @Width, @Height)
+        public Task<int> AddImageAsync(string imageUrl, int characterId, int userId, bool isMature, string imageCaption, int width, int height) =>
+            GetScalarAsync<int>("""
+            INSERT INTO "CharacterImages"
+                ("CharacterImageUrl", "CharacterId", "UserId", "IsMature", "ImageCaption", "Width", "Height", "ImageScale")
+            VALUES
+                (@ImageUrl, @CharacterId, @UserId, @IsMature, @ImageCaption, @Width, @Height, 0)
+            RETURNING "CharacterImageId";
             """,
                 new { ImageUrl = imageUrl, CharacterId = characterId, UserId = userId, IsMature = isMature, ImageCaption = imageCaption, Width = width, Height = height });
         public Task UpdateImageAsync(int imageId, bool isMature, string imageCaption) => ExecuteAsync("""UPDATE "CharacterImages" SET "IsMature" = @IsMature, "ImageCaption" = @ImageCaption WHERE "CharacterImageId" = @imageId""", new { imageId, isMature, imageCaption });
@@ -121,6 +122,23 @@ namespace RoleplayersGuild.Site.Services.DataServices
 
         public Task UpdateImageDetailsAsync(int imageId, string caption, int imageScale) => ExecuteAsync("""UPDATE "CharacterImages" SET "ImageCaption" = @caption, "ImageScale" = @imageScale WHERE "CharacterImageId" = @imageId""", new { imageId, caption, imageScale });
         public Task DeleteImageRecordAsync(int imageId) => ExecuteAsync("""DELETE FROM "CharacterImages" WHERE "CharacterImageId" = @ImageId""", new { ImageId = imageId });
+        public async Task UpdateImagePositionsAsync(List<int> imageIds)
+        {
+            var sql = """
+                UPDATE "CharacterImages"
+                SET "SortOrder" = CASE "CharacterImageId"
+            """;
+            for (int i = 0; i < imageIds.Count; i++)
+            {
+                sql += $" WHEN {imageIds[i]} THEN {i}";
+            }
+            sql += """
+                END
+                WHERE "CharacterImageId" = ANY(@ImageIds)
+            """;
+
+            await ExecuteAsync(sql, new { ImageIds = imageIds });
+        }
 
         public async Task<IEnumerable<CharactersForListing>> GetCharactersForListingAsync(string screenStatus, int recordCount, int currentUserId)
         {
@@ -466,6 +484,16 @@ namespace RoleplayersGuild.Site.Services.DataServices
         public Task IncrementCharacterViewCountAsync(int characterId)
         {
             return ExecuteAsync("""UPDATE "Characters" SET "ViewCount" = "ViewCount" + 1 WHERE "CharacterId" = @CharacterId""", new { CharacterId = characterId });
+        }
+
+        public async Task DeleteImagesAsync(List<int> imageIds, int userId)
+        {
+            var images = await GetRecordsAsync<CharacterImage>("""SELECT * FROM "CharacterImages" WHERE "CharacterImageId" = ANY(@ImageIds) AND "UserId" = @UserId""", new { ImageIds = imageIds, UserId = userId });
+            foreach (var image in images)
+            {
+                await _imageService.DeleteImageAsync((ImageUploadPath)image.CharacterImageUrl);
+            }
+            await ExecuteAsync("""DELETE FROM "CharacterImages" WHERE "CharacterImageId" = ANY(@ImageIds) AND "UserId" = @UserId""", new { ImageIds = imageIds, UserId = userId });
         }
     }
     

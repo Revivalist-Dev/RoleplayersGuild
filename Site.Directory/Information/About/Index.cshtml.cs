@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using RoleplayersGuild.Site.Services;
 
-namespace RoleplayersGuild.Site.Directory.About
+namespace RoleplayersGuild.Site.Directory.Information.About
 {
     public class IndexModel : PageModel
     {

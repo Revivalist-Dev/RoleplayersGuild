@@ -11,14 +11,12 @@ namespace RoleplayersGuild.Site.Directory.Community.Proposals
 {
     public class ViewProposalModel : PageModel
     {
-        private readonly IBaseDataService _baseDataService;
         private readonly IMiscDataService _miscDataService;
         private readonly IContentDataService _contentDataService;
         private readonly IUserService _userService;
 
-        public ViewProposalModel(IBaseDataService baseDataService, IMiscDataService miscDataService, IContentDataService contentDataService, IUserService userService)
+        public ViewProposalModel(IMiscDataService miscDataService, IContentDataService contentDataService, IUserService userService)
         {
-            _baseDataService = baseDataService;
             _miscDataService = miscDataService;
             _contentDataService = contentDataService;
             _userService = userService;
@@ -35,7 +33,7 @@ namespace RoleplayersGuild.Site.Directory.Community.Proposals
             }
 
             const string query = """SELECT * FROM "ProposalsWithDetails" WHERE "ProposalId" = @Id""";
-            Proposal = await _baseDataService.GetRecordAsync<ProposalWithDetails>(query, new { Id = id });
+            Proposal = await _contentDataService.GetRecordAsync<ProposalWithDetails>(query, new { Id = id });
 
             if (Proposal is null)
             {
