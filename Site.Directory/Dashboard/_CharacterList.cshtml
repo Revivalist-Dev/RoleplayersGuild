@@ -1,0 +1,2 @@
+@model dynamic
+@await Component.InvokeAsync("CharacterListing", new { Model.displaySize, Model.showFooter, Model.screenStatus, Model.recordCount })

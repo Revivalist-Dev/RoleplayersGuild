@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using RoleplayersGuild.Site.Model;
 using RoleplayersGuild.Site.Services.DataServices;
 using System.Linq;
@@ -27,9 +27,9 @@ namespace RoleplayersGuild.Site.Services.ViewComponents
         {
             var viewModel = new UserNavViewModel();
 
-            viewModel.IsAuthenticated = User.Identity?.IsAuthenticated ?? false; // <-- ADD THIS LINE
+            viewModel.IsAuthenticated = await _userService.IsUserAuthenticatedAsync();
 
-            if (viewModel?.IsAuthenticated == true)
+            if (viewModel.IsAuthenticated)
             {
                 var user = await _userService.GetCurrentUserAsync();
                 if (user != null)

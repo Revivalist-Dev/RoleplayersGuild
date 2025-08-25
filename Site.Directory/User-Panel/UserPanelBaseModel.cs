@@ -44,6 +44,12 @@ namespace RoleplayersGuild.Site.Directory.User_Panel
             }
 
             // NEW: Check if the user has created their first character.
+            // The Dashboard is a special case; it should always be accessible, so we bypass the character check.
+            if (context.ActionDescriptor.DisplayName != null && context.ActionDescriptor.DisplayName.Contains("Dashboard"))
+            {
+                await next.Invoke();
+                return;
+            }
             var characterCount = await _characterDataService.GetCharacterCountAsync(LoggedInUserId);
             if (characterCount == 0)
             {

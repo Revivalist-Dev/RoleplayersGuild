@@ -1,0 +1,19 @@
+{
+  "name": "fchat",
+  "version": "3.0.0",
+  "author": "The F-List Team",
+  "description": "F-Chat Themes",
+  "license": "MIT",
+  "dependencies": {
+    "@fortawesome/fontawesome-free": "^5.15.1",
+    "bootstrap": "^4.6.2",
+    "node-sass": "^7.0.2",
+    "@snyk/protect": "latest"
+  },
+  "scripts": {
+    "build": "node-sass --importer=./importer --output css",
+    "prepare": "yarn run snyk-protect",
+    "snyk-protect": "snyk-protect"
+  },
+  "snyk": true
+}

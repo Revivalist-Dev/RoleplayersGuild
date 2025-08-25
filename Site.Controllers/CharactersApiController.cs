@@ -1,12 +1,7 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using RoleplayersGuild.Site.Model;
-using RoleplayersGuild.Site.Services;
 using RoleplayersGuild.Site.Services.DataServices;
-using System.Collections.Generic;
-using System.Linq;
 using System.Text.Json;
-using System.Threading.Tasks;
 using RoleplayersGuild.Site.Services.Models;
 
 namespace RoleplayersGuild.Site.Controllers
@@ -24,8 +19,27 @@ namespace RoleplayersGuild.Site.Controllers
         public string? BBFrameContent { get; set; }
     }
 
+    public class ScaleInput
+    {
+        public double Scale { get; set; }
+    }
+
+    public class ResizeInput
+    {
+        public int Width { get; set; }
+        public int Height { get; set; }
+    }
+
+    public class ResetInput
+    {
+        public int Width { get; set; }
+        public int Height { get; set; }
+        public double? Scale { get; set; }
+    }
+
     [ApiController]
     [Route("api/characters")]
+    [Authorize]
     public class CharactersApiController(
         ICharacterDataService characterDataService,
         IUserService userService,
@@ -319,41 +333,12 @@ namespace RoleplayersGuild.Site.Controllers
                     var image = await _characterDataService.GetImageAsync(imageUpdate.ImageId);
                     if (image is not null && image.UserId == userId)
                     {
-                        await _characterDataService.UpdateImageDetailsAsync(imageUpdate.ImageId, imageUpdate.ImageCaption ?? "", imageUpdate.ImageScale);
+                        await _characterDataService.UpdateImageDetailsAsync(imageUpdate.ImageId, imageUpdate.ImageCaption ?? "", (double?)imageUpdate.ImageScale);
                     }
                 }
             }
 
             return Ok(new { message = "Gallery updated successfully." });
-        }
-        [HttpPost("UpdateImagePositions")]
-        public async Task<IActionResult> UpdateImagePositions([FromBody] ImagePositionUpdateModel input)
-        {
-            var userId = _userService.GetUserId(User);
-            if (userId == 0) return Unauthorized();
-
-            var character = await _characterDataService.GetCharacterForEditAsync(input.CharacterId, userId);
-            if (character is null) return Forbid();
-
-            await _characterDataService.UpdateImagePositionsAsync(input.ImageIds);
-
-            return Ok(new { message = "Image positions updated successfully." });
-        }
-
-        [HttpPost("DeleteImages")]
-        public async Task<IActionResult> DeleteImages([FromBody] List<int> imageIds)
-        {
-            var userId = _userService.GetUserId(User);
-            if (userId == 0) return Unauthorized();
-
-            if (imageIds == null || !imageIds.Any())
-            {
-                return BadRequest(new { message = "No image IDs provided for deletion." });
-            }
-
-            await _characterDataService.DeleteImagesAsync(imageIds, userId);
-
-            return Ok(new { message = "Images deleted successfully." });
         }
 
         [HttpPut("{id:int}/profile")]
@@ -370,6 +355,46 @@ namespace RoleplayersGuild.Site.Controllers
 
             await _characterDataService.UpdateCharacterCustomProfileAsync(id, sanitizedCss, sanitizedHtml, input.IsEnabled);
             return Ok(new { message = "Custom profile saved successfully!" });
+        }
+
+        [HttpPost("gallery/image/{imageId:int}/scale")]
+        public async Task<IActionResult> UpdateImageScale(int imageId, [FromBody] ScaleInput input)
+        {
+            var userId = _userService.GetUserId(User);
+            if (userId == 0) return Unauthorized();
+
+            var image = await _characterDataService.GetImageAsync(imageId);
+            if (image == null || image.UserId != userId) return Forbid();
+
+            await _characterDataService.UpdateImageDetailsAsync(imageId, image.ImageCaption ?? "", input.Scale);
+            return Ok(new { message = "Image scale updated successfully." });
+        }
+
+        [HttpPost("gallery/image/{imageId:int}/resize")]
+        public async Task<IActionResult> UpdateImageSize(int imageId, [FromBody] ResizeInput input)
+        {
+            var userId = _userService.GetUserId(User);
+            if (userId == 0) return Unauthorized();
+
+            var image = await _characterDataService.GetImageAsync(imageId);
+            if (image == null || image.UserId != userId) return Forbid();
+
+            await _characterDataService.UpdateImageSizeAsync(imageId, input.Width, input.Height);
+            return Ok(new { message = "Image size updated successfully." });
+        }
+
+        [HttpPost("gallery/image/{imageId:int}/reset")]
+        public async Task<IActionResult> ResetImageSize(int imageId, [FromBody] ResetInput input)
+        {
+            var userId = _userService.GetUserId(User);
+            if (userId == 0) return Unauthorized();
+
+            var image = await _characterDataService.GetImageAsync(imageId);
+            if (image == null || image.UserId != userId) return Forbid();
+
+            await _characterDataService.UpdateImageSizeAsync(imageId, input.Width, input.Height);
+            await _characterDataService.UpdateImageDetailsAsync(imageId, image.ImageCaption ?? "", input.Scale);
+            return Ok(new { message = "Image reset successfully." });
         }
     }
 }

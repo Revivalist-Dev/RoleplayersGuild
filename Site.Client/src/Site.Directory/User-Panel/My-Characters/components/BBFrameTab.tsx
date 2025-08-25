@@ -28,7 +28,9 @@ const BBFrameTab: React.FC<BBFrameTabProps> = ({ characterId, initialBBFrame, in
         setStatus(null);
         try {
             // FIXED: Ensure the JSON key 'BBFrameContent' matches the C# model property exactly.
-            const response = await axios.put(`/api/characters/${characterId}/bbframe`, { BBFrameContent: bbframeContent });
+            const response = await axios.put(`/api/characters/${characterId}/bbframe`, {
+                BBFrameContent: bbframeContent,
+            });
             setStatus({ message: response.data.message || 'BBFrame saved successfully!', type: 'success' });
         } catch (error) {
             setStatus({ message: 'Failed to save BBFrame.', type: 'error' });
@@ -89,32 +91,72 @@ const BBFrameTab: React.FC<BBFrameTabProps> = ({ characterId, initialBBFrame, in
             <div className="col-lg-8">
                 <form onSubmit={handleSaveBBFrame}>
                     <div className="mb-3">
-                        <label htmlFor="bbframe-editor" className="form-label">BBFrame Content (BBCode)</label>
-                        <textarea id="bbframe-editor" className="form-control" rows={15} value={bbframeContent} onChange={(e) => setBBFrameContent(e.target.value)} />
+                        <label htmlFor="bbframe-editor" className="form-label">
+                            BBFrame Content (BBCode)
+                        </label>
+                        <textarea
+                            id="bbframe-editor"
+                            className="form-control"
+                            rows={15}
+                            value={bbframeContent}
+                            onChange={(e) => setBBFrameContent(e.target.value)}
+                        />
                     </div>
                     <div className="d-flex justify-content-end">
-                        <button type="submit" className="btn btn-primary" disabled={isSaving}>{isSaving ? 'Saving...' : 'Save BBFrame'}</button>
+                        <button type="submit" className="btn btn-primary" disabled={isSaving}>
+                            {isSaving ? 'Saving...' : 'Save BBFrame'}
+                        </button>
                     </div>
                 </form>
             </div>
 
             <div className="col-lg-4">
                 <div className="card mb-3">
-                    <div className="card-header"><h5 className="mb-0">Manage Inlines</h5></div>
+                    <div className="card-header">
+                        <h5 className="mb-0">Manage Inlines</h5>
+                    </div>
                     <div className="card-body" style={{ maxHeight: '400px', overflowY: 'auto' }}>
-                        {inlines.length === 0 ? <p className="text-muted small">No inline images.</p> : (
+                        {inlines.length === 0 ? (
+                            <p className="text-muted small">No inline images.</p>
+                        ) : (
                             <ul className="list-group list-group-flush">
-                                {inlines.map(inline => (
-                                    <li key={inline.inlineId} className="list-group-item d-flex justify-content-between align-items-center">
+                                {inlines.map((inline) => (
+                                    <li
+                                        key={inline.inlineId}
+                                        className="list-group-item d-flex justify-content-between align-items-center"
+                                    >
                                         <div>
-                                            <img src={inline.inlineImageUrl} alt={inline.inlineName} className="img-thumbnail me-2" style={{ width: '40px', height: '40px', objectFit: 'cover' }} />
+                                            <img
+                                                src={inline.inlineImageUrl}
+                                                alt={inline.inlineName}
+                                                className="img-thumbnail me-2"
+                                                style={{ width: '40px', height: '40px', objectFit: 'cover' }}
+                                            />
                                             <span className="fw-bold">{inline.inlineName}</span>
                                             <div className="input-group input-group-sm mt-1">
-                                                <input type="text" className="form-control" value={`[img=${inline.inlineId}]`} readOnly />
-                                                <button className="btn btn-outline-secondary" type="button" onClick={() => copyToClipboard(`[img=${inline.inlineId}]`)} title="Copy BBCode"><i className="bi bi-clipboard"></i></button>
+                                                <input
+                                                    type="text"
+                                                    className="form-control"
+                                                    value={`[img=${inline.inlineId}]`}
+                                                    readOnly
+                                                />
+                                                <button
+                                                    className="btn btn-outline-secondary"
+                                                    type="button"
+                                                    onClick={() => copyToClipboard(`[img=${inline.inlineId}]`)}
+                                                    title="Copy BBCode"
+                                                >
+                                                    <i className="bi bi-clipboard"></i>
+                                                </button>
                                             </div>
                                         </div>
-                                        <button className="btn btn-sm btn-outline-danger" title="Delete" onClick={() => handleDeleteInline(inline.inlineId)}><i className="bi bi-trash"></i></button>
+                                        <button
+                                            className="btn btn-sm btn-outline-danger"
+                                            title="Delete"
+                                            onClick={() => handleDeleteInline(inline.inlineId)}
+                                        >
+                                            <i className="bi bi-trash"></i>
+                                        </button>
                                     </li>
                                 ))}
                             </ul>
@@ -123,30 +165,47 @@ const BBFrameTab: React.FC<BBFrameTabProps> = ({ characterId, initialBBFrame, in
                 </div>
 
                 <div className="card">
-                    <div className="card-header"><h5 className="mb-0">Upload New Inline</h5></div>
+                    <div className="card-header">
+                        <h5 className="mb-0">Upload New Inline</h5>
+                    </div>
                     <div className="card-body">
                         <form onSubmit={handleUploadInline}>
                             <div className="mb-3">
-                                <label htmlFor="inline-name-input" className="form-label">Inline Name</label>
-                                <input id="inline-name-input" type="text" className="form-control" placeholder="e.g., header-image" value={newInlineName} onChange={(e) => setNewInlineName(e.target.value)} />
+                                <label htmlFor="inline-name-input" className="form-label">
+                                    Inline Name
+                                </label>
+                                <input
+                                    id="inline-name-input"
+                                    type="text"
+                                    className="form-control"
+                                    placeholder="e.g., header-image"
+                                    value={newInlineName}
+                                    onChange={(e) => setNewInlineName(e.target.value)}
+                                />
                             </div>
                             <div className="mb-3">
-                                <label htmlFor="inline-file-input" className="form-label">Image File</label>
-                                <input id="inline-file-input" type="file" className="form-control" onChange={(e) => setNewInlineFile(e.target.files ? e.target.files[0] : null)} accept="image/*" />
+                                <label htmlFor="inline-file-input" className="form-label">
+                                    Image File
+                                </label>
+                                <input
+                                    id="inline-file-input"
+                                    type="file"
+                                    className="form-control"
+                                    onChange={(e) => setNewInlineFile(e.target.files ? e.target.files[0] : null)}
+                                    accept="image/*"
+                                />
                             </div>
                             <div className="d-grid">
-                                <button type="submit" className="btn btn-success" disabled={isUploading}>{isUploading ? 'Uploading...' : 'Upload'}</button>
+                                <button type="submit" className="btn btn-success" disabled={isUploading}>
+                                    {isUploading ? 'Uploading...' : 'Upload'}
+                                </button>
                             </div>
                         </form>
                     </div>
                 </div>
             </div>
 
-            {status && (
-                <div className={`col-12 mt-3 alert alert-${status.type}`}>
-                    {status.message}
-                </div>
-            )}
+            {status && <div className={`col-12 mt-3 alert alert-${status.type}`}>{status.message}</div>}
         </div>
     );
 };

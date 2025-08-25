@@ -1,0 +1,8 @@
+// Define the B612 Mono font family
+@font-face {
+    font-family: 'B612 Mono';
+    src: url('/fonts/B612_Mono/B612Mono-Regular.woff2') format('woff2'),
+         url('/fonts/B612_Mono/B612Mono-Regular.woff') format('woff');
+    font-weight: normal;
+    font-style: normal;
+}

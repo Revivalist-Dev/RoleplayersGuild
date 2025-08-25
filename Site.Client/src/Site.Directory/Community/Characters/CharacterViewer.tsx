@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Character, CharacterImage } from '../../../types';
 import BBFrameTabView from './components/BBFrameTabView';
 import DataTabView from './components/DataTabView';
@@ -20,23 +20,26 @@ const CharacterViewer: React.FC<CharacterViewerProps> = ({
     bbFrameHtml,
     isOwner,
     userCanViewMatureContent,
-    genres
+    genres,
 }) => {
-    const [activeTab, setActiveTab] = useState<'BBFrame' | 'Details' | 'Data'>('BBFrame');
+    const [activeTab, setActiveTab] = useState<'BBFrame' | 'Details' | 'Gallery' | 'Data'>('BBFrame');
 
-    useEffect(() => {
-    }, [activeTab]);
+    useEffect(() => {}, [activeTab]);
 
     const renderTabContent = () => {
         switch (activeTab) {
             case 'BBFrame':
-                return <BBFrameTabView
-                    bbFrameHtml={bbFrameHtml}
-                    matureContent={character.matureContent}
-                    userCanViewMatureContent={userCanViewMatureContent}
-                />;
+                return (
+                    <BBFrameTabView
+                        bbFrameHtml={bbFrameHtml}
+                        matureContent={character.matureContent}
+                        userCanViewMatureContent={userCanViewMatureContent}
+                    />
+                );
             case 'Details':
                 return <DetailsTabView character={character} genres={genres} />;
+            case 'Gallery':
+                return <GalleryTabView images={images} />;
             case 'Data':
                 return <DataTabView />;
             default:
@@ -49,13 +52,36 @@ const CharacterViewer: React.FC<CharacterViewerProps> = ({
             <div className="card-header">
                 <ul className="nav nav-tabs card-header-tabs" id="profileTab" role="tablist">
                     <li className="nav-item" role="presentation">
-                        <button className={`nav-link ${activeTab === 'BBFrame' ? 'active' : ''}`} onClick={() => setActiveTab('BBFrame')}>BBFrame</button>
+                        <button
+                            className={`nav-link ${activeTab === 'BBFrame' ? 'active' : ''}`}
+                            onClick={() => setActiveTab('BBFrame')}
+                        >
+                            BBFrame
+                        </button>
                     </li>
                     <li className="nav-item" role="presentation">
-                        <button className={`nav-link ${activeTab === 'Details' ? 'active' : ''}`} onClick={() => setActiveTab('Details')}>Details</button>
+                        <button
+                            className={`nav-link ${activeTab === 'Details' ? 'active' : ''}`}
+                            onClick={() => setActiveTab('Details')}
+                        >
+                            Details
+                        </button>
                     </li>
                     <li className="nav-item" role="presentation">
-                        <button className={`nav-link ${activeTab === 'Data' ? 'active' : ''}`} onClick={() => setActiveTab('Data')}>Data</button>
+                        <button
+                            className={`nav-link ${activeTab === 'Gallery' ? 'active' : ''}`}
+                            onClick={() => setActiveTab('Gallery')}
+                        >
+                            Gallery
+                        </button>
+                    </li>
+                    <li className="nav-item" role="presentation">
+                        <button
+                            className={`nav-link ${activeTab === 'Data' ? 'active' : ''}`}
+                            onClick={() => setActiveTab('Data')}
+                        >
+                            Data
+                        </button>
                     </li>
                 </ul>
             </div>

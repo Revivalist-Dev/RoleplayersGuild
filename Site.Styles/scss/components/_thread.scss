@@ -1,9 +1,0 @@
-// Styles for the User's threads
-
-// Styles for the private message thread view
-.thread-avatar {
-    width: 60px;
-    height: 60px;
-    object-fit: cover; // Prevents the image from being stretched or squished
-    flex-shrink: 0; // Prevents the flex container from shrinking the avatar
-}

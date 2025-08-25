@@ -18,8 +18,8 @@ const CharacterCard: React.FC<CharacterCardProps> = ({
 }) => {
     const [activeView, setActiveView] = useState<'card' | 'avatar'>('card');
 
-    const defaultAvatarUrl = "/images/Defaults/NewAvatar.png";
-    const defaultCardUrl = "/images/Defaults/NewCharacter.png";
+    const defaultAvatarUrl = '/images/Defaults/NewAvatar.png';
+    const defaultCardUrl = '/images/Defaults/NewCharacter.png';
 
     const profileUrl = `/Community/Characters/View/${characterId}`;
     const editUrl = `/User-Panel/My-Characters/Edit/${characterId}`;
@@ -36,17 +36,36 @@ const CharacterCard: React.FC<CharacterCardProps> = ({
                         <img src={cardImageUrl || defaultCardUrl} className="rpg-img img-fluid" alt={displayName} />
                     </div>
                     <div className={`avatar-view-container p-3 ${activeView !== 'avatar' ? 'd-none' : ''}`}>
-                        <img src={avatarImageUrl || defaultAvatarUrl} className="img-thumbnail mb-2" style={{ width: '150px', height: '150px' }} alt="Avatar Large" />
+                        <img
+                            src={avatarImageUrl || defaultAvatarUrl}
+                            className="img-thumbnail mb-2"
+                            style={{ width: '150px', height: '150px' }}
+                            alt="Avatar Large"
+                        />
                         <div className="d-flex justify-content-center gap-2">
-                            <img src={avatarImageUrl || defaultAvatarUrl} className="img-thumbnail" style={{ width: '75px', height: '75px' }} alt="Avatar Medium" />
-                            <img src={avatarImageUrl || defaultAvatarUrl} className="img-thumbnail" style={{ width: '50px', height: '50px' }} alt="Avatar Small" />
+                            <img
+                                src={avatarImageUrl || defaultAvatarUrl}
+                                className="img-thumbnail"
+                                style={{ width: '75px', height: '75px' }}
+                                alt="Avatar Medium"
+                            />
+                            <img
+                                src={avatarImageUrl || defaultAvatarUrl}
+                                className="img-thumbnail"
+                                style={{ width: '50px', height: '50px' }}
+                                alt="Avatar Small"
+                            />
                         </div>
                     </div>
                 </div>
                 {showAdminControls ? (
                     <div className="card-footer p-1 d-flex justify-content-around">
-                        <a className="btn btn-sm btn-primary" href={editUrl} title="Edit"><i className="bi bi-pencil"></i> Edit</a>
-                        <a className="btn btn-sm btn-secondary" href={profileUrl} title="View"><i className="bi bi-eye"></i> View</a>
+                        <a className="btn btn-sm btn-primary" href={editUrl} title="Edit">
+                            <i className="bi bi-pencil"></i> Edit
+                        </a>
+                        <a className="btn btn-sm btn-secondary" href={profileUrl} title="View">
+                            <i className="bi bi-eye"></i> View
+                        </a>
                     </div>
                 ) : (
                     <a href={profileUrl} className="card-footer p-1 text-decoration-none">
@@ -57,10 +76,18 @@ const CharacterCard: React.FC<CharacterCardProps> = ({
             {/* Controls Sidebar */}
             <div className="character-card-controls">
                 <div className="controls-box">
-                    <button className={`view-toggle-btn ${activeView === 'card' ? 'active' : ''}`} onClick={() => setActiveView('card')} title="Card View">
+                    <button
+                        className={`view-toggle-btn ${activeView === 'card' ? 'active' : ''}`}
+                        onClick={() => setActiveView('card')}
+                        title="Card View"
+                    >
                         <i className="bi bi-card-image"></i>
                     </button>
-                    <button className={`view-toggle-btn ${activeView === 'avatar' ? 'active' : ''}`} onClick={() => setActiveView('avatar')} title="Avatar View">
+                    <button
+                        className={`view-toggle-btn ${activeView === 'avatar' ? 'active' : ''}`}
+                        onClick={() => setActiveView('avatar')}
+                        title="Avatar View"
+                    >
                         <i className="bi bi-person-square"></i>
                     </button>
                 </div>

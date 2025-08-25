@@ -4,28 +4,15 @@
       "commandName": "Project",
       "dotnetRunMessages": true,
       "launchBrowser": true,
-      "applicationUrl": "https://localhost:7123;http://localhost:5123",
       "environmentVariables": {
-        "ASPNETCORE_ENVIRONMENT": "Development",
-        "DOTNET_WATCH_SUPPRESS_BROWSER_REFRESH": "true",
-        "ASPNETCORE_HOSTINGSTARTUPASSEMBLIES": ""
-      }
-    },
-    "RPG_PublicTest": {
-      "commandName": "Project",
-      "dotnetRunMessages": true,
-      "launchBrowser": true,
-      "applicationUrl": "https://localhost:7123;http://localhost:5123",
-      "environmentVariables": {
-        "ASPNETCORE_ENVIRONMENT": "PublicTest",
-        "DOTNET_WATCH_SUPPRESS_BROWSER_REFRESH": "true"
+        "ASPNETCORE_ENVIRONMENT": "Development"
       }
     },
     "RPG_Release": {
       "commandName": "Project",
       "dotnetRunMessages": true,
       "launchBrowser": true,
-      "applicationUrl": "https://localhost:7123;http://localhost:5123",
+      "applicationUrl": "http://localhost:8080",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Release",
         "DOTNET_WATCH_SUPPRESS_BROWSER_REFRESH": "true"

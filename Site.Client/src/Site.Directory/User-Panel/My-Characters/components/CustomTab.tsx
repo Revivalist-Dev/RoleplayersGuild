@@ -27,7 +27,7 @@ const CustomTab: React.FC<CustomTabProps> = ({ character, onUpdate }) => {
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         const { name, value, type } = e.target;
         const inputValue = type === 'checkbox' ? (e.target as HTMLInputElement).checked : value;
-        setFormData(prev => ({ ...prev, [name]: inputValue }));
+        setFormData((prev) => ({ ...prev, [name]: inputValue }));
     };
 
     const handleSave = async (e: React.FormEvent) => {
@@ -58,11 +58,15 @@ const CustomTab: React.FC<CustomTabProps> = ({ character, onUpdate }) => {
                     checked={formData.isEnabled}
                     onChange={handleChange}
                 />
-                <label className="form-check-label" htmlFor="isEnabled">Enable my custom profile</label>
+                <label className="form-check-label" htmlFor="isEnabled">
+                    Enable my custom profile
+                </label>
             </div>
 
             <div className="mb-3">
-                <label htmlFor="profileCss" className="form-label">Profile CSS</label>
+                <label htmlFor="profileCss" className="form-label">
+                    Profile CSS
+                </label>
                 <textarea
                     id="profileCss"
                     name="profileCss"
@@ -75,7 +79,9 @@ const CustomTab: React.FC<CustomTabProps> = ({ character, onUpdate }) => {
             </div>
 
             <div className="mb-3">
-                <label htmlFor="profileHtml" className="form-label">Profile HTML</label>
+                <label htmlFor="profileHtml" className="form-label">
+                    Profile HTML
+                </label>
                 <textarea
                     id="profileHtml"
                     name="profileHtml"
@@ -88,17 +94,19 @@ const CustomTab: React.FC<CustomTabProps> = ({ character, onUpdate }) => {
             </div>
 
             <div className="d-flex justify-content-between align-items-center">
-                <a className="btn btn-secondary" target="_blank" href={`/Community/Characters/View/${character.characterId}`}>View Profile</a>
+                <a
+                    className="btn btn-secondary"
+                    target="_blank"
+                    href={`/Community/Characters/View/${character.characterId}`}
+                >
+                    View Profile
+                </a>
                 <button type="submit" className="btn btn-primary" disabled={isSaving}>
                     {isSaving ? 'Saving...' : 'Save Changes'}
                 </button>
             </div>
 
-            {status && (
-                <div className={`mt-3 alert alert-${status.type}`}>
-                    {status.message}
-                </div>
-            )}
+            {status && <div className={`mt-3 alert alert-${status.type}`}>{status.message}</div>}
         </form>
     );
 };

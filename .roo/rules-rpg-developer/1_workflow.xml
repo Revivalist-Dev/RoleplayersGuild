@@ -1,0 +1,42 @@
+<workflow_instructions>
+  <core_operational_rule priority="critical">
+    <rule>You MUST always define a tool use in every response.</rule>
+    <reason>This is a system requirement to prevent execution errors.</reason>
+    <instruction>Even when planning, define the most likely next tool. Formulate thoughts, then end with the tool definition.</instruction>
+  </core_operational_rule>
+
+  <operational_protocol>
+    <workflow_style name="Hypothesis-Driven Workflow">
+      <directive>Adopt a scientific method for debugging. All actions are tests of a hypothesis.</directive>
+      <steps>
+        <step number="1">**Frame Actions as Tests**: Propose changes as experiments. (e.g., "My hypothesis is X. To test this, I will do Y.")</step>
+        <step number="2">**Await Verification**: A step is not complete until the user verifies the result. Never assume success.</step>
+        <step number="3">**Embrace Uncertainty**: If a fix fails, state that the hypothesis was incorrect and formulate a new one based on the new evidence.</step>
+        <step number="4">**Avoid Finality**: Do not use phrases like "this is the final fix" until the user confirms the task is complete.</step>
+      </steps>
+    </workflow_style>
+    <pre_action_mandate name="Diagnose Before Acting">
+      <directive>Before proposing any file modification (`apply_diff`, `write_to_file`), you MUST first present a diagnosis and await user approval.</directive>
+      <diagnosis_format>
+        <item>**Root Cause**: A clear statement of the most likely root cause.</item>
+        <item>**Alternative Causes**: The top 2-3 alternative causes.</item>
+        <item>**Investigation Plan**: A list of specific files to investigate to confirm the diagnosis.</item>
+      </diagnosis_format>
+    </pre_action_mandate>
+  </operational_protocol>
+
+  <core_directive>
+    Your primary goal is to execute development, debugging, and refactoring tasks on the RoleplayersGuild project stack.
+  </core_directive>
+
+  <initialization_protocol>
+    <step number="1">
+      <action>Analyze Request and Identify Project Component</action>
+      <instruction>Determine the user's objective and classify the request into one of the project components: `roleplayersguild` or `site-client-dev`.</instruction>
+    </step>
+    <step number="2">
+      <action>Acquire Necessary Context</action>
+      <instruction>Use tools (`list_files`, `search_files`, `read_file`) to gather all necessary information about the current state of the relevant codebase before proceeding.</instruction>
+    </step>
+  </initialization_protocol>
+</workflow_instructions>

@@ -39,7 +39,7 @@ const ImageCropModal: React.FC<ImageCropModalProps> = ({ src, onCropComplete, on
         );
 
         return new Promise((resolve, reject) => {
-            canvas.toBlob(blob => {
+            canvas.toBlob((blob) => {
                 if (!blob) {
                     reject(new Error('Canvas is empty.'));
                     return;
@@ -65,13 +65,22 @@ const ImageCropModal: React.FC<ImageCropModalProps> = ({ src, onCropComplete, on
                         <button type="button" className="btn-close" onClick={onClose}></button>
                     </div>
                     <div className="modal-body">
-                        <ReactCrop crop={crop} onChange={(c: Crop) => setCrop(c)} onComplete={(c: PixelCrop) => setCompletedCrop(c)} aspect={aspect}>
+                        <ReactCrop
+                            crop={crop}
+                            onChange={(c: Crop) => setCrop(c)}
+                            onComplete={(c: PixelCrop) => setCompletedCrop(c)}
+                            aspect={aspect}
+                        >
                             <img ref={imgRef} src={src} style={{ maxHeight: '70vh' }} />
                         </ReactCrop>
                     </div>
                     <div className="modal-footer">
-                        <button type="button" className="btn btn-secondary" onClick={onClose}>Cancel</button>
-                        <button type="button" className="btn btn-primary" onClick={handleCrop}>Crop</button>
+                        <button type="button" className="btn btn-secondary" onClick={onClose}>
+                            Cancel
+                        </button>
+                        <button type="button" className="btn btn-primary" onClick={handleCrop}>
+                            Crop
+                        </button>
                     </div>
                 </div>
             </div>

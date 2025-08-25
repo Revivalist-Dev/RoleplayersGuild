@@ -282,7 +282,7 @@ namespace RoleplayersGuild.Site.Services.DataServices
 
         public Task UpdateUserLastActionAsync(int userId)
         {
-            return ExecuteAsync("""UPDATE "Users" SET "LastAction" = NOW() AT TIME ZONE 'UTC' WHERE "UserId" = @UserId""", new { UserId = userId });
+            return ExecuteAsync("""UPDATE "Users" SET "LastAction" = NOW() WHERE "UserId" = @UserId""", new { UserId = userId });
         }
 
         public Task<int> GetOnlineUserCountAsync()

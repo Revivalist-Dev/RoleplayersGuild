@@ -16,7 +16,20 @@ interface ImageManagerProps {
     selectedImageId?: number | null;
 }
 
-const ImageManager: React.FC<ImageManagerProps> = ({ images, onCaptionChange, onDelete, onImageScaleChange, onUpload, onSaveChanges, isSaving, isEditable, selectedImageId, onResizeStart, onResizeEnd, onResize }) => {
+const ImageManager: React.FC<ImageManagerProps> = ({
+    images,
+    onCaptionChange,
+    onDelete,
+    onImageScaleChange,
+    onUpload,
+    onSaveChanges,
+    isSaving,
+    isEditable,
+    selectedImageId,
+    onResizeStart,
+    onResizeEnd,
+    onResize,
+}) => {
     const [selectedImageIds, setSelectedImageIds] = useState<number[]>([]);
     const listRef = useRef<HTMLUListElement>(null);
 
@@ -30,14 +43,12 @@ const ImageManager: React.FC<ImageManagerProps> = ({ images, onCaptionChange, on
     }, [selectedImageId]);
 
     const handleSelectionChange = (id: number) => {
-        setSelectedImageIds(prev =>
-            prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
-        );
+        setSelectedImageIds((prev) => (prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]));
     };
 
     const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.checked) {
-            setSelectedImageIds(images.map(i => i.characterImageId));
+            setSelectedImageIds(images.map((i) => i.characterImageId));
         } else {
             setSelectedImageIds([]);
         }
@@ -46,7 +57,7 @@ const ImageManager: React.FC<ImageManagerProps> = ({ images, onCaptionChange, on
     const handleDeleteSelected = () => {
         if (selectedImageIds.length === 0) return;
         if (window.confirm(`Are you sure you want to delete ${selectedImageIds.length} selected images?`)) {
-            selectedImageIds.forEach(id => onDelete(id));
+            selectedImageIds.forEach((id) => onDelete(id));
             setSelectedImageIds([]);
         }
     };
@@ -58,12 +69,18 @@ const ImageManager: React.FC<ImageManagerProps> = ({ images, onCaptionChange, on
                     <h5 className="mb-0">Manage Images</h5>
                     <div>
                         <input type="checkbox" onChange={handleSelectAll} />
-                        <button className="btn btn-sm btn-outline-danger ms-2" onClick={handleDeleteSelected} disabled={selectedImageIds.length === 0}>Delete Selected</button>
+                        <button
+                            className="btn btn-sm btn-outline-danger ms-2"
+                            onClick={handleDeleteSelected}
+                            disabled={selectedImageIds.length === 0}
+                        >
+                            Delete Selected
+                        </button>
                     </div>
                 </div>
                 <div className="card-body" style={{ height: '400px', overflowY: 'scroll' }}>
                     <ul className="list-group list-group-flush" ref={listRef}>
-                        {images.map(image => (
+                        {images.map((image) => (
                             <ImageItem
                                 key={image.characterImageId}
                                 image={image}
@@ -81,21 +98,35 @@ const ImageManager: React.FC<ImageManagerProps> = ({ images, onCaptionChange, on
                     </ul>
                 </div>
             </div>
-            <form onSubmit={(e) => { e.preventDefault(); onUpload((document.getElementById('gallery-upload-input') as HTMLInputElement).files); }} className="card mt-3">
-                <div className="card-header"><h5 className="mb-0">Upload New Images</h5></div>
+            <form
+                onSubmit={(e) => {
+                    e.preventDefault();
+                    onUpload((document.getElementById('gallery-upload-input') as HTMLInputElement).files);
+                }}
+                className="card mt-3"
+            >
+                <div className="card-header">
+                    <h5 className="mb-0">Upload New Images</h5>
+                </div>
                 <div className="card-body">
                     <input id="gallery-upload-input" type="file" multiple className="form-control" accept="image/*" />
                 </div>
                 <div className="card-footer text-end">
-                    <button type="submit" className="btn btn-success" disabled={isSaving}>Upload</button>
+                    <button type="submit" className="btn btn-success" disabled={isSaving}>
+                        Upload
+                    </button>
                 </div>
             </form>
             <div className="card mt-3">
-                <div className="card-header"><h5 className="mb-0">Save Changes</h5></div>
+                <div className="card-header">
+                    <h5 className="mb-0">Save Changes</h5>
+                </div>
                 <div className="card-body">
                     <p className="small text-muted">Save any changes to image names, sizes, or sort order.</p>
                     <div className="d-grid">
-                        <button type="button" className="btn btn-primary" disabled={isSaving} onClick={onSaveChanges}>Save Gallery Changes</button>
+                        <button type="button" className="btn btn-primary" disabled={isSaving} onClick={onSaveChanges}>
+                            Save Gallery Changes
+                        </button>
                     </div>
                 </div>
             </div>
@@ -103,13 +134,46 @@ const ImageManager: React.FC<ImageManagerProps> = ({ images, onCaptionChange, on
     );
 };
 
-const ImageItem = ({ image, onCaptionChange, onDelete, onImageScaleChange, isSelected, onSelectionChange, isEditable, onResizeStart, onResizeEnd, onResize }: { image: CharacterImage, onCaptionChange: (id: number, caption: string) => void, onDelete: (id: number) => void, onImageScaleChange: (id: number, scale: number) => void, isSelected: boolean, onSelectionChange: (id: number) => void, isEditable: boolean, onResizeStart: (id: number) => void, onResizeEnd: (id: number) => void, onResize: (id: number) => void }) => {
-
+const ImageItem = ({
+    image,
+    onCaptionChange,
+    onDelete,
+    onImageScaleChange,
+    isSelected,
+    onSelectionChange,
+    isEditable,
+    onResizeStart,
+    onResizeEnd,
+    onResize,
+}: {
+    image: CharacterImage;
+    onCaptionChange: (id: number, caption: string) => void;
+    onDelete: (id: number) => void;
+    onImageScaleChange: (id: number, scale: number) => void;
+    isSelected: boolean;
+    onSelectionChange: (id: number) => void;
+    isEditable: boolean;
+    onResizeStart: (id: number) => void;
+    onResizeEnd: (id: number) => void;
+    onResize: (id: number) => void;
+}) => {
     return (
         <li className="list-group-item" data-id={image.characterImageId}>
             <div className="d-flex align-items-center mb-2">
-                {isEditable && <input type="checkbox" checked={isSelected} onChange={() => onSelectionChange(image.characterImageId)} className="me-2" />}
-                <img src={image.characterImageUrl} alt={image.imageCaption || 'thumbnail'} className="img-thumbnail me-3" style={{ width: '60px', height: '60px', objectFit: 'cover' }} />
+                {isEditable && (
+                    <input
+                        type="checkbox"
+                        checked={isSelected}
+                        onChange={() => onSelectionChange(image.characterImageId)}
+                        className="me-2"
+                    />
+                )}
+                <img
+                    src={image.characterImageUrl}
+                    alt={image.imageCaption || 'thumbnail'}
+                    className="img-thumbnail me-3"
+                    style={{ width: '60px', height: '60px', objectFit: 'cover' }}
+                />
                 <input
                     type="text"
                     className="form-control form-control-sm"
@@ -118,7 +182,15 @@ const ImageItem = ({ image, onCaptionChange, onDelete, onImageScaleChange, isSel
                     onChange={(e) => onCaptionChange(image.characterImageId, e.target.value)}
                     disabled={!isEditable}
                 />
-                {isEditable && <button className="btn btn-sm btn-outline-danger ms-2" title="Delete" onClick={() => onDelete(image.characterImageId)}><i className="bi bi-trash"></i></button>}
+                {isEditable && (
+                    <button
+                        className="btn btn-sm btn-outline-danger ms-2"
+                        title="Delete"
+                        onClick={() => onDelete(image.characterImageId)}
+                    >
+                        <i className="bi bi-trash"></i>
+                    </button>
+                )}
             </div>
             {isEditable && (
                 <div>

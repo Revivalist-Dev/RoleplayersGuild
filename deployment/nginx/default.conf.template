@@ -1,0 +1,63 @@
+# This map block creates a variable $connection_upgrade that will be set to "upgrade"
+# if the client sends an "Upgrade" header, and "close" otherwise. This is the
+# standard and most reliable way to handle WebSocket proxying in NGINX.
+map $http_upgrade $connection_upgrade {
+    default upgrade;
+    ''      close;
+}
+
+server {
+    listen 80;
+    server_name localhost;
+
+    # Route requests for Vite dev server to the site-client-dev container
+    location /vite-dev/ {
+        proxy_pass http://site-client-dev:${VITE_PORT};
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection $connection_upgrade;
+        proxy_set_header Host $host;
+        proxy_cache_bypass $http_upgrade;
+    }
+
+    # Route requests for fonts to the Vite dev server
+    location /fonts/ {
+        proxy_pass http://roleplayersguild:${HTTP_PORT};
+    }
+
+    # Route requests for user-uploaded content to the Minio S3 service.
+    # This rule must come *before* the general /images/ rule.
+    location /images/UserFiles/ {
+        # The bucket name is defined in docker-compose.yml
+        proxy_pass http://minio:${S3_PORT}/localimages-roleplayersguild-com/images/UserFiles/;
+        proxy_set_header Host $host;
+    }
+
+    location /images/ {
+        proxy_pass http://roleplayersguild:${HTTP_PORT};
+    }
+
+    # Route SignalR hub requests to the main application, ensuring WebSocket support
+    location /chatHub {
+        proxy_pass http://roleplayersguild:${HTTP_PORT};
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection $connection_upgrade;
+        proxy_set_header Host $host;
+        proxy_cache_bypass $http_upgrade;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    # Route all other requests to the main RoleplayersGuild application
+    location / {
+        proxy_pass http://roleplayersguild:${HTTP_PORT};
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection $connection_upgrade;
+        proxy_set_header Host $host;
+        proxy_cache_bypass $http_upgrade;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}

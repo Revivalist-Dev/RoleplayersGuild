@@ -1,0 +1,17 @@
+/*
+    Site Header
+    - Styles for the main sticky navigation bar container.
+*/
+
+.site-header {
+    font-family: 'Lexend Deca', sans-serif;
+    background-color: #35384C;
+    width: 100%;
+    z-index: 1030; /* Ensure it's above content but below modals */
+    border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+}
+
+/* The sticky header is now outside the main content, so no extra padding is needed. */
+.rpg-main-content {
+    /* This class is primarily used by the pre-loader to fade in content. */
+}

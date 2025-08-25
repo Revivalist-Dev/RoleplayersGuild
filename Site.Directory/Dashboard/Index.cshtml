@@ -31,6 +31,7 @@
             </div>
         </div>
     </div>
+
 }
 
 @section cphRightCol {
@@ -41,13 +42,19 @@
         </div>
     </div>
 
-    @* SIMPLIFIED Chat Room Panel *@
-    <div class="card border-primary mb-4">
-        <div class="card-header">
-            <h5 class="mb-0">Popular Chat Rooms</h5>
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <div class="card border-primary h-100">
+                <div class="card-header">
+                    <h5 class="mb-0">Popular Chat Rooms</h5>
+                </div>
+                <div id="chatroom-list-container" style="min-height: 250px;">
+                    <div class="text-center my-4 p-4"><div class="spinner-border" role="status"><span class="visually-hidden">Loading...</span></div></div>
+                </div>
+            </div>
         </div>
-        <div id="chatroom-list-container">
-            <div class="text-center my-4 p-4"><div class="spinner-border" role="status"><span class="visually-hidden">Loading...</span></div></div>
+        <div class="col-md-4">
+            @await Component.InvokeAsync("AdBanner", new { adType = "Box" })
         </div>
     </div>
 

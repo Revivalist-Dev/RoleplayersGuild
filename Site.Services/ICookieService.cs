@@ -7,6 +7,7 @@ namespace RoleplayersGuild.Site.Services
         void RemoveCookie(string name);
         string? GetCookie(string name);
         void SetCookie(string name, string value, int expiryDays = 365);
+        void SetPublicCookie(string name, string value, int expiryDays = 365);
 
         bool GetUserPrefersMature();
     }

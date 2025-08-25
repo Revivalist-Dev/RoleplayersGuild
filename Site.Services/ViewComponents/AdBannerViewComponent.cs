@@ -1,50 +1,40 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using RoleplayersGuild.Site.Model;
-using RoleplayersGuild.Site.Services;
-using RoleplayersGuild.Site.Services.DataServices;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.Extensions.Hosting;
 using System.Threading.Tasks;
 
 namespace RoleplayersGuild.Site.Services.ViewComponents
 {
-    // A simple model to pass ad data to the view
     public class AdBannerViewModel
     {
-        public string? ImageUrl { get; set; }
-        public string? LinkUrl { get; set; }
+        public bool IsDevelopment { get; set; }
+        public string AdType { get; set; } = "Default";
     }
 
     public class AdBannerViewComponent : ViewComponent
     {
-        private readonly IMiscDataService _miscDataService;
-        private readonly IUserService _userService; // Using IUserService to check membership
+        private readonly IUserService _userService;
+        private readonly IWebHostEnvironment _env;
 
-        public AdBannerViewComponent(IMiscDataService miscDataService, IUserService userService)
+        public AdBannerViewComponent(IUserService userService, IWebHostEnvironment env)
         {
-            _miscDataService = miscDataService;
             _userService = userService;
+            _env = env;
         }
 
-        public async Task<IViewComponentResult> InvokeAsync()
+        public async Task<IViewComponentResult> InvokeAsync(string adType = "Default")
         {
-            // Check if the user is a paying member. If so, don't show an ad.
+            // If the user has an active membership, don't show any ad.
             if (await _userService.CurrentUserHasActiveMembershipAsync())
             {
-                return Content(string.Empty); // Return empty content, hiding the ad
+                return Content(string.Empty);
             }
 
-            // Fetch a random ad from the database (AdType 1 for top banner)
-            var ad = await _miscDataService.GetRandomAdAsync(1);
-
-            if (ad is null)
-            {
-                // You could also render a default Google AdSense block here if no database ad is found
-                return Content(string.Empty); // Or return nothing if no ad is available
-            }
-
+            // Otherwise, prepare the model for the view.
             var model = new AdBannerViewModel
             {
-                ImageUrl = ad.AdImageUrl,
-                LinkUrl = ad.AdLink
+                IsDevelopment = _env.IsDevelopment(),
+                AdType = adType
             };
 
             return View(model);

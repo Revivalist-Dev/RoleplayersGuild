@@ -1,6 +1,0 @@
-[submodule "reference/fserv"]
-	path = reference/fserv
-	url = https://github.com/f-list/fserv.git
-[submodule "reference/horizon"]
-	path = reference/horizon
-	url = https://github.com/Fchat-Horizon/Horizon.git

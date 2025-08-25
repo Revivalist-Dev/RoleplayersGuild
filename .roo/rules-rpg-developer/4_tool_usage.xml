@@ -1,0 +1,100 @@
+<tool_usage_guide>
+  <tool_priorities>
+    <priority level="1">
+      <tool>search_files</tool>
+      <when>Always use this first to find relevant code when you don't have a specific file path.</when>
+      <why>It's the most effective way to discover where functionality is implemented across the project.</why>
+    </priority>
+    <priority level="2">
+      <tool>read_file</tool>
+      <when>After identifying key files with `search_files` or when the user provides a direct path.</when>
+      <why>You must get the full context and exact content of a file before attempting to modify it.</why>
+    </priority>
+    <priority level="3">
+      <tool>apply_diff</tool>
+      <when>For making targeted changes to existing files.</when>
+      <why>It is safer and more precise than overwriting an entire file with `write_to_file`.</why>
+    </priority>
+    <priority level="4">
+      <tool>write_to_file</tool>
+      <when>Only for creating new files.</when>
+      <why>Overwriting existing files with this tool is risky and should be avoided unless absolutely necessary.</why>
+    </priority>
+  </tool_priorities>
+
+  <platform_specific_commands>
+    <platform os="windows" shell="powershell">
+      <rule name="CommandChaining">
+        <description>When chaining multiple commands in a single line, you MUST use a semicolon (;) as the separator.</description>
+        <good_example>docker stop site-client-dev; docker rm site-client-dev</good_example>
+        <bad_example>docker stop site-client-dev && docker rm site-client-dev</bad_example>
+      </rule>
+    </platform>
+  </platform_specific_commands>
+
+  <cli_tool_examples>
+    <tool name="dotnet">
+      <description>General .NET CLI commands for building and running projects.</description>
+      <commands>
+        <command>
+          <syntax>dotnet build [PROJECT_PATH]</syntax>
+          <description>Builds the specified project.</description>
+          <example>dotnet build RoleplayersGuild.csproj</example>
+        </command>
+        <command>
+          <syntax>dotnet watch run --project [PROJECT_PATH]</syntax>
+          <description>Runs the project with hot reload enabled.</description>
+          <example>dotnet watch run --project RoleplayersGuild.csproj</example>
+        </command>
+        <command>
+          <syntax>dotnet tool restore</syntax>
+          <description>Restores local .NET tools defined in `.config/dotnet-tools.json`.</description>
+        </command>
+      </commands>
+    </tool>
+    <tool name="dotnet-fm">
+      <description>CLI for managing FluentMigrator database migrations. Must be run from the root directory.</description>
+      <commands>
+        <command>
+          <syntax>dotnet fm list migrations -p "RoleplayersGuild.csproj" -c "DefaultConnection" --preview</syntax>
+          <description>Lists all migrations and their current status.</description>
+        </command>
+        <command>
+          <syntax>dotnet fm migrate up -p "RoleplayersGuild.csproj" -c "DefaultConnection" --preview</syntax>
+          <description>Applies all pending upward migrations.</description>
+        </command>
+        <command>
+          <syntax>dotnet fm migrate down [VERSION] -p "RoleplayersGuild.csproj" -c "DefaultConnection" --preview</syntax>
+          <description>Rolls back a specific migration by its version number.</description>
+          <example>dotnet fm migrate down 202508130001 -p "RoleplayersGuild.csproj" -c "DefaultConnection" --preview</example>
+        </command>
+      </commands>
+    </tool>
+    <tool name="docker-compose">
+      <description>Commands for running the application stack using Docker Compose.</description>
+      <commands>
+        <command>
+          <syntax>docker-compose --profile dev up</syntax>
+          <description>Starts the local development environment with the Vite dev server and HMR.</description>
+        </command>
+        <command>
+          <syntax>docker-compose --profile prod up</syntax>
+          <description>Starts the production simulation environment with Nginx serving static assets.</description>
+        </command>
+        <command>
+          <syntax>docker-compose down</syntax>
+          <description>Stops and removes all running containers for the project.</description>
+        </command>
+        <command>
+          <syntax>docker-compose logs -f [SERVICE_NAME]</syntax>
+          <description>Follows the logs for all services or a specific service.</description>
+          <example>docker-compose logs -f roleplayersguild</example>
+        </command>
+        <command>
+          <syntax>docker-compose --profile dev up --build</syntax>
+          <description>Forces a rebuild of the Docker images before starting the services.</description>
+        </command>
+      </commands>
+    </tool>
+  </cli_tool_examples>
+</tool_usage_guide>

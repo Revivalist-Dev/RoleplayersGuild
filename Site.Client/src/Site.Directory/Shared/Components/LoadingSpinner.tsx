@@ -10,10 +10,7 @@ const LoadingSpinner: React.FC = () => {
         <div className={styles.loader}>
             {/* We now generate the 9 cells dynamically with a map */}
             {delayClasses.map((delayClass, index) => (
-                <div
-                    key={index}
-                    className={`${styles.cell} ${styles[delayClass]}`}
-                ></div>
+                <div key={index} className={`${styles.cell} ${styles[delayClass]}`}></div>
             ))}
         </div>
     );

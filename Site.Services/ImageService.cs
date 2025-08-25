@@ -23,9 +23,9 @@ namespace RoleplayersGuild.Site.Services
                             ILogger<ImageService> logger, IUserDataService userDataService, IAmazonS3? s3Client = null)
         {
             _webHostEnvironment = webHostEnvironment;
-            _imageHandlingMode = config.GetValue<string>("ImageHandling", "S3")!;
             _awsSettings = awsSettings.Value;
             _imageSettings = imageSettings.Value;
+            _imageHandlingMode = _imageSettings.ImageHandling;
             _s3Client = s3Client;
             _logger = logger;
             _userDataService = userDataService;

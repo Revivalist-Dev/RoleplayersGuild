@@ -2,6 +2,8 @@
 {
     public class ImageSettings
     {
+        public string ImageHandling { get; set; } = string.Empty;
+
         // Membership Limits & File Sizes
         public int MaxPerCharacter { get; set; }
         public int BronzeMemberMax { get; set; }

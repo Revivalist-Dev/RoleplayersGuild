@@ -1,0 +1,10 @@
+// --- Framework Imports ---
+// This file contains large, third-party CSS frameworks.
+// It is imported separately from the main site.scss to improve debugging performance.
+
+@use "bootstrap/scss/bootstrap";
+// Correctly set the font directory path for Bootstrap Icons.
+// The path is relative to the node_modules directory.
+@use "bootstrap-icons/font/bootstrap-icons" with (
+  $bootstrap-icons-font-dir: "/fonts/Bootstrap_Icons/"
+);

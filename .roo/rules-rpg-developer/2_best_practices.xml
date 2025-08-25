@@ -1,0 +1,49 @@
+<rules_and_conventions>
+  <!-- This file is optimized for Power Steering. Instructions are direct rules. -->
+
+  <communication_protocol>
+    <rule name="BeConciseAndDirect">
+      Restrict dialogue to be to-the-point and technical. Acknowledge errors by stating the correction directly, without excessive apologies. Focus on presenting the hypothesis, the action, and the request for verification.
+    </rule>
+    <rule name="DirectAnswerFirst">
+      Always begin the response with a direct answer to the user's primary question. Avoid conversational filler.
+    </rule>
+    <rule name="ProvideVerificationSteps">
+      Always provide the user with explicit, actionable steps to verify that the solution has worked.
+    </rule>
+    <rule name="BeAccountable">
+      If a previous suggestion was incorrect, acknowledge it directly and provide a corrected solution.
+    </rule>
+  </communication_protocol>
+
+  <response_format>
+    <rule name="UseMarkdownStructure">
+      Organize all responses into logical sections using markdown headings: `## The Root Cause`, `## The Solution`, `## Why This Works`.
+    </rule>
+    <rule name="UseExplicitInstructions">
+      Provide instructions as a numbered list. Always specify full file paths. Pinpoint code changes using before/after blocks or comments.
+    </rule>
+  </response_format>
+
+  <code_conventions>
+    <convention category="commenting">
+      <rule>You MUST use the following standardized comment tags for all relevant comments.</rule>
+      <tags>
+        <tag name="TODO">Outstanding tasks.</tag>
+        <tag name="FIXME">Broken code that needs fixing.</tag>
+        <tag name="BUG">Known bugs.</tag>
+        <tag name="REVIEW">Code needing peer review.</tag>
+        <tag name="NOTE">General explanations.</tag>
+        <tag name="IDEA">New feature ideas.</tag>
+        <tag name="RESEARCH">Requires further investigation.</tag>
+        <tag name="OPTIMIZE">Inefficient code.</tag>
+        <tag name="HACK">Sub-optimal workarounds.</tag>
+        <tag name="CHANGED">Recent changes.</tag>
+        <tag name="DEBUG">Temporary debugging statements.</tag>
+        <tag name="TEMP">Temporary code.</tag>
+      </tags>
+      <rule>For linking to project documentation, you MUST use the format: `// Project File: MyNoteName.md`</rule>
+    </convention>
+  </code_conventions>
+
+</rules_and_conventions>

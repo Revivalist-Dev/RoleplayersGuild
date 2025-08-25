@@ -1,20 +1,51 @@
+# Build artifacts, compiled output, and packages
 **/bin/
 **/obj/
 **/node_modules/
-/packages/
-/Site.Client/dist/
-/Site.Client/build/
-/Site.Client/.vite/
+wwwroot/react-dist/
+wwwroot/site-dist/
+package-lock.json
+yarn.lock
+
+# Secrets and sensitive configuration
+Site.Certificates/
+.ebextensions/certificate.pfx
+appsettings.Development.json
+.env
+*.pfx
+*.pem
+*.key
+
+# IDE, user-specific, and local settings
 .vs/
 .vscode/
-*.suo
-*.user
-/User.Files/
-*.log
 .git/
 .github/
-.gitattributes
-.gitignore
-.gitmodules
-wwwroot\vendor*
-wwwroot\images*
+.pnotes/
+.roo/
+.userhub/
+Properties/launchSettings.json
+*.suo
+*.user
+
+# Third-party code, large references, and assets
+Project.References/
+Site.Client/public/images/
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.svg
+*.ico
+*.mp3
+*.wav
+*.ogg
+*.woff
+*.woff2
+*.ttf
+*.eot
+
+# Archives, logs, and other non-essential files
+*.zip
+*.log
+*.har

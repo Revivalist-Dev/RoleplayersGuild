@@ -1,69 +1,31 @@
-﻿# 🚀 Managing Your Project
+﻿# Site.Client NPM Commands and Tooling
 
-These commands are for the day-to-day tasks of running and building your application. They are shortcuts for the scripts defined in your package.json.
+This document provides an overview of the available `npm` scripts and the automated tooling configured for the `Site.Client` project.
 
-    npm run dev
+## Available Scripts
 
-        Starts the Vite development server with hot-reloading. This is what you'll use while actively coding your React components.
+You can run any of these scripts from the `Site.Client` directory using the `npm run <script_name>` command.
 
-    npm run build
+| Script            | Description                                                                                                                                                      |
+| :---------------- | :--------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `npm run dev`     | Starts the Vite development server with Hot Module Replacement (HMR). This is the primary command you will use during development.                               |
+| `npm run build`   | Compiles, bundles, and minifies all front-end assets (TypeScript, React, SASS, etc.) for production. The output is placed in the `wwwroot/react-dist` directory. |
+| `npm run check`   | Runs `depcheck` to analyze your `package.json` and identify any unused or missing dependencies.                                                                  |
+| `npm run lint`    | Runs ESLint to statically analyze your code for potential errors and style issues.                                                                               |
+| `npm run preview` | Starts a local server to preview the production build from the `wwwroot/react-dist` directory.                                                                   |
 
-        Checks your code for TypeScript errors and then builds the optimized, production-ready files into the ../wwwroot/react-dist folder for your C# application to use.
+## Automated Tooling
 
-    npm run storybook
+This project is equipped with a professional-grade tooling setup to automate code formatting and quality checks.
 
-        Starts the Storybook development server. Use this to build, view, and test your components in isolation.
+### Prettier
 
-    npm run lint
+- **Purpose:** An opinionated code formatter that ensures a consistent code style across the entire project.
+- **Configuration:** Rules are defined in the `.prettierrc.json` file.
+- **Usage:** Prettier is run automatically on every commit. You can also run it manually with `npx prettier --write .`.
 
-        Analyzes your code with ESLint to find and report potential errors or style issues.
+### Husky & lint-staged
 
-## 📦 Managing Dependencies (Packages)
-
-Use these commands to add, update, or remove libraries from your project.
-
-### Installation
-
-    npm install
-
-        Installs all dependencies listed in your package.json. Run this after cloning a project or when a teammate adds a new package.
-
-    npm install <package-name>
-
-        Adds a new package as a production dependency (e.g., npm install dayjs).
-
-    npm install <package-name> -D
-
-        Adds a new package as a development dependency (e.g., a testing tool). The -D is a shortcut for --save-dev.
-
-### Updating
-
-    npm outdated
-
-        Checks for newer versions of your installed packages and shows you a list of what's available to update.
-
-    npm update
-
-        Updates your packages to the latest versions allowed by the rules in your package.json.
-
-### Removing
-
-    npm uninstall <package-name>
-
-        Removes a package from your node_modules folder and updates your package.json.
-
-## 🛠️ Maintenance & Security
-
-These commands help you keep your project healthy and secure.
-
-    npm audit
-
-        Scans your project for known security vulnerabilities in your dependencies and provides a report.
-
-    npm audit fix
-
-        Attempts to automatically fix any reported vulnerabilities by updating packages to secure versions.
-
-    npm list --depth=0
-
-        Shows you a clean, top-level list of all the packages you have installed.
+- **Purpose:** This combination automates code quality checks before any code is committed to the repository.
+- **Configuration:** The `lint-staged` configuration is in `package.json`, and the Husky hook is in the `.husky` directory.
+- **Usage:** When you run `git commit`, Husky will trigger `lint-staged`, which will then run ESLint and Prettier on all the files you have staged for commit. This process is completely automatic. If there are any linting errors, the commit will be aborted, allowing you to fix the issues before trying again.

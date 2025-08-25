@@ -1,74 +1,138 @@
 services:
-  roleplayersguild:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    container_name: roleplayersguild
-    environment:
-      - ConnectionStrings__DefaultConnection=Host=host.docker.internal;Port=5432;Database=rpgdb-local;Username=postgres;Password=Hitoki1582!
-      - ImageHandling=S3 # We will use S3 mode, but point it to our local MinIO
-      - AwsSettings__ServiceURL=http://minio:9000
-      - AwsSettings__AccessKeyId=minioadmin
-      - AwsSettings__SecretAccessKey=minioadmin
-      - AwsSettings__BucketName=localimages-roleplayersguild-com
-      - AwsSettings__CloudFrontDomain=http://localhost:9000/localimages-roleplayersguild-com
+  # 1. Configuration Service (Runs First)
+  configurator:
+    image: node:lts-alpine
+    working_dir: /app/Site.Client
     volumes:
-      - dataprotection-keys:/root/.aspnet/DataProtection-Keys
-    depends_on:
-      - minio
+      - .:/app
+    command: sh -c "npm install && npm run config"
 
-  rpgateway:
-    build:
-      context: ../RPGateway
-      dockerfile: Dockerfile
-    container_name: rpgateway
-    depends_on:
-      - roleplayersguild
-
+  # 2. S3-Compatible Storage
   minio:
     image: minio/minio:latest
     container_name: minio
     ports:
-      - "9000:9000" # S3 API
-      - "9001:9001" # MinIO Console
+      - "${S3_PORT}:${S3_PORT}"
+      - "${S3_CONSOLE_PORT}:${S3_CONSOLE_PORT}"
     volumes:
       - ../RoleplayersGuild-Local/s3-data:/data
     environment:
       - MINIO_ROOT_USER=minioadmin
       - MINIO_ROOT_PASSWORD=minioadmin
-    command: server /data --console-address ":9001"
+    command: server /data --console-address ":${S3_CONSOLE_PORT}"
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
-      interval: 30s
-      timeout: 20s
+      test: ["CMD", "curl", "-f", "http://localhost:${S3_PORT}/minio/health/live"]
+      interval: 20s
+      timeout: 10s
       retries: 3
 
+  # 3. Bucket Creation Utility (Runs after MinIO is healthy)
   createbuckets:
     image: minio/mc
     depends_on:
-      - minio
+      minio:
+        condition: service_healthy
     entrypoint: >
       /bin/sh -c "
-      until /usr/bin/mc alias set local http://minio:9000 minioadmin minioadmin; do
-        echo '...waiting for minio...' && sleep 1;
-      done;
-      /usr/bin/mc mb local/localimages-roleplayersguild-com;
-      /usr/bin/mc anonymous set download local/localimages-roleplayersguild-com;
+      /usr/bin/mc alias set local http://minio:${S3_PORT} minioadmin minioadmin;
+      if /usr/bin/mc ls local/localimages-roleplayersguild-com > /dev/null 2>&1; then
+        echo 'Bucket local/localimages-roleplayersguild-com already exists.';
+      else
+        echo 'Bucket local/localimages-roleplayersguild-com not found. Creating...';
+        /usr/bin/mc mb local/localimages-roleplayersguild-com;
+        /usr/bin/mc anonymous set download local/localimages-roleplayersguild-com;
+      fi;
       "
 
+  # 4. Backend Application
+  roleplayersguild:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: build
+    container_name: roleplayersguild
+    working_dir: /app
+    command: ["dotnet", "watch", "run", "--project", "RoleplayersGuild.csproj", "--no-launch-profile", "--urls", "http://*:${HTTP_PORT}"]
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - DOTNET_USE_POLLING_FILE_WATCHER=true
+      - DOTNET_WATCH_SUPPRESS_BROWSER_REFRESH=true
+      - DOTNET_WATCH_RESTART_ON_RUDE_EDIT=true
+      - ConnectionStrings__DefaultConnection=Host=host.docker.internal;Port=${DB_PORT};Database=rpgdb-local;Username=postgres;Password=Hitoki1582!
+      - AwsSettings__ServiceURL=http://minio:${S3_PORT}
+      - AwsSettings__AccessKeyId=minioadmin
+      - AwsSettings__SecretAccessKey=minioadmin
+      - AwsSettings__BucketName=localimages-roleplayersguild-com
+    volumes:
+      # Mount the entire project directory for live code changes.
+      - .:/app
+      # Use anonymous volumes to "mask" the host's bin/obj folders.
+      # This forces the container to use its own, internally restored
+      # dependencies from the 'dotnet restore' step in the Dockerfile,
+      # preventing conflicts with the host's build artifacts.
+      - /app/bin
+      - /app/obj
+      - dataprotection-keys:/root/.aspnet/DataProtection-Keys
+    depends_on:
+      minio:
+        condition: service_healthy
+      configurator:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:${HTTP_PORT}/healthz"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+      start_period: 20s
+
+  # 5. Frontend Vite Dev Server
+  site-client-dev:
+    image: node:lts-alpine
+    container_name: site-client-dev
+    working_dir: /app/Site.Client
+    ports:
+      - "${VITE_PORT}:${VITE_PORT}"
+    volumes:
+      - .:/app
+      - /app/Site.Client/node_modules
+    environment:
+      - VITE_PORT=${VITE_PORT}
+      - HTTP_PORT=${HTTP_PORT}
+      - VITE_USE_POLLING=true
+    command: sh -c "apk add --no-cache curl git && npm install && npm run dev"
+    depends_on:
+      configurator:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:${VITE_PORT}/vite-dev/"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+      start_period: 20s
+
+  # 6. NGINX Reverse Proxy (Runs Last)
   nginx:
     build:
       context: ./deployment/nginx
       dockerfile: Dockerfile
     container_name: nginx
     ports:
-      - "80:80" # Expose Nginx on port 80 of the host
+      - "${HTTP_PORT}:80"
+    environment:
+      - HTTP_PORT=${HTTP_PORT}
+      - VITE_PORT=${VITE_PORT}
+      - S3_PORT=${S3_PORT}
     depends_on:
-      - rpgateway
+      roleplayersguild:
+        condition: service_healthy
+      site-client-dev:
+        condition: service_healthy
+    command: /bin/sh -c "envsubst '\$${HTTP_PORT} \$${VITE_PORT} \$${S3_PORT}' < /etc/nginx/conf.d/default.conf.template > /etc/nginx/conf.d/default.conf && nginx -g 'daemon off;'"
 
 networks:
   default:
     name: rpguild-network
+    driver: bridge
 
 volumes:
   dataprotection-keys:

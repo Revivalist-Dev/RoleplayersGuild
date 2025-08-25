@@ -1,3 +1,4 @@
+﻿/* LoadingSpinner.module.css */
 ﻿/* From Uiverse.io by alexruix, adapted for theming */
 .loader {
     --cell-size: 52px;
@@ -22,10 +23,9 @@
 }
 
 /* Dark Mode override sets the color to a vibrant purple */
-[data-theme="dark"] .cell {
-    --cell-color: #60EFFF;
+[data-theme='dark'] .cell {
+    --cell-color: #60efff;
 }
-
 
 /* Stagger the animation start time for each cell */
 .d-1 {

@@ -1,0 +1,4 @@
+# Ignore vendor directories and bundled output
+public/vendor/
+dist/
+wwwroot/

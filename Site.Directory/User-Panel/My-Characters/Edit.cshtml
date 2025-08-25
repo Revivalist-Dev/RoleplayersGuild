@@ -11,7 +11,8 @@
 
 <div id="react-root" style="min-height: 900px;">
     <div id="character-editor-root"
-         data-character-id="@Model.Input.CharacterId"
+         data-component="CharacterEditor"
+         data-props='{"characterId": @Model.Input.CharacterId}'
          data-initial-avatar-url="@Model.InitialAvatarUrl"
          data-initial-card-url="@Model.InitialCardUrl">
         @* This placeholder will be replaced by the React component *@
@@ -46,10 +47,6 @@
     </div>
 </div>
 
-@section head {
-    @await ViteAssets.RenderViteStyles()
-}
-
 @section Scripts {
-    @await ViteAssets.RenderViteScripts()
+    @await ViteAssets.RenderViteScripts("src/main.tsx")
 }

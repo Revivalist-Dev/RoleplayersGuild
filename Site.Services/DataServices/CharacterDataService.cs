@@ -120,7 +120,8 @@ namespace RoleplayersGuild.Site.Services.DataServices
             return maxImages - usedSlots > 0 ? maxImages - usedSlots : 0;
         }
 
-        public Task UpdateImageDetailsAsync(int imageId, string caption, int imageScale) => ExecuteAsync("""UPDATE "CharacterImages" SET "ImageCaption" = @caption, "ImageScale" = @imageScale WHERE "CharacterImageId" = @imageId""", new { imageId, caption, imageScale });
+        public Task UpdateImageDetailsAsync(int imageId, string caption, double? imageScale) => ExecuteAsync("""UPDATE "CharacterImages" SET "ImageCaption" = @caption, "ImageScale" = @imageScale WHERE "CharacterImageId" = @imageId""", new { imageId, caption, imageScale });
+        public Task UpdateImageSizeAsync(int imageId, int width, int height) => ExecuteAsync("""UPDATE "CharacterImages" SET "Width" = @width, "Height" = @height WHERE "CharacterImageId" = @imageId""", new { imageId, width, height });
         public Task DeleteImageRecordAsync(int imageId) => ExecuteAsync("""DELETE FROM "CharacterImages" WHERE "CharacterImageId" = @ImageId""", new { ImageId = imageId });
         public async Task UpdateImagePositionsAsync(List<int> imageIds)
         {
@@ -154,7 +155,7 @@ namespace RoleplayersGuild.Site.Services.DataServices
 
             if (screenStatus == "OnlineCharacters")
             {
-                whereClauses.Add("""u."LastAction" > (NOW() AT TIME ZONE 'UTC' - interval '15 minute') AND u."ShowWhenOnline" = TRUE""");
+                whereClauses.Add("""u."LastAction" > (NOW() - interval '15 minute') AND u."ShowWhenOnline" = TRUE""");
             }
 
             string sql = $"""

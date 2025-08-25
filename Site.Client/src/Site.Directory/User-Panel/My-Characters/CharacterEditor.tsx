@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 
 // Import Components
@@ -36,7 +36,7 @@ const CharacterEditor: React.FC<CharacterEditorProps> = ({ characterId }) => {
 
             const [characterResponse, lookupsResponse] = await Promise.all([
                 characterId > 0 ? axios.get<EditorData>(`/api/characters/${characterId}`) : Promise.resolve(null),
-                axios.get<EditorLookups>('/api/characters/editor-lookups')
+                axios.get<EditorLookups>('/api/characters/editor-lookups'),
             ]);
 
             setLookupData(lookupsResponse.data);
@@ -74,11 +74,16 @@ const CharacterEditor: React.FC<CharacterEditorProps> = ({ characterId }) => {
                 };
                 setEditorData({
                     character: newCharacter,
-                    selectedGenreIds: [],
+                    selectedGenreIds: [] as number[],
                     images: [],
                     inlines: [],
                     avatarUrl: null,
-                    cardUrl: null
+                    cardUrl: null,
+                    // Add missing properties with default values
+                    bbFrameHtml: '',
+                    isOwner: true, // A new character is always owned by the creator
+                    userCanViewMatureContent: false, // Default to false for safety
+                    genres: [],
                 });
             }
         } catch (err) {
@@ -93,9 +98,8 @@ const CharacterEditor: React.FC<CharacterEditorProps> = ({ characterId }) => {
         fetchInitialData();
     }, [fetchInitialData]);
 
-
     const handleGalleryUpload = (newImage: CharacterImage) => {
-        setGalleryImages(prev => [newImage, ...prev]);
+        setGalleryImages((prev) => [newImage, ...prev]);
     };
 
     const handleAvatarChange = (newAvatarUrl: string) => {
@@ -119,38 +123,41 @@ const CharacterEditor: React.FC<CharacterEditorProps> = ({ characterId }) => {
 
         switch (activeTab) {
             case 'BBFrame':
-                return <BBFrameTab
-                    characterId={characterId}
-                    initialBBFrame={editorData.character.characterBBFrame}
-                    inlines={inlines}
-                    onUpdate={fetchInitialData}
-                    onInlinesChange={handleInlinesChange}
-                />;
+                return (
+                    <BBFrameTab
+                        characterId={characterId}
+                        initialBBFrame={editorData.character.characterBBFrame}
+                        inlines={inlines}
+                        onUpdate={fetchInitialData}
+                        onInlinesChange={handleInlinesChange}
+                    />
+                );
             case 'Details':
-                return <DetailsTab
-                    character={editorData.character}
-                    lookups={lookupData}
-                    selectedGenres={editorData.selectedGenreIds}
-                    onSave={fetchInitialData}
-                    avatarUrl={avatarUrl}
-                    cardUrl={cardUrl}
-                    onAvatarChange={handleAvatarChange}
-                    onCardChange={handleCardChange}
-                />;
+                return (
+                    <DetailsTab
+                        character={editorData.character}
+                        lookups={lookupData}
+                        selectedGenres={editorData.selectedGenreIds}
+                        onSave={fetchInitialData}
+                        avatarUrl={avatarUrl}
+                        cardUrl={cardUrl}
+                        onAvatarChange={handleAvatarChange}
+                        onCardChange={handleCardChange}
+                    />
+                );
             case 'Gallery':
-                return <GalleryTab
-                    characterId={characterId}
-                    images={galleryImages}
-                    onImageUpload={handleGalleryUpload}
-                    onGalleryUpdate={handleImagesChange}
-                />;
+                return (
+                    <GalleryTab
+                        characterId={characterId}
+                        images={galleryImages}
+                        onImageUpload={handleGalleryUpload}
+                        onGalleryUpdate={handleImagesChange}
+                    />
+                );
             case 'Data':
                 return <DataTab />;
             case 'Custom':
-                return <CustomTab
-                    character={editorData.character}
-                    onUpdate={fetchInitialData}
-                />;
+                return <CustomTab character={editorData.character} onUpdate={fetchInitialData} />;
             default:
                 return null;
         }
@@ -176,19 +183,48 @@ const CharacterEditor: React.FC<CharacterEditorProps> = ({ characterId }) => {
             <div className="card-header">
                 <ul className="nav nav-tabs card-header-tabs">
                     <li className="nav-item">
-                        <button className={`nav-link ${activeTab === 'BBFrame' ? 'active' : ''}`} disabled={isNewCharacter} onClick={() => setActiveTab('BBFrame')}>BBFrame & Inlines</button>
+                        <button
+                            className={`nav-link ${activeTab === 'BBFrame' ? 'active' : ''}`}
+                            disabled={isNewCharacter}
+                            onClick={() => setActiveTab('BBFrame')}
+                        >
+                            BBFrame & Inlines
+                        </button>
                     </li>
                     <li className="nav-item">
-                        <button className={`nav-link ${activeTab === 'Details' ? 'active' : ''}`} onClick={() => setActiveTab('Details')}>Details</button>
+                        <button
+                            className={`nav-link ${activeTab === 'Details' ? 'active' : ''}`}
+                            onClick={() => setActiveTab('Details')}
+                        >
+                            Details
+                        </button>
                     </li>
                     <li className="nav-item">
-                        <button className={`nav-link ${activeTab === 'Gallery' ? 'active' : ''}`} disabled={isNewCharacter} onClick={() => setActiveTab('Gallery')}>Gallery</button>
+                        <button
+                            className={`nav-link ${activeTab === 'Gallery' ? 'active' : ''}`}
+                            disabled={isNewCharacter}
+                            onClick={() => setActiveTab('Gallery')}
+                        >
+                            Gallery
+                        </button>
                     </li>
                     <li className="nav-item">
-                        <button className={`nav-link ${activeTab === 'Data' ? 'active' : ''}`} disabled={isNewCharacter} onClick={() => setActiveTab('Data')}>Data</button>
+                        <button
+                            className={`nav-link ${activeTab === 'Data' ? 'active' : ''}`}
+                            disabled={isNewCharacter}
+                            onClick={() => setActiveTab('Data')}
+                        >
+                            Data
+                        </button>
                     </li>
                     <li className="nav-item">
-                        <button className={`nav-link ${activeTab === 'Custom' ? 'active' : ''}`} disabled={isNewCharacter} onClick={() => setActiveTab('Custom')}>Custom</button>
+                        <button
+                            className={`nav-link ${activeTab === 'Custom' ? 'active' : ''}`}
+                            disabled={isNewCharacter}
+                            onClick={() => setActiveTab('Custom')}
+                        >
+                            Custom
+                        </button>
                     </li>
                 </ul>
             </div>

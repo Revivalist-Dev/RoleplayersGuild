@@ -26,16 +26,14 @@ namespace RoleplayersGuild.Site.Directory.Dashboard
             Funding = await _miscDataService.GetDashboardFundingAsync();
         }
 
-        public ViewComponentResult OnGetCharacterList(string screenStatus)
+        public IActionResult OnGetCharacterList(string screenStatus)
         {
             int recordCount = 18;
             bool showFooter = true;
             string displaySize = "profile-card-vertical";
-            return new ViewComponentResult
-            {
-                ViewComponentName = "CharacterListing",
-                Arguments = new { displaySize, showFooter, screenStatus, recordCount }
-            };
+            // Return a PartialView that renders the ViewComponent. This is the correct
+            // way to return a view component from a page handler for an AJAX call.
+            return Partial("_CharacterList", new { displaySize, showFooter, screenStatus, recordCount });
         }
 
         public async Task<IActionResult> OnGetDashboardListAsync(string itemType, string filter)

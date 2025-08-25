@@ -107,7 +107,9 @@
     </script>
 
     <div id="react-root" style="min-height: 900px;">
-        <div id="character-viewer-root" class="h-100">
+        <div id="character-viewer-root"
+             data-component="CharacterViewer"
+             data-props='{"character": @Html.Raw(Model.CharacterJson), "images": @Html.Raw(Model.ImagesJson), "bbFrameHtml": @Html.Raw(JsonSerializer.Serialize(Model.CharacterBBFrameHtml)), "isOwner": @Model.IsOwner.ToString().ToLower(), "userCanViewMatureContent": @Model.UserCanViewMatureContent.ToString().ToLower(), "genres": @Html.Raw(Model.GenresJson)}'>
             <div class="card h-100">
                 <div class="card-header">
                     <ul class="nav nav-tabs card-header-tabs">

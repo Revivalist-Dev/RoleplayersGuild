@@ -21,7 +21,8 @@ namespace RoleplayersGuild.Site.Services.DataServices
         Task UpdateImageAsync(int imageId, bool isMature, string imageCaption);
         Task<CharacterImage?> GetImageWithOwnerAsync(int imageId);
         Task<int> GetAvailableImageSlotCountAsync(int userId, int characterId);
-        Task UpdateImageDetailsAsync(int imageId, string caption, int imageScale);
+        Task UpdateImageDetailsAsync(int imageId, string caption, double? imageScale);
+        Task UpdateImageSizeAsync(int imageId, int width, int height);
         Task UpdateImagePositionsAsync(List<int> imageIds);
         Task DeleteImageRecordAsync(int imageId);
         Task DeleteImagesAsync(List<int> imageIds, int userId);

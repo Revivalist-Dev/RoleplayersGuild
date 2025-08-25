@@ -1,0 +1,67 @@
+<architecture_overview>
+  <overview>
+    The local development environment uses a simplified architecture orchestrated by `docker-compose.yml`. An NGINX reverse proxy acts as the single entry point for all traffic, routing requests to the appropriate backend service based on the URL path.
+  </overview>
+
+  <services>
+    <service name="nginx">
+      <role>Edge Reverse Proxy</role>
+      <entry_point>http://localhost:8080</entry_point>
+      <responsibilities>
+        <responsibility>Acts as the single entry point for all browser traffic.</responsibility>
+        <responsibility>Routes `/vite-dev/{...}` to the `site-client-dev` service.</responsibility>
+        <responsibility>Routes `/fonts/{...}` and `/images/{...}` to the `roleplayersguild` service.</responsibility>
+        <responsibility>All other requests are proxied to the `roleplayersguild` service.</responsibility>
+      </responsibilities>
+    </service>
+    <service name="roleplayersguild">
+      <role>Backend ASP.NET Core Application</role>
+      <responsibilities>
+        <responsibility>Serves server-rendered HTML via Razor Pages.</responsibility>
+        <responsibility>Handles all business logic and API requests.</responsibility>
+        <responsibility>Serves static assets like fonts and images from the mounted `Site.Assets` directory.</responsibility>
+      </responsibilities>
+    </service>
+    <service name="site-client-dev">
+      <role>Frontend Vite Development Server</role>
+      <responsibilities>
+        <responsibility>Serves all JavaScript, TypeScript, and SCSS assets for development.</responsibility>
+        <responsibility>Provides Hot Module Replacement (HMR).</responsibility>
+      </responsibilities>
+    </service>
+  </services>
+
+  <request_flow environment="Development">
+    <flow name="JS/SCSS Asset Load">
+      <steps>
+        <step number="1">Browser requests `http://localhost:8080/vite-dev/src/main.tsx`.</step>
+        <step number="2">NGINX sees `/vite-dev/` and proxies the request to the `site-client-dev` service.</step>
+        <step number="3">Vite serves the module and injects CSS via HMR.</step>
+      </steps>
+    </flow>
+    <flow name="Static Asset Load (e.g., Fonts)">
+      <steps>
+        <step number="1">Browser requests `http://localhost:8080/fonts/bootstrap-icons.woff2`.</step>
+        <step number="2">NGINX sees `/fonts/` and proxies the request to the `roleplayersguild` service.</step>
+        <step number="3">The ASP.NET Core app serves the font file from the `Site.Assets` directory.</step>
+      </steps>
+    </flow>
+  </request_flow>
+
+  <key_service name="ViteManifestService">
+    <description>The bridge between Vite and ASP.NET Core. It injects asset tags into `_Layout.cshtml`.</description>
+    <behavior environment="Development">
+      Generates `<script>` tags pointing to the Vite dev server's `main.tsx` entry point. It does NOT render `<link>` tags for CSS, as this is handled by Vite HMR.
+    </behavior>
+    <behavior environment="Production">
+      Reads `manifest.json` to inject `<script>` and `<link>` tags with final, cache-busted asset paths.
+    </behavior>
+  </key_service>
+
+  <key_configuration_files>
+    <file path="docker-compose.yml">Defines the core services and their networking.</file>
+    <file path="deployment/nginx/default.conf.template">Configures NGINX routing rules.</file>
+    <file path="Site.Client/vite.config.ts">Configures the Vite dev server, build process, and HMR client port.</file>
+    <file path="RoleplayersGuild/Site.Services/ViteManifestService.cs">The C# service that bridges Vite and Razor Pages.</file>
+  </key_configuration_files>
+</architecture_overview>

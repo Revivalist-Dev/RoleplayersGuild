@@ -36,6 +36,19 @@ namespace RoleplayersGuild.Site.Services
             CurrentContext.Response.Cookies.Append(name, value, cookieOptions);
         }
 
+        public void SetPublicCookie(string name, string value, int expiryDays = 365)
+        {
+            if (CurrentContext is null) return;
+            var cookieOptions = new CookieOptions
+            {
+                HttpOnly = false, // Accessible by client-side script
+                Secure = true,
+                Expires = DateTime.UtcNow.AddDays(expiryDays),
+                SameSite = SameSiteMode.Lax
+            };
+            CurrentContext.Response.Cookies.Append(name, value, cookieOptions);
+        }
+
         public void SetEncryptedCookie(string name, string value, int expiryDays = 2, string purpose = "General-Cookie-Encryption")
         {
             if (CurrentContext is null || string.IsNullOrEmpty(value)) return;

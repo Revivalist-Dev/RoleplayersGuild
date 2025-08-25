@@ -1,0 +1,50 @@
+<technology_best_practices>
+  <overview>
+    This document outlines the specific best practices and conventions for key technologies used in the RoleplayersGuild project.
+  </overview>
+
+  <technology name="ASP.NET Core Razor Pages">
+    <best_practices>
+      <practice category="Project Structure">
+        <rule>All Razor Pages MUST be located within the `/Site.Directory/` folder.</rule>
+        <rule>Group related pages into feature folders (e.g., `/Community/Characters/`).</rule>
+      </practice>
+      <practice category="PageModels">
+        <rule>Always use constructor injection for services.</rule>
+        <rule>Use named handler methods for clarity (e.g., `OnPostCreateAsync`).</rule>
+        <rule>Handler methods MUST return `async Task<IActionResult>`.</rule>
+      </practice>
+      <practice category="Views">
+        <rule>Use `@inject` for services needed in rendering logic (e.g., `IViteManifestService`).</rule>
+        <rule>Prefer strongly-typed PageModel properties over `ViewData`.</rule>
+        <rule>Use Partial Views for simple reusable markup; use View Components for complex UI elements with their own logic.</rule>
+      </practice>
+      <practice category="React Integration">
+        <rule>The global `main.tsx` bundle is loaded on every page via `_Layout.cshtml`.</rule>
+        <rule>To mount a component, add its root DOM element (e.g., `<div id="react-root">`) to the Razor view.</rule>
+        <rule>Pass initial data from the PageModel to React using `data-*` attributes.</rule>
+      </practice>
+    </best_practices>
+  </technology>
+
+  <technology name="Styling (Vite and SCSS)">
+    <architecture_summary>
+      Styling is managed entirely by Vite. The `main.tsx` file (from `Site.Client`) imports the main stylesheet `site.scss` (from `Site.Assets/styles/scss/`). Vite processes this import, providing HMR in development and a bundled CSS file in production. This confirms that `site-client-dev` DOES serve the SCSS, even though the source files are in the separate `Site.Assets` directory.
+    </architecture_summary>
+    <key_files>
+      <file path="Site.Assets/styles/scss/site.scss">
+        <role>The main entry point for all global styles. Incorrect paths or `@use` rules here will break site styling.</role>
+      </file>
+      <file path="Site.Client/src/main.tsx">
+        <role>Imports `site.scss`, making it part of the Vite asset graph. If this import is removed, no styles will load.</role>
+      </file>
+      <file path="Site.Client/vite.config.ts">
+        <role>Configures the Vite dev server. An incorrect `server.hmr.clientPort` will break HMR.</role>
+      </file>
+      <file path="deployment/nginx/default.conf.template">
+        <role>Routes requests for static assets. Missing `location` blocks for `/fonts/` or `/images/` will cause 404s.</role>
+      </file>
+    </key_files>
+  </technology>
+
+</technology_best_practices>

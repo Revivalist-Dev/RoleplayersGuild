@@ -89,181 +89,21 @@
             </div>
         </div>
     </div>
-}
-
-<div class="modal fade" id="ChatInfoModal" tabindex="-1" aria-labelledby="ChatInfoLabel" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="ChatInfoLabel">@Model.ChatRoom!.ChatRoomName Details</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body linkify">
-                @Html.Raw(Model.ChatRoom.ChatRoomDescription)
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+    <input type="hidden" id="chatRoomId" value="@Model.ChatRoom.ChatRoomId" />
+    <div class="modal fade" id="ChatInfoModal" tabindex="-1" aria-labelledby="ChatInfoLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="ChatInfoLabel">@Model.ChatRoom!.ChatRoomName Details</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body linkify">
+                    @Html.Raw(Model.ChatRoom.ChatRoomDescription)
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
             </div>
         </div>
     </div>
-</div>
-
-@section Scripts {
-    <script src="~/lib/microsoft/signalr/dist/browser/signalr.min.js"></script>
-    <script src="~/js/linkify.min.js"></script>
-    <script>
-        const chatRoomId = @Model.ChatRoom.ChatRoomId;
-        let lastPostId = 0;
-
-        const connection = new signalR.HubConnectionBuilder()
-            .withUrl("/chatHub")
-            .withAutomaticReconnect()
-            .build();
-
-        connection.on("ReceiveMessage", function (post) {
-            appendPost(post);
-        });
-
-        connection.on("ReceiveError", function (error) {
-            console.error("Chat Error:", error);
-            const chatOutput = document.getElementById('ChatOutput');
-            const errorMessage = `<div class="alert alert-danger mt-3" role="alert">Error: ${error}</div>`;
-            chatOutput.insertAdjacentHTML('beforeend', errorMessage);
-        });
-
-        connection.on("RoomJoined", function (roomId) {
-            console.log(`Successfully joined room: ${roomId}`);
-            getInitialPosts();
-        });
-
-        connection.onreconnected(connectionId => {
-            console.log(`SignalR reconnected. Connection ID: ${connectionId}`);
-            connection.invoke("JoinRoom", chatRoomId)
-                .catch(err => console.error("Failed to re-join room on reconnected:", err));
-        });
-
-        async function startSignalRConnection() {
-            try {
-                await connection.start();
-                console.log("SignalR Connected.");
-                await connection.invoke("JoinRoom", chatRoomId);
-            } catch (err) {
-                console.error("SignalR connection error:", err);
-            }
-        }
-
-        async function getInitialPosts() {
-            try {
-                const response = await fetch(`/api/ChatApi/GetPosts?chatRoomId=${chatRoomId}&lastPostId=0`);
-                if (!response.ok) {
-                    throw new Error(`Failed to fetch initial posts: ${response.statusText}`);
-                }
-                const posts = await response.json();
-                const chatOutput = document.getElementById('ChatOutput');
-                chatOutput.innerHTML = '';
-
-                if (posts.length > 0) {
-                    lastPostId = posts[posts.length - 1].chatPostId;
-                    posts.forEach(post => appendPost(post));
-                } else {
-                    chatOutput.innerHTML = '<p class="text-center text-muted">No messages yet.</p>';
-                }
-            } catch (error) {
-                console.error("Error fetching initial posts:", error);
-                document.getElementById('ChatOutput').innerHTML = '<p class="text-center text-danger">Error loading chat history.</p>';
-            }
-        }
-
-        async function submitPost() {
-            const contentInput = document.getElementById('txtPostContent');
-            const content = contentInput.value.trim();
-            const characterId = document.getElementById('ddlSendAs').value;
-            if (content === '' || characterId === '0' || !characterId) {
-                alert("Please enter a message and select a character.");
-                return;
-            }
-            try {
-                await connection.invoke("SendMessage", chatRoomId, parseInt(characterId), content);
-                contentInput.value = '';
-            } catch (error) {
-                console.error("Error sending message:", error);
-                alert("Failed to send message. Please try again.");
-            }
-        }
-
-        function appendPost(post) {
-            // Find an existing "no messages" placeholder and remove it if it exists
-            const noMessagesP = document.querySelector('#ChatOutput .text-muted');
-            if (noMessagesP) {
-                noMessagesP.remove();
-            }
-
-            const postHtml = `
-                <div class="Post">
-                    <div class="row g-2">
-                        <div class="col-2 col-xl-1 text-center">
-                            <a href="/Community/Characters/View/${post.characterId}" class="PostAsImage">
-                            <img src="${post.characterThumbnail || '/images/Defaults/NewAvatar.png'}" class="chat-avatar" alt="${post.characterDisplayName}" />
-                           </div>
-                        <div class="col-10 col-xl-11 PostText">
-                            <a href="/Community/Characters/View/${post.characterId}" class="fw-bold text-decoration-none ${post.characterNameClass}">${post.characterDisplayName}</a>
-                            <small class="text-muted ms-2">${new Date(post.postDateTime).toLocaleString()}</small>
-                            <div class="linkify mt-1">${post.postContent}</div>
-                        </div>
-                    </div>
-                </div>`;
-            const chatOutput = document.getElementById('ChatOutput');
-            chatOutput.insertAdjacentHTML('beforeend', postHtml);
-            if (typeof linkifyStr === 'function') {
-                const lastPostDiv = chatOutput.lastElementChild;
-                const linkifyTarget = lastPostDiv.querySelector('.linkify');
-                if (linkifyTarget) {
-                    linkifyTarget.innerHTML = linkifyStr(linkifyTarget.innerHTML, { target: '_blank' });
-                }
-            }
-        }
-
-        async function getActiveRooms() {
-            const listContainer = document.getElementById('ActiveChatRoomList');
-            try {
-                const response = await fetch('/api/ChatApi/GetActiveRooms');
-                if (!response.ok) {
-                    throw new Error('Failed to fetch active rooms.');
-                }
-                const rooms = await response.json();
-                listContainer.innerHTML = '';
-                if (rooms.length > 0) {
-                    rooms.forEach(room => {
-                        const roomHtml = `<a href="/Community/Chat-Rooms/Room/${room.chatRoomId}" class="list-group-item list-group-item-action">[${room.contentRating}] - ${room.chatRoomName}</a>`;
-                        listContainer.insertAdjacentHTML('beforeend', roomHtml);
-                    });
-                } else {
-                    listContainer.innerHTML = '<p class="p-3 text-muted">No active rooms.</p>';
-                }
-            } catch (error) {
-                console.error('Error fetching active rooms:', error);
-                listContainer.innerHTML = '<p class="p-3 text-danger">Could not load rooms.</p>';
-            }
-        }
-
-        document.addEventListener('DOMContentLoaded', () => {
-            startSignalRConnection();
-            getActiveRooms();
-            document.getElementById('btnSubmitPost').addEventListener('click', submitPost);
-            document.getElementById('txtPostContent').addEventListener('keypress', function(e) {
-                if (e.key === 'Enter' && !e.shiftKey) {
-                    e.preventDefault();
-                    submitPost();
-                }
-            });
-        });
-
-        window.addEventListener('beforeunload', () => {
-            if (connection.state === signalR.HubConnectionState.Connected) {
-                connection.invoke("LeaveRoom", chatRoomId)
-                    .catch(err => console.error("Failed to leave room on unload:", err));
-                connection.stop();
-            }
-        });
-    </script>
 }

@@ -9,11 +9,13 @@ namespace RoleplayersGuild.Site.Services
     {
         private readonly string _imageHandlingMode;
         private readonly AwsSettings _awsSettings;
+        private readonly IWebHostEnvironment _env;
 
-        public UrlProcessingService(IConfiguration config, IOptions<AwsSettings> awsSettings)
+        public UrlProcessingService(IConfiguration config, IOptions<AwsSettings> awsSettings, IWebHostEnvironment env)
         {
             _imageHandlingMode = config.GetValue<string>("ImageHandling", "S3")!;
             _awsSettings = awsSettings.Value;
+            _env = env;
         }
 
         public string GetCharacterImageUrl(ImageUploadPath? storedPathInfo)
@@ -51,6 +53,12 @@ namespace RoleplayersGuild.Site.Services
             }
             else // S3
             {
+                // In development, we want to serve images through our NGINX proxy to Minio.
+                if (_env.IsDevelopment())
+                {
+                    return $"/{pathSegment}{storedPath}";
+                }
+                // In production, we use the CDN domain.
                 if (string.IsNullOrEmpty(_awsSettings.CloudFrontDomain)) return "/images/Defaults/NewCharacter.png";
                 return $"{_awsSettings.CloudFrontDomain.TrimEnd('/')}/{pathSegment}{storedPath}";
             }

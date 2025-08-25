@@ -1,61 +1,148 @@
 ﻿@inject RoleplayersGuild.Site.Services.ICookieService CookieService
 @inject RoleplayersGuild.Site.Services.IViteManifestService ViteAssets
+@inject Microsoft.Extensions.Options.IOptions<RoleplayersGuild.Project.Configuration.SiteSettings> SiteSettings
 @{
-    var theme = string.Equals(CookieService.GetCookie("UseDarkTheme"), "true", StringComparison.OrdinalIgnoreCase) ? "dark" : "light";
     var unblurNsfw = string.Equals(CookieService.GetCookie("ShowMatureContent"), "true", StringComparison.OrdinalIgnoreCase) ? "true" : "false";
 }
 <!DOCTYPE html>
-<html lang="en" data-theme="@theme">
+<html lang="en" data-bs-theme="dark">
 <head>
-    <script>
-        // Prevents a flash of unstyled content (FOUC)
-        (function() {
-            try {
-                var theme = document.cookie.split('; ').find(row => row.startsWith('UseDarkTheme=')).split('=')[1];
-                if (theme === 'true') {
-                    document.documentElement.setAttribute('data-theme', 'dark');
-                } else {
-                    document.documentElement.setAttribute('data-theme', 'light');
-                }
-            } catch (e) {
-                // Default to light theme if cookie is not found or an error occurs
-                document.documentElement.setAttribute('data-theme', 'light');
-            }
-        })();
-    </script>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"] - Role-Players Guild</title>
     <meta name="description" content="@ViewData["MetaDescription"]" />
     <link rel="icon" sizes="192x192" href="~/images/Logo/RPGico.png" />
 
-    <link rel="stylesheet" href="~/vendor/bootstrap/css/bootstrap.min.css" />
-    <link rel="stylesheet" href="~/vendor/bootstrap-icons/bootstrap-icons.min.css" />
-    <link rel="stylesheet" href="~/css/site.css" />
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6220312574026916"
+            crossorigin="anonymous"></script>
 
-    @await RenderSectionAsync("head", required: false)
+   <script>
+       (function() {
+           function getCookie(name) {
+               const value = `; ${document.cookie}`;
+               const parts = value.split(`; ${name}=`);
+               if (parts.length === 2) return parts.pop().split(';').shift();
+           }
+
+           // The subscriber-satus cookie is set server-side upon login for subscribed members.
+           const isSubscriber = getCookie('subscriber-status') === 'true';
+
+           window.googlefc = window.googlefc || {};
+           googlefc.controlledMessagingFunction = function(message, onDismiss) {
+               if (isSubscriber) {
+                   // If the user is a subscriber, automatically dismiss the message
+                   // without showing it.
+                   onDismiss({ userInteracted: false });
+               } else {
+                   // If the user is not a subscriber, show the message.
+                   message.present();
+               }
+           };
+       })();
+   </script>
+
+   @await ViteAssets.RenderViteStyles()
+   @await RenderSectionAsync("head", required: false)
+
+    <style>
+        /* Pre-loader styles to prevent FOUC */
+        html {
+            background-color: #212529; /* Set the root background color immediately */
+        }
+
+        .rpg-preloader {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #212529; /* Fallback for dark theme */
+            background-color: var(--bs-body-bg); /* Use theme background */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            opacity: 1;
+            transition: opacity 0.5s ease-in-out;
+        }
+
+        .rpg-preloader.fade-out {
+            opacity: 0;
+        }
+
+        .rpg-main-content {
+            opacity: 0;
+            transition: opacity 0.5s ease-in-out;
+        }
+
+        .rpg-main-content.fade-in {
+            opacity: 1;
+        }
+    </style>
 </head>
-<body data-unblur-nsfw="@unblurNsfw" class="d-flex flex-column min-vh-100">
+<body data-unblur-nsfw="@unblurNsfw"
+      data-heartbeat-interval-minutes="@SiteSettings.Value.HeartbeatIntervalMinutes"
+      class="d-flex flex-column min-vh-100">
 
-    @await Component.InvokeAsync("SiteHeader")
-    @await Component.InvokeAsync("UserNav")
-
-    <main role="main" class="mb-5">
-        <div class="container-fluid mt-4">
-            @await Component.InvokeAsync("AdBanner")
-            <div class="rpg-ContentArea">
-                @RenderBody()
-            </div>
+    @Html.AntiForgeryToken()
+    <div class="rpg-preloader">
+        <div class="rpg-loader">
+            <div class="cell d-1"></div>
+            <div class="cell d-2"></div>
+            <div class="cell d-3"></div>
+            <div class="cell d-4"></div>
+            <div class="cell d-1"></div>
+            <div class="cell d-2"></div>
+            <div class="cell d-3"></div>
+            <div class="cell d-4"></div>
+            <div class="cell d-1"></div>
         </div>
-    </main>
+    </div>
 
-    @await Component.InvokeAsync("SiteFooter")
+    <header class="site-header">
+        @await Component.InvokeAsync("SiteHeader")
+    </header>
+    <div class="rpg-main-content">
+        <main role="main" class="mb-5">
+            <div class="container-fluid mt-4">
+                <div class="rpg-ContentArea py-4">
+                    @RenderBody()
+                </div>
+            </div>
+        </main>
 
-    <script src="~/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
-    <script src="~/vendor/imagesloaded/imagesloaded.pkgd.min.js"></script>
-    <script src="~/vendor/packery/packery.pkgd.min.js"></script>
-    @await ViteAssets.RenderViteScripts()
+        @await Component.InvokeAsync("SiteFooter")
 
+        @* The UserNav is a global, floating component and is rendered here. *@
+        @await Component.InvokeAsync("UserNav")
+    </div>
+
+    @* The main.tsx bundle contains all site-wide JavaScript and stylesheets. *@
+    @await ViteAssets.RenderViteScripts("src/main.tsx")
+
+    @* Page-specific scripts are rendered here. *@
     @await RenderSectionAsync("Scripts", required: false)
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const preloader = document.querySelector('.rpg-preloader');
+            const mainContent = document.querySelector('.rpg-main-content');
+
+            if (preloader) {
+                preloader.classList.add('fade-out');
+                // Remove the preloader from the DOM after the transition
+                preloader.addEventListener('transitionend', () => preloader.remove());
+            }
+            if (mainContent) {
+                mainContent.classList.add('fade-in');
+                
+                // Listen for the end of the main content's fade-in transition
+                mainContent.addEventListener('transitionend', () => {
+                    // Dispatch a custom event to signal that the page is fully loaded and visible
+                    window.dispatchEvent(new CustomEvent('rpg:load'));
+                }, { once: true }); // Ensure the event listener is only called once
+            }
+        });
+    </script>
 </body>
 </html>

@@ -241,5 +241,15 @@
             ],
             "url": "https://raw.githubusercontent.com/SirNoName2705/VintelliSchemas/master/SchemaReleases/current/.schemas/modinfo.json"
         }
+    ],
+    "css.enabledLanguages": [
+        "html",
+        "typescript",
+        "csharp"
+    ],
+    "css.styleSheets": [
+        "node_modules/bootstrap/dist/css/bootstrap.css",
+        "Site.Client/src/**/*.scss",
+        "Site.Assets/styles/scss/**/*.scss"
     ]
 }

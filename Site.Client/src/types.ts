@@ -32,9 +32,12 @@ export interface CharacterImage {
     imageCaption: string | null;
     isMature: boolean;
     userId: number;
-    imageScale: number;
+    imageScale: number | null;
     width: number;
     height: number;
+    isSpacer?: boolean;
+    color?: string;
+    opacity?: number;
 }
 
 export interface CharacterInline {
@@ -50,6 +53,11 @@ export interface EditorData {
     inlines: CharacterInline[];
     avatarUrl: string | null;
     cardUrl: string | null;
+    // Properties required by CharacterViewer
+    bbFrameHtml: string;
+    isOwner: boolean;
+    userCanViewMatureContent: boolean;
+    genres: string[];
 }
 
 export interface EditorLookups {

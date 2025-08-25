@@ -5,10 +5,8 @@
     Layout = "~/Site.Directory/Shared/_Layout2Col.cshtml";
 }
 
-@section LeftCol {
-    @* This replaces the old UserNav.ascx control.
-       I'm assuming you have a _UserNav.cshtml partial in your Shared folder. *@
-    <partial name="Shared/_UserNav" />
+@section cphLeftCol {
+    @* The UserNav is now a global component invoked from _Layout.cshtml *@
 }
 
 <fieldset class="PublicAreas">

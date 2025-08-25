@@ -1,0 +1,65 @@
+<error_handling_and_troubleshooting>
+  <overview>
+    This document contains a knowledge base of common project errors, their root causes, and the established solutions. It also includes mitigation strategies for common AI tool failures.
+  </overview>
+
+  <debugging_checklists>
+    <checklist name="Routing and Asset Loading Issues">
+      <description>For MIME type errors, 404s for static assets, or WebSocket errors during development.</description>
+      <step number="1">
+        <action>Check the Browser's Network Tab</action>
+        <details>
+          <check>What is the exact URL being requested?</check>
+          <check>JS modules MUST start with `/vite-dev/`. If not, the `ViteManifestService` is misconfigured.</check>
+          <check>Static assets MUST start with `/fonts/` or `/images/`. If not, the path in the SCSS or C# file is incorrect.</check>
+        </details>
+      </step>
+      <step number="2">
+        <action>Verify the `RoleplayersGuild` Application</action>
+        <details>
+          <check file="_Layout.cshtml">Is the call to `@await ViteAssets.RenderViteScripts()` present?</check>
+          <check file="ViteManifestService.cs">Is it configured to load only `main.tsx`?</check>
+        </details>
+      </step>
+      <step number="3">
+        <action>Verify the Proxy Layer and HMR</action>
+        <details>
+          <check file="vite.config.ts">Is `server.hmr.clientPort` set to the public port (e.g., 8080)?</check>
+          <check file="nginx/default.conf.template">Are the `location` blocks for `/vite-dev/`, `/fonts/`, and `/images/` correct?</check>
+        </details>
+      </step>
+      <final_step>If all checks pass, a full, clean rebuild (`docker-compose down -v` then `docker-compose up --build`) will resolve most remaining issues.</final_step>
+    </checklist>
+  </debugging_checklists>
+
+  <common_project_failures>
+    <failure>
+      <symptom>Browser reports MIME type errors.</symptom>
+      <root_cause>`ViteManifestService` was called incorrectly from Razor.</root_cause>
+      <solution>The service is now hardened to ignore Razor parameters.</solution>
+    </failure>
+    <failure>
+      <symptom>`dotnet watch` fails inside Docker.</symptom>
+      <root_cause>Default file watcher is unreliable in containers.</root_cause>
+      <solution>Ensure `DOTNET_USE_POLLING_FILE_WATCHER=true` is set in `docker-compose.yml`.</solution>
+    </failure>
+    <failure>
+      <symptom>Flash of Unstyled Content (FOUC).</symptom>
+      <root_cause>HTML renders before Vite CSS is loaded.</root_cause>
+      <solution>An inline pre-loader was implemented in `_Layout.cshtml`.</solution>
+    </failure>
+  </common_project_failures>
+
+  <ai_tool_failure_mitigation>
+    <tool name="apply_diff">
+      <failure_mode>
+        <symptom>Fails with "No sufficiently similar match found".</symptom>
+        <root_cause>The file's content is "stale".</root_cause>
+        <mitigation_protocol>
+          <step number="1">**Mandatory `read_file`**: If `apply_diff` fails, you MUST use `read_file` to get the current content before retrying.</step>
+          <step number="2">**Prefer `write_to_file`**: For complex changes, use `write_to_file` for a single, atomic update.</step>
+        </mitigation_protocol>
+      </failure_mode>
+    </tool>
+  </ai_tool_failure_mitigation>
+</error_handling_and_troubleshooting>

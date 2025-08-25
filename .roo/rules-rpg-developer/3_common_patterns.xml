@@ -1,0 +1,89 @@
+<common_patterns>
+  <overview>
+    This file contains common code patterns and templates for the RoleplayersGuild project.
+    Use these as a starting point for new features to ensure consistency.
+  </overview>
+
+  <pattern name="csharp_service_repository">
+    <description>A standard C# service using the Repository Pattern for database access.</description>
+    <context>Use this when creating a new service in the 'RoleplayersGuild' project that needs to interact with the database.</context>
+    <files>
+      <file name="Services/Interfaces/INewService.cs">
+        <code language="csharp"><![CDATA[
+namespace RoleplayersGuild.Services.Interfaces
+{
+    public interface INewService
+    {
+        // ... method signatures
+    }
+}
+        ]]></code>
+      </file>
+      <file name="Services/NewService.cs">
+        <code language="csharp"><![CDATA[
+using RoleplayersGuild.Services.Interfaces;
+using RoleplayersGuild.Data.Repositories.Interfaces;
+
+namespace RoleplayersGuild.Services
+{
+    public class NewService : INewService
+    {
+        private readonly IUnitOfWork _unitOfWork;
+
+        public NewService(IUnitOfWork unitOfWork)
+        {
+            _unitOfWork = unitOfWork;
+        }
+
+        // ... service implementation
+    }
+}
+        ]]></code>
+      </file>
+    </files>
+    <explanation>
+      This pattern uses Dependency Injection to provide the service with a Unit of Work, which manages database transactions and repositories.
+      Always define an interface for your service to facilitate testing and dependency inversion.
+    </explanation>
+  </pattern>
+
+  <pattern name="react_component">
+    <description>A standard functional React component in TypeScript.</description>
+    <context>Use this when creating a new component in the 'Site.Client' project.</context>
+    <files>
+      <file name="src/components/NewComponent/NewComponent.tsx">
+        <code language="typescript"><![CDATA[
+import React from 'react';
+import './NewComponent.scss';
+
+interface NewComponentProps {
+  // ... component props
+}
+
+const NewComponent: React.FC<NewComponentProps> = ({ /* props */ }) => {
+  return (
+    <div className="new-component">
+      {/* Component JSX */}
+    </div>
+  );
+};
+
+export default NewComponent;
+        ]]></code>
+      </file>
+      <file name="src/components/NewComponent/NewComponent.scss">
+        <code language="scss"><![CDATA[
+.new-component {
+  // ... component styles
+}
+        ]]></code>
+      </file>
+    </files>
+    <explanation>
+      Components should be self-contained in their own directory.
+      Use TypeScript interfaces for props to ensure type safety.
+      Import a corresponding SCSS file for styling.
+    </explanation>
+  </pattern>
+
+</common_patterns>

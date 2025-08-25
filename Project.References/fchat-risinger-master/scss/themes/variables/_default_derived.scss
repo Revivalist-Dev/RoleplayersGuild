@@ -1,0 +1,9 @@
+.purpleText {
+  @include text-outline(#306);
+}
+
+.blackText {
+  @include text-outline($gray-600);
+}
+
+$blue-color: #06f;

@@ -1,3 +1,4 @@
+using System;
 using Dapper;
 using Microsoft.Extensions.Configuration;
 using RoleplayersGuild.Site.Model;
@@ -77,7 +78,7 @@ namespace RoleplayersGuild.Site.Services.DataServices
         public async Task<PagedResult<ChatRoomWithDetails>> SearchChatRoomsAsync(int pageIndex, int pageSize, string? searchTerm, List<int> genreIds)
         {
             var parameters = new DynamicParameters();
-            var whereClauses = new List<string> { """CR."ChatRoomStatusId" = 1""" };
+            var whereClauses = new List<string> { """CR."ChatRoomStatusId" = 2""" };
 
             // This will need to be refactored to get the CurrentUserId from the UserService
             // int currentUserId = CurrentUserId;
@@ -125,9 +126,11 @@ namespace RoleplayersGuild.Site.Services.DataServices
             var items = await GetRecordsAsync<ChatRoomWithDetails>(pagingSql, parameters);
             return new PagedResult<ChatRoomWithDetails> { Items = items, TotalCount = totalCount, PageIndex = pageIndex, PageSize = pageSize };
         }
-        public Task<IEnumerable<DashboardChatRoom>> GetDashboardChatRoomsAsync(int userId)
+        public async Task<IEnumerable<DashboardChatRoom>> GetDashboardChatRoomsAsync(int userId)
         {
-            const string sql = """
+            try
+            {
+                const string sql = """
 SELECT r."ChatRoomId", r."ChatRoomName", cr."ContentRatingName" as "ContentRating", lp."LastPostTime"
 FROM "ChatRooms" r
 JOIN "ContentRatings" cr ON r."ContentRatingId" = cr."ContentRatingId"
@@ -136,14 +139,23 @@ LEFT JOIN (
     FROM "ChatRoomPosts"
     GROUP BY "ChatRoomId"
 ) lp ON r."ChatRoomId" = lp."ChatRoomId"
-WHERE r."ChatRoomStatusId" = 2 -- <<< FIX IS HERE
+WHERE r."ChatRoomStatusId" = 2
 AND r."SubmittedByUserId" NOT IN (SELECT "UserBlocked" FROM "UserBlocking" WHERE "UserBlockedBy" = @userId)
 AND r."SubmittedByUserId" NOT IN (SELECT "UserBlockedBy" FROM "UserBlocking" WHERE "UserBlocked" = @userId)
 ORDER BY lp."LastPostTime" DESC NULLS LAST, r."ChatRoomId" DESC
 LIMIT 6
 """;
 
-            return GetRecordsAsync<DashboardChatRoom>(sql, new { userId });
+                return await GetRecordsAsync<DashboardChatRoom>(sql, new { userId });
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("*********************************");
+                Console.WriteLine("EXCEPTION IN GetDashboardChatRoomsAsync");
+                Console.WriteLine(ex.ToString());
+                Console.WriteLine("*********************************");
+                throw;
+            }
         }
         public async Task<IEnumerable<ChatParticipantViewModel>> GetChatRoomParticipantsAsync(int chatRoomId)
         {

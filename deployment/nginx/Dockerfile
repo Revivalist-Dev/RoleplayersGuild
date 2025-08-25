@@ -1,8 +1,11 @@
-# Use the official Nginx image from Docker Hub
-FROM nginx:latest
+# Use the official lightweight NGINX image
+FROM nginx:alpine
 
-# Remove the default Nginx configuration file
-RUN rm /etc/nginx/conf.d/default.conf
+# Install the 'gettext' package which provides the 'envsubst' utility.
+# This allows us to substitute environment variables into our config template.
+RUN apk add --no-cache gettext
 
-# Copy our custom configuration file
-COPY default.conf /etc/nginx/conf.d/
+# Copy our custom configuration template file from the local directory to the container.
+COPY default.conf.template /etc/nginx/conf.d/default.conf.template
+
+# The container will now start by running a script that processes this template.

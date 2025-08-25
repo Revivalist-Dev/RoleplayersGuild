@@ -136,8 +136,14 @@ namespace RoleplayersGuild.Site.Services
 
             var ipAddress = GetCurrentIpAddress();
             await _userDataService.LogSuccessfulLoginAsync(user.UserId, user.EmailAddress ?? string.Empty, ipAddress);
-            var cookieOptions = new CookieOptions { Expires = DateTime.Now.AddDays(14), HttpOnly = true, SameSite = SameSiteMode.Lax, Secure = true };
-            context.Response.Cookies.Append("UseDarkTheme", user.UseDarkTheme.ToString(), cookieOptions);
+            _cookieService.SetCookie("UseDarkTheme", user.UseDarkTheme.ToString(), 14);
+
+            // Set the subscriber status cookie for Google Funding Choices
+            var membershipTypeId = await _userDataService.GetMembershipTypeIdAsync(user.UserId);
+            if (membershipTypeId > 0)
+            {
+                _cookieService.SetPublicCookie("subscriber-status", "true", 365);
+            }
         }
 
         public async Task SendPasswordResetEmailAsync(string email)

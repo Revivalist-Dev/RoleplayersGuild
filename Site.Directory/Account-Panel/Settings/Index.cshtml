@@ -96,10 +96,10 @@
             if (themeToggle) {
                 themeToggle.addEventListener('change', function () {
                     if (this.checked) {
-                        document.body.setAttribute('data-theme', 'dark');
+                        document.documentElement.setAttribute('data-theme', 'dark');
                     } else {
                         // FIXED: Set the theme to 'light' instead of removing the attribute.
-                        document.body.setAttribute('data-theme', 'light');
+                        document.documentElement.setAttribute('data-theme', 'light');
                     }
                 });
             }
